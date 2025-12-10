@@ -23,6 +23,7 @@ export interface Event {
   end_time: string;
   sections_config: Section[];
   status: 'draft' | 'published' | 'cancelled';
+  allow_multiple_slots: boolean | null;
 }
 
 export interface Booking {

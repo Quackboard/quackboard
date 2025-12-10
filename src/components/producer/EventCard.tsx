@@ -62,6 +62,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
             bookings={bookings} 
             eventId={event.id}
             eventTime={eventTime}
+            allowMultipleSpots={event.allow_multiple_slots ?? false}
             onBookingSuccess={onBookingSuccess}
           />
         )}

@@ -36,6 +36,7 @@ interface SignUpModalProps {
   eventTime: string;
   sectionLabel: string;
   spotNumber: number;
+  allowMultipleSpots: boolean;
   onSuccess: () => void;
 }
 
@@ -46,6 +47,7 @@ export function SignUpModal({
   eventTime,
   sectionLabel,
   spotNumber,
+  allowMultipleSpots,
   onSuccess,
 }: SignUpModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,6 +82,27 @@ export function SignUpModal({
         });
         setIsSubmitting(false);
         return;
+      }
+
+      // Check if user already has a booking for this event (when multiple spots not allowed)
+      if (!allowMultipleSpots) {
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('event_id', eventId)
+          .eq('guest_email', data.email.toLowerCase())
+          .is('cancelled_at', null)
+          .maybeSingle();
+
+        if (existingBooking) {
+          toast({
+            title: 'One spot per comic',
+            description: 'Grab a different time.',
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Insert booking
