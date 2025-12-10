@@ -37,13 +37,15 @@ export function SlotList({ sectionsConfig, bookings }: SlotListProps) {
 
         return (
           <div key={sectionIndex}>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-              <span className="flex-1 h-px bg-border" />
-              <span className="uppercase tracking-wider font-medium">
-                {section.label}
-              </span>
-              <span className="flex-1 h-px bg-border" />
-            </div>
+            {section.label && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/70 py-1">
+                <span className="flex-1 h-px bg-border/50" />
+                <span className="uppercase tracking-wider text-[10px]">
+                  {section.label}
+                </span>
+                <span className="flex-1 h-px bg-border/50" />
+              </div>
+            )}
             
             <div className="space-y-1 mt-2">
               {slots.map(slot => (
