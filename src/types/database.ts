@@ -6,6 +6,11 @@ export interface Producer {
   bio_markdown: string | null;
 }
 
+export interface Section {
+  label: string;
+  slots: number;
+}
+
 export interface Event {
   id: string;
   producer_id: string;
@@ -16,6 +21,14 @@ export interface Event {
   date: string;
   start_time: string;
   end_time: string;
-  sections_config: Record<string, unknown> | null;
+  sections_config: Section[];
   status: 'draft' | 'published' | 'cancelled';
+}
+
+export interface Booking {
+  id: string;
+  event_id: string;
+  slot_position: number;
+  guest_name: string;
+  cancelled_at: string | null;
 }
