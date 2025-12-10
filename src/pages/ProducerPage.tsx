@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ProducerPage() {
   const { id } = useParams<{ id: string }>();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: producer, isLoading: producerLoading } = useQuery({
     queryKey: ['producer', id],
@@ -65,6 +66,10 @@ export default function ProducerPage() {
     },
     enabled: eventIds.length > 0,
   });
+
+  const refetchBookings = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-bookings', eventIds] });
+  };
 
   // Get unique dates that have events
   const eventDates = events
@@ -134,6 +139,7 @@ export default function ProducerPage() {
                   event={event} 
                   bookings={bookings?.filter(b => b.event_id === event.id) || []}
                   producerVenueName={producer.venue_name}
+                  onBookingSuccess={refetchBookings}
                 />
               ))}
             </div>
