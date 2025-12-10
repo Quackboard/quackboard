@@ -18,6 +18,7 @@ interface SpotListProps {
   bookings: Booking[];
   eventId: string;
   eventTime: string;
+  allowMultipleSpots: boolean;
   onBookingSuccess: () => void;
 }
 
@@ -32,6 +33,7 @@ export function SpotList({
   bookings, 
   eventId, 
   eventTime,
+  allowMultipleSpots,
   onBookingSuccess 
 }: SpotListProps) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
@@ -169,6 +171,7 @@ export function SpotList({
         eventTime={eventTime}
         sectionLabel={modalState.sectionLabel}
         spotNumber={modalState.spotNumber}
+        allowMultipleSpots={allowMultipleSpots}
         onSuccess={onBookingSuccess}
       />
     </>
