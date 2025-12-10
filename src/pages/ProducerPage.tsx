@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Producer, Event } from '@/types/database';
+import { Producer, Event, Booking } from '@/types/database';
 import { ProducerHeader } from '@/components/producer/ProducerHeader';
 import { DaySelector } from '@/components/producer/DaySelector';
 import { EventCard } from '@/components/producer/EventCard';
@@ -44,6 +44,26 @@ export default function ProducerPage() {
       return data as Event[];
     },
     enabled: !!id,
+  });
+
+  // Get all event IDs to fetch bookings
+  const eventIds = events?.map(e => e.id) || [];
+
+  const { data: bookings } = useQuery({
+    queryKey: ['event-bookings', eventIds],
+    queryFn: async () => {
+      if (eventIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, event_id, slot_position, guest_name, cancelled_at')
+        .in('event_id', eventIds)
+        .is('cancelled_at', null);
+      
+      if (error) throw error;
+      return data as Booking[];
+    },
+    enabled: eventIds.length > 0,
   });
 
   // Get unique dates that have events
@@ -107,7 +127,11 @@ export default function ProducerPage() {
             
             <div className="mt-6 space-y-4">
               {selectedEvents.map(event => (
-                <EventCard key={event.id} event={event} />
+                <EventCard 
+                  key={event.id} 
+                  event={event} 
+                  bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                />
               ))}
             </div>
           </>

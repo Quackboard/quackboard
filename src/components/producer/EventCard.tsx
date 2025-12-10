@@ -1,9 +1,11 @@
-import { Event } from '@/types/database';
+import { Event, Booking, Section } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, MapPin } from 'lucide-react';
+import { SlotList } from './SlotList';
 
 interface EventCardProps {
   event: Event;
+  bookings: Booking[];
 }
 
 function formatTime(time: string): string {
@@ -14,7 +16,22 @@ function formatTime(time: string): string {
   return `${hour12}:${minutes} ${ampm}`;
 }
 
-export function EventCard({ event }: EventCardProps) {
+function parseSectionsConfig(config: unknown): Section[] {
+  if (Array.isArray(config)) {
+    return config.filter(
+      (item): item is Section =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.label === 'string' &&
+        typeof item.slots === 'number'
+    );
+  }
+  return [];
+}
+
+export function EventCard({ event, bookings }: EventCardProps) {
+  const sections = parseSectionsConfig(event.sections_config);
+
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-2">
@@ -36,6 +53,10 @@ export function EventCard({ event }: EventCardProps) {
             <p>{event.venue_address}</p>
           </div>
         </div>
+        
+        {sections.length > 0 && (
+          <SlotList sectionsConfig={sections} bookings={bookings} />
+        )}
       </CardContent>
     </Card>
   );
