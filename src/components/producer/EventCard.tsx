@@ -1,12 +1,13 @@
 import { Event, Booking, Section } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, MapPin } from 'lucide-react';
-import { SlotList } from './SlotList';
+import { SpotList } from './SpotList';
 
 interface EventCardProps {
   event: Event;
   bookings: Booking[];
   producerVenueName?: string | null;
+  onBookingSuccess: () => void;
 }
 
 function formatTime(time: string): string {
@@ -30,9 +31,10 @@ function parseSectionsConfig(config: unknown): Section[] {
   return [];
 }
 
-export function EventCard({ event, bookings, producerVenueName }: EventCardProps) {
+export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
+  const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
 
   return (
     <Card className="bg-card border-border">
@@ -40,7 +42,7 @@ export function EventCard({ event, bookings, producerVenueName }: EventCardProps
         <div className="flex items-center gap-2 text-foreground">
           <Clock className="h-4 w-4" />
           <span className="text-sm font-medium">
-            {formatTime(event.start_time)} - {formatTime(event.end_time)}
+            {eventTime}
           </span>
         </div>
         
@@ -55,7 +57,13 @@ export function EventCard({ event, bookings, producerVenueName }: EventCardProps
         )}
         
         {sections.length > 0 && (
-          <SlotList sectionsConfig={sections} bookings={bookings} />
+          <SpotList 
+            sectionsConfig={sections} 
+            bookings={bookings} 
+            eventId={event.id}
+            eventTime={eventTime}
+            onBookingSuccess={onBookingSuccess}
+          />
         )}
       </CardContent>
     </Card>
