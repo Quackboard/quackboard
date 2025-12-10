@@ -78,8 +78,10 @@ export default function ProducerPage() {
     }
   }, [eventDates, selectedDate]);
 
-  // Filter events for selected date
-  const selectedEvents = events?.filter(e => e.date === selectedDate) || [];
+  // Filter events for selected date and sort by start_time
+  const selectedEvents = events
+    ?.filter(e => e.date === selectedDate)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time)) || [];
 
   if (producerLoading) {
     return (
@@ -131,6 +133,7 @@ export default function ProducerPage() {
                   key={event.id} 
                   event={event} 
                   bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                  producerVenueName={producer.venue_name}
                 />
               ))}
             </div>
