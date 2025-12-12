@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 
 export function Navbar() {
@@ -15,7 +15,9 @@ export function Navbar() {
   return (
     <nav className="border-b border-border bg-background">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        <span className="text-lg font-semibold text-foreground">Quackboard</span>
+        <Link to="/dashboard" className="text-lg font-semibold text-foreground hover:text-foreground/80">
+          Quackboard
+        </Link>
         
         {user && (
           <Button 

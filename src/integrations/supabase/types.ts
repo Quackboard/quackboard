@@ -107,6 +107,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           producer_id: string | null
+          publish_at: string | null
           recurrence_day: number | null
           recurrence_end_date: string | null
           recurrence_pattern: string
@@ -126,6 +127,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           producer_id?: string | null
+          publish_at?: string | null
           recurrence_day?: number | null
           recurrence_end_date?: string | null
           recurrence_pattern: string
@@ -145,6 +147,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           producer_id?: string | null
+          publish_at?: string | null
           recurrence_day?: number | null
           recurrence_end_date?: string | null
           recurrence_pattern?: string
@@ -176,6 +179,7 @@ export type Database = {
           id: string
           is_info_only: boolean | null
           producer_id: string | null
+          publish_at: string | null
           sections_config: Json
           series_id: string | null
           signup_opens_at: string | null
@@ -196,6 +200,7 @@ export type Database = {
           id?: string
           is_info_only?: boolean | null
           producer_id?: string | null
+          publish_at?: string | null
           sections_config?: Json
           series_id?: string | null
           signup_opens_at?: string | null
@@ -216,6 +221,7 @@ export type Database = {
           id?: string
           is_info_only?: boolean | null
           producer_id?: string | null
+          publish_at?: string | null
           sections_config?: Json
           series_id?: string | null
           signup_opens_at?: string | null
@@ -363,6 +369,7 @@ export type Database = {
           name: string | null
           profile_image_url: string | null
           social_links: Json | null
+          timezone: string | null
           venue_address: string | null
           venue_name: string | null
         }
@@ -376,6 +383,7 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           social_links?: Json | null
+          timezone?: string | null
           venue_address?: string | null
           venue_name?: string | null
         }
@@ -389,6 +397,7 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           social_links?: Json | null
+          timezone?: string | null
           venue_address?: string | null
           venue_name?: string | null
         }
