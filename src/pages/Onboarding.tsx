@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navbar } from '@/components/Navbar';
+import { ProducerLayout } from '@/components/layouts/ProducerLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,14 +66,11 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="max-w-md mx-auto px-4 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">Welcome to Quackboard!</h1>
-          <p className="text-muted-foreground mt-2">Let's set up your page.</p>
-        </div>
+    <ProducerLayout className="max-w-md py-12">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-semibold text-foreground">Welcome to Quackboard!</h1>
+        <p className="text-muted-foreground mt-2">Let's set up your page.</p>
+      </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
@@ -142,7 +139,6 @@ export default function Onboarding() {
             )}
           </Button>
         </form>
-      </main>
-    </div>
+    </ProducerLayout>
   );
 }
