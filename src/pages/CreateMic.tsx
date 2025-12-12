@@ -19,6 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { useFormDraft } from '@/hooks/useFormDraft';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
+const CREATE_MIC_DRAFT_KEY = 'quackboard_create_mic_draft';
 
 const sectionSchema = z.object({
   label: z.string().min(1, 'Label is required'),
@@ -123,6 +126,17 @@ export default function CreateMic() {
 
   const timezone = producer?.timezone || 'America/Los_Angeles';
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      sections: [{ label: '', slots: 10 }],
+      publishOption: 'now',
+      signupOption: 'live',
+      venueName: producer?.venue_name || '',
+      venueAddress: producer?.venue_address || '',
+    },
+  });
+
   const {
     register,
     control,
@@ -131,24 +145,27 @@ export default function CreateMic() {
     setValue,
     reset,
     formState: { errors, isDirty },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      sections: [{ label: '', slots: 10 }],
-      publishOption: 'now',
-      signupOption: 'live',
-      venueName: '',
-      venueAddress: '',
-    },
+  } = form;
+
+  const { clearDraft } = useFormDraft({
+    form,
+    storageKey: CREATE_MIC_DRAFT_KEY,
   });
 
-  // Update venue defaults when producer data loads
+  // Update venue defaults when producer data loads (only if not restored from draft)
   useEffect(() => {
     if (producer) {
-      setValue('venueName', producer.venue_name || '');
-      setValue('venueAddress', producer.venue_address || '');
+      const currentVenueName = watch('venueName');
+      const currentVenueAddress = watch('venueAddress');
+      // Only set defaults if fields are empty (not restored from draft)
+      if (!currentVenueName) {
+        setValue('venueName', producer.venue_name || '');
+      }
+      if (!currentVenueAddress) {
+        setValue('venueAddress', producer.venue_address || '');
+      }
     }
-  }, [producer, setValue]);
+  }, [producer, setValue, watch]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -209,6 +226,7 @@ export default function CreateMic() {
         description: status === 'draft' ? 'Saved as draft.' : 'Your mic is now live.',
       });
 
+      clearDraft();
       setShowSuccess(true);
     } catch (error: any) {
       toast({
@@ -222,6 +240,7 @@ export default function CreateMic() {
   };
 
   const handleCreateAnother = () => {
+    clearDraft();
     // Keep date, venue, sections, scheduling - only clear times
     setValue('startTime', '');
     setValue('endTime', '');
@@ -235,6 +254,11 @@ export default function CreateMic() {
     } else {
       navigate('/dashboard');
     }
+  };
+
+  const handleDiscard = () => {
+    clearDraft();
+    navigate('/dashboard');
   };
 
   if (showSuccess) {
@@ -575,7 +599,7 @@ export default function CreateMic() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/dashboard')}>
+            <AlertDialogAction onClick={handleDiscard}>
               Discard
             </AlertDialogAction>
           </AlertDialogFooter>

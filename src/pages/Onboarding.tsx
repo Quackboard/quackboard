@@ -11,7 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useFormDraft } from '@/hooks/useFormDraft';
 import { Loader2 } from 'lucide-react';
+
+const ONBOARDING_DRAFT_KEY = 'quackboard_onboarding_draft';
 
 const onboardingSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -28,12 +31,25 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const form = useForm<OnboardingFormData>({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: {
+      name: '',
+      venue_name: '',
+      venue_address: '',
+      bio: '',
+    },
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<OnboardingFormData>({
-    resolver: zodResolver(onboardingSchema),
+  } = form;
+
+  const { clearDraft } = useFormDraft({
+    form,
+    storageKey: ONBOARDING_DRAFT_KEY,
   });
 
   const onSubmit = async (data: OnboardingFormData) => {
@@ -62,6 +78,7 @@ export default function Onboarding() {
       return;
     }
 
+    clearDraft();
     navigate('/dashboard');
   };
 
