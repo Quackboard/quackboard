@@ -24,6 +24,8 @@ export interface Event {
   sections_config: Section[];
   status: 'draft' | 'published' | 'cancelled';
   allow_multiple_slots: boolean | null;
+  publish_at: string | null;
+  signup_opens_at: string | null;
 }
 
 export interface Booking {
