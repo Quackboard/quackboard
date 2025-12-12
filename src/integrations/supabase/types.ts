@@ -363,6 +363,7 @@ export type Database = {
           name: string | null
           profile_image_url: string | null
           social_links: Json | null
+          venue_address: string | null
           venue_name: string | null
         }
         Insert: {
@@ -375,6 +376,7 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           social_links?: Json | null
+          venue_address?: string | null
           venue_name?: string | null
         }
         Update: {
@@ -387,6 +389,7 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           social_links?: Json | null
+          venue_address?: string | null
           venue_name?: string | null
         }
         Relationships: []
