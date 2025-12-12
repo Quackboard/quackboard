@@ -1,4 +1,4 @@
-import { Navbar } from '@/components/Navbar';
+import { ProducerLayout } from '@/components/layouts/ProducerLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Loader2, Plus, ExternalLink } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
-import { format, parseISO, isPast } from 'date-fns';
+import { parseISO, isPast } from 'date-fns';
 
 interface EventWithBookings {
   id: string;
@@ -57,10 +57,7 @@ export default function Dashboard() {
   const pastEvents = events?.filter(e => isPast(parseISO(e.date))) || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="max-w-4xl mx-auto px-4 py-8">
+    <ProducerLayout>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Your Mics</h1>
@@ -124,7 +121,6 @@ export default function Dashboard() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </ProducerLayout>
   );
 }
