@@ -77,13 +77,22 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
 
   // Signup status logic
   const getSignupStatus = () => {
-    if (!event.signup_opens_at || !isAfter(parseISO(event.signup_opens_at), now)) {
-      return { label: 'Open', className: 'text-foreground' };
+    // If signup_opens_at is set and in the future, show that time
+    if (event.signup_opens_at && isAfter(parseISO(event.signup_opens_at), now)) {
+      return { 
+        label: `Opens ${formatDateTime(event.signup_opens_at)}`, 
+        className: 'text-muted-foreground' 
+      };
     }
-    return { 
-      label: `Opens ${formatDateTime(event.signup_opens_at)}`, 
-      className: 'text-muted-foreground' 
-    };
+    // If signup_opens_at is null but publish_at is in the future, sign-ups open when mic goes live
+    if (!event.signup_opens_at && event.publish_at && isAfter(parseISO(event.publish_at), now)) {
+      return { 
+        label: `Opens ${formatDateTime(event.publish_at)}`, 
+        className: 'text-muted-foreground' 
+      };
+    }
+    // Otherwise sign-ups are open
+    return { label: 'Open', className: 'text-foreground' };
   };
 
   const status = getStatus();

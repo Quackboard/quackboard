@@ -2,6 +2,7 @@ import { Event, Booking, Section } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, MapPin } from 'lucide-react';
 import { SpotList } from './SpotList';
+import { parseISO, isAfter, format } from 'date-fns';
 
 interface EventCardProps {
   event: Event;
@@ -31,10 +32,31 @@ function parseSectionsConfig(config: unknown): Section[] {
   return [];
 }
 
+function formatDateTime(dateStr: string): string {
+  const date = parseISO(dateStr);
+  return format(date, "MMM d 'at' h:mm a");
+}
+
+function getSignupStatus(event: Event): { label: string; isOpen: boolean } {
+  const now = new Date();
+  
+  // If signup_opens_at is set and in the future
+  if (event.signup_opens_at && isAfter(parseISO(event.signup_opens_at), now)) {
+    return { label: `Sign-ups open ${formatDateTime(event.signup_opens_at)}`, isOpen: false };
+  }
+  // If signup_opens_at is null but publish_at is in the future
+  if (!event.signup_opens_at && event.publish_at && isAfter(parseISO(event.publish_at), now)) {
+    return { label: `Sign-ups open ${formatDateTime(event.publish_at)}`, isOpen: false };
+  }
+  // Otherwise sign-ups are open
+  return { label: '', isOpen: true };
+}
+
 export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
+  const signupStatus = getSignupStatus(event);
 
   return (
     <Card className="bg-card border-border">
@@ -56,7 +78,11 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           </div>
         )}
         
-        {sections.length > 0 && (
+        {!signupStatus.isOpen && (
+          <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
+        )}
+        
+        {signupStatus.isOpen && sections.length > 0 && (
           <SpotList 
             sectionsConfig={sections} 
             bookings={bookings} 
