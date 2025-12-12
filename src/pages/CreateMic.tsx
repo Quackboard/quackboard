@@ -19,6 +19,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const sectionSchema = z.object({
   label: z.string().min(1, 'Label is required'),
@@ -94,6 +104,7 @@ export default function CreateMic() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: producer } = useQuery({
     queryKey: ['producer-profile', user?.id],
@@ -119,7 +130,7 @@ export default function CreateMic() {
     watch,
     setValue,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -216,6 +227,14 @@ export default function CreateMic() {
     setValue('endTime', '');
     setValue('title', '');
     setShowSuccess(false);
+  };
+
+  const handleCancel = () => {
+    if (isDirty) {
+      setShowCancelDialog(true);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   if (showSuccess) {
@@ -522,6 +541,14 @@ export default function CreateMic() {
         <div className="flex gap-3 pt-4">
           <Button
             type="button"
+            variant="ghost"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
             variant="outline"
             onClick={handleSubmit((data) => onSubmit(data, 'draft'))}
             disabled={isSubmitting}
@@ -537,6 +564,23 @@ export default function CreateMic() {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes that will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/dashboard')}>
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProducerLayout>
   );
 }
