@@ -20,7 +20,7 @@ interface EventRowProps {
     status: string;
     publish_at: string | null;
     signup_opens_at: string | null;
-    bookings: { id: string; cancelled_at: string | null }[];
+    bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
   };
   isPast?: boolean;
 }
@@ -55,8 +55,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const now = new Date();
   const sections = parseSections(event.sections_config);
   const activeBookings = event.bookings.filter(b => !b.cancelled_at);
-  const totalSlots = sections.reduce((sum, s) => sum + s.slots, 0);
-  const filledSlots = activeBookings.length;
 
   // Status logic
   const getStatus = () => {
@@ -98,15 +96,20 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const status = getStatus();
   const signupStatus = getSignupStatus();
 
-  // Build sections summary
-  const sectionsSummary = sections.map(section => {
-    const sectionBookings = activeBookings.filter((_, i) => {
-      // Simple approximation - count bookings per section based on slot positions
-      // For accurate counts, we'd need slot_position data
-      return true;
+  // Calculate slot ranges and booking counts per section
+  const getSectionStats = () => {
+    let startSlot = 1;
+    return sections.map(section => {
+      const endSlot = startSlot + section.slots - 1;
+      const bookedCount = activeBookings.filter(
+        b => b.slot_position >= startSlot && b.slot_position <= endSlot
+      ).length;
+      const stats = { label: section.label, booked: bookedCount, total: section.slots };
+      startSlot = endSlot + 1;
+      return stats;
     });
-    return `${section.label} — ${filledSlots}/${totalSlots} spots`;
-  }).join(', ');
+  };
+  const sectionStats = getSectionStats();
 
   return (
     <Card className={cn(
@@ -128,12 +131,12 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
             
             <p className="text-sm text-muted-foreground">{event.venue_name}</p>
             
-            {sections.length > 0 && (
+            {sectionStats.length > 0 && (
               <p className="text-sm text-muted-foreground">
-                {sections.map((s, i) => (
+                {sectionStats.map((s, i) => (
                   <span key={i}>
                     {i > 0 && ' • '}
-                    {s.label} — {filledSlots}/{totalSlots} spots
+                    {s.label} — {s.booked}/{s.total} spots
                   </span>
                 ))}
               </p>

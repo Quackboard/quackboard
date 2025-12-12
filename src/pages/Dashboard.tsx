@@ -19,7 +19,7 @@ interface EventWithBookings {
   status: string;
   publish_at: string | null;
   signup_opens_at: string | null;
-  bookings: { id: string; cancelled_at: string | null }[];
+  bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
 export default function Dashboard() {
@@ -41,7 +41,7 @@ export default function Dashboard() {
           status,
           publish_at,
           signup_opens_at,
-          bookings (id, cancelled_at)
+          bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
         .order('date', { ascending: true });
