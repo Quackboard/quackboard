@@ -19,17 +19,15 @@ export function Navbar() {
           Quackboard
         </Link>
         
-        {user && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleSignOut}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Log out
-          </Button>
-        )}
+<Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleSignOut}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Log out
+        </Button>
       </div>
     </nav>
   );
