@@ -132,14 +132,13 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
             <p className="text-sm text-muted-foreground">{event.venue_name}</p>
             
             {sectionStats.length > 0 && (
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground space-y-0.5">
                 {sectionStats.map((s, i) => (
-                  <span key={i}>
-                    {i > 0 && ' • '}
+                  <div key={i}>
                     {s.label} — {s.booked}/{s.total} spots
-                  </span>
+                  </div>
                 ))}
-              </p>
+              </div>
             )}
 
             <div className="flex items-center gap-3 text-xs">
