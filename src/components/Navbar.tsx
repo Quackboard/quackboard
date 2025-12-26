@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Plus, ExternalLink } from 'lucide-react';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -19,15 +19,41 @@ export function Navbar() {
           Quackboard
         </Link>
         
-<Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleSignOut}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Log out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            asChild
+          >
+            <Link to="/create">
+              <Plus className="h-4 w-4 mr-1" />
+              Create Mic
+            </Link>
+          </Button>
+          
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              asChild
+            >
+              <Link to={`/producer/${user.id}`}>
+                <ExternalLink className="h-4 w-4 mr-1" />
+                View My Page
+              </Link>
+            </Button>
+          )}
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Log out
+          </Button>
+        </div>
       </div>
     </nav>
   );
