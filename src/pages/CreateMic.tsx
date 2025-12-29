@@ -39,7 +39,10 @@ const sectionSchema = z.object({
 });
 
 const formSchema = z.object({
-  date: z.date({ required_error: 'Date is required' }),
+  date: z.date({ 
+    required_error: 'Date is required',
+    invalid_type_error: 'Please select a valid date',
+  }),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
   title: z.string().optional(),
@@ -47,21 +50,35 @@ const formSchema = z.object({
   venueAddress: z.string().min(1, 'Venue address is required'),
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
   publishOption: z.enum(['now', 'later']),
-  publishAt: z.date().optional(),
+  publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupOpensAt: z.date().optional(),
+  signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
 }).refine((data) => {
-  const start = data.startTime;
-  const end = data.endTime;
-  return start < end;
+  if (!data.startTime || !data.endTime) return true;
+  return data.startTime < data.endTime;
 }, {
   message: 'End time must be after start time',
   path: ['endTime'],
 }).refine((data) => {
   if (data.publishOption === 'later') {
-    if (!data.publishAt || !data.publishAtTime) return false;
+    if (!data.publishAt) return false;
+  }
+  return true;
+}, {
+  message: 'Please select a publish date',
+  path: ['publishAt'],
+}).refine((data) => {
+  if (data.publishOption === 'later') {
+    if (!data.publishAtTime) return false;
+  }
+  return true;
+}, {
+  message: 'Please select a publish time',
+  path: ['publishAtTime'],
+}).refine((data) => {
+  if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
     const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
     return publishDateTime > new Date();
   }
@@ -71,7 +88,22 @@ const formSchema = z.object({
   path: ['publishAt'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
-    if (!data.signupOpensAt || !data.signupOpensAtTime) return false;
+    if (!data.signupOpensAt) return false;
+  }
+  return true;
+}, {
+  message: 'Please select a signup date',
+  path: ['signupOpensAt'],
+}).refine((data) => {
+  if (data.signupOption === 'later') {
+    if (!data.signupOpensAtTime) return false;
+  }
+  return true;
+}, {
+  message: 'Please select a signup time',
+  path: ['signupOpensAtTime'],
+}).refine((data) => {
+  if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
     const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
     return signupDateTime > new Date();
   }
