@@ -335,6 +335,15 @@ export default function EditMic() {
       }
     }
 
+    // Check signup opens before event starts
+    if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
+      const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
+      const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
+      if (signupDateTime >= eventStartDateTime) {
+        return 'Sign-ups must open before the mic starts';
+      }
+    }
+
     return null;
   };
 
