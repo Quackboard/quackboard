@@ -295,6 +295,11 @@ export default function EditMic() {
   const hasBlockingSectionErrors = Object.keys(sectionErrors).length > 0;
 
   const validateScheduling = (data: FormData): string | null => {
+    // Check end time after start time
+    if (data.startTime && data.endTime && data.startTime >= data.endTime) {
+      return 'End time must be after start time';
+    }
+
     const now = new Date();
 
     // Check publish_at - only if changed
