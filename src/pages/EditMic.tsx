@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import {
@@ -63,6 +64,7 @@ const formSchema = z.object({
   venueName: z.string().min(1, 'Venue name is required'),
   venueAddress: z.string().min(1, 'Venue address is required'),
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
+  allowMultipleSlots: z.boolean(),
   publishOption: z.enum(['now', 'later']),
   publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
@@ -175,6 +177,7 @@ export default function EditMic() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       sections: [{ label: '', slots: 10 }],
+      allowMultipleSlots: false,
       publishOption: 'now',
       signupOption: 'live',
     },
@@ -234,6 +237,7 @@ export default function EditMic() {
           venueName: event.venue_name,
           venueAddress: event.venue_address,
           sections: sections.length > 0 ? sections : [{ label: '', slots: 10 }],
+          allowMultipleSlots: event.allow_multiple_slots || false,
           publishOption,
           publishAt: publishAtDate,
           publishAtTime,
@@ -407,6 +411,7 @@ export default function EditMic() {
           venue_name: data.venueName,
           venue_address: data.venueAddress,
           sections_config: sectionsConfig,
+          allow_multiple_slots: data.allowMultipleSlots,
           status,
           publish_at: publishAt,
           signup_opens_at: signupOpensAt,
@@ -808,6 +813,21 @@ export default function EditMic() {
           {errors.sections?.root && (
             <p className="text-sm text-destructive">{errors.sections.root.message}</p>
           )}
+
+          {/* Allow Multiple Slots Toggle */}
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowMultipleSlots">Allow multiple spots per comic</Label>
+              <p className="text-sm text-muted-foreground">
+                When disabled, each comic can only sign up for one spot
+              </p>
+            </div>
+            <Switch
+              id="allowMultipleSlots"
+              checked={watch('allowMultipleSlots')}
+              onCheckedChange={(checked) => setValue('allowMultipleSlots', checked)}
+            />
+          </div>
         </section>
 
         {/* Scheduling */}
