@@ -122,6 +122,17 @@ const formSchema = z.object({
 }, {
   message: 'Signup time must be on or after publish time',
   path: ['signupOpensAt'],
+}).refine((data) => {
+  // Check signup opens before event starts
+  if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
+    const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
+    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
+    return signupDateTime < eventStartDateTime;
+  }
+  return true;
+}, {
+  message: 'Sign-ups must open before the mic starts',
+  path: ['signupOpensAt'],
 });
 
 function combineDateAndTime(date: Date, time: string): Date {
