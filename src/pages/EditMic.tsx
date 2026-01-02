@@ -937,54 +937,61 @@ export default function EditMic() {
         </section>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={async () => {
-              const isValid = await trigger();
-              if (isValid) {
-                const data = form.getValues();
-                onSubmit(data, 'draft');
-              } else {
-                toast({
-                  title: 'Validation Error',
-                  description: 'Please fix the form errors before saving.',
-                  variant: 'destructive',
-                });
-              }
-            }}
-            disabled={isSubmitting || hasBlockingSectionErrors}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
-          </Button>
-          <Button
-            type="button"
-            onClick={async () => {
-              const isValid = await trigger();
-              if (isValid) {
-                const data = form.getValues();
-                onSubmit(data, 'published');
-              } else {
-                toast({
-                  title: 'Validation Error',
-                  description: 'Please fix the form errors before saving.',
-                  variant: 'destructive',
-                });
-              }
-            }}
-            disabled={isSubmitting || hasBlockingSectionErrors}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Publish'}
-          </Button>
+        <div className="flex flex-col gap-2 pt-4">
+          {hasBlockingSectionErrors && (
+            <p className="text-sm text-destructive">
+              Please fix the section errors above before saving.
+            </p>
+          )}
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                const isValid = await trigger();
+                if (isValid) {
+                  const data = form.getValues();
+                  onSubmit(data, 'draft');
+                } else {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Please fix the form errors before saving.',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                const isValid = await trigger();
+                if (isValid) {
+                  const data = form.getValues();
+                  onSubmit(data, 'published');
+                } else {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Please fix the form errors before saving.',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Publish'}
+            </Button>
+          </div>
         </div>
 
         {/* Delete Section */}
