@@ -190,6 +190,7 @@ export default function EditMic() {
     watch,
     setValue,
     reset,
+    trigger,
     formState: { errors, isDirty },
   } = form;
 
@@ -948,14 +949,38 @@ export default function EditMic() {
           <Button
             type="button"
             variant="outline"
-            onClick={handleSubmit((data) => onSubmit(data, 'draft'))}
+            onClick={async () => {
+              const isValid = await trigger();
+              if (isValid) {
+                const data = form.getValues();
+                onSubmit(data, 'draft');
+              } else {
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please fix the form errors before saving.',
+                  variant: 'destructive',
+                });
+              }
+            }}
             disabled={isSubmitting || hasBlockingSectionErrors}
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
           </Button>
           <Button
             type="button"
-            onClick={handleSubmit((data) => onSubmit(data, 'published'))}
+            onClick={async () => {
+              const isValid = await trigger();
+              if (isValid) {
+                const data = form.getValues();
+                onSubmit(data, 'published');
+              } else {
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please fix the form errors before saving.',
+                  variant: 'destructive',
+                });
+              }
+            }}
             disabled={isSubmitting || hasBlockingSectionErrors}
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Publish'}
