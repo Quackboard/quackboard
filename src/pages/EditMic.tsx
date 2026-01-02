@@ -295,7 +295,7 @@ export default function EditMic() {
     });
 
     setSectionErrors(newErrors);
-  }, [watchSections, event]);
+  }, [watchSections, event, activeBookings]);
 
   const hasBlockingSectionErrors = Object.keys(sectionErrors).length > 0;
 
