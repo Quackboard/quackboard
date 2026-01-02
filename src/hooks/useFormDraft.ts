@@ -50,8 +50,10 @@ export function useFormDraft<T extends FieldValues>({
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = deserializeFn(saved);
-        // Reset form with saved values
-        form.reset(parsed as T, { keepDefaultValues: false });
+        // Merge with current form values to preserve defaults for missing fields
+        const currentValues = form.getValues();
+        const mergedValues = { ...currentValues, ...parsed };
+        form.reset(mergedValues as T, { keepDefaultValues: false });
       }
     } catch (e) {
       // Invalid data, clear it

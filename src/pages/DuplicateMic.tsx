@@ -119,6 +119,7 @@ export default function DuplicateMic() {
           venueName: original.venue_name,
           venueAddress: original.venue_address,
           sections: sectionsConfig.length > 0 ? sectionsConfig : [{ label: '', slots: 10 }],
+          allowMultipleSlots: original.allow_multiple_slots || false,
           publishOption: original.publish_at ? 'later' : 'now',
           publishAt: original.publish_at ? { __type: 'Date', value: original.publish_at } : undefined,
           publishAtTime: original.publish_at ? new Date(original.publish_at).toISOString().slice(11, 16) : undefined,
