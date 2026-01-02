@@ -289,7 +289,7 @@ export default function EditMic() {
       if (index < originalSections.length) {
         const bookedCount = getBookingsInSection(index);
         if (section.slots < bookedCount) {
-          newErrors[index] = `Can't reduce spots — all ${bookedCount} are filled. Remove people from the roster first.`;
+          newErrors[index] = `Can't reduce to ${section.slots} spots — ${bookedCount} are already booked. Remove people from the roster first.`;
         }
       }
     });
@@ -766,8 +766,9 @@ export default function EditMic() {
                     <div className="w-24 space-y-2">
                       <Input
                         type="number"
-                        min={bookedCount > 0 ? bookedCount : 1}
+                        min={1}
                         placeholder="Spots"
+                        className={cn(sectionErrors[index] && 'border-destructive')}
                         {...register(`sections.${index}.slots`, { valueAsNumber: true })}
                       />
                       {errors.sections?.[index]?.slots && (
