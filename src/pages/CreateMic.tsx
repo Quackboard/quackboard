@@ -35,7 +35,7 @@ import {
 const CREATE_MIC_DRAFT_KEY = 'quackboard_create_mic_draft';
 
 const sectionSchema = z.object({
-  label: z.string().min(1, 'Label is required'),
+  label: z.string(),
   slots: z.number().min(1, 'At least 1 spot required'),
 });
 
