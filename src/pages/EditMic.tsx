@@ -372,11 +372,7 @@ export default function EditMic() {
     }
 
     if (hasBlockingSectionErrors) {
-      toast({
-        title: 'Cannot save',
-        description: 'Please fix the section errors before saving.',
-        variant: 'destructive',
-      });
+      // Section errors are shown inline next to the section inputs.
       return;
     }
 
@@ -768,9 +764,13 @@ export default function EditMic() {
                         type="number"
                         min={1}
                         placeholder="Spots"
+                        aria-invalid={!!sectionErrors[index] || !!errors.sections?.[index]?.slots}
                         className={cn(sectionErrors[index] && 'border-destructive')}
                         {...register(`sections.${index}.slots`, { valueAsNumber: true })}
                       />
+                      {sectionErrors[index] && (
+                        <p className="text-sm text-destructive">{sectionErrors[index]}</p>
+                      )}
                       {errors.sections?.[index]?.slots && (
                         <p className="text-sm text-destructive">
                           {errors.sections[index]?.slots?.message}
@@ -793,9 +793,6 @@ export default function EditMic() {
                     <p className="text-xs text-muted-foreground pl-1">
                       {bookedCount} spot{bookedCount !== 1 ? 's' : ''} booked
                     </p>
-                  )}
-                  {sectionErrors[index] && (
-                    <p className="text-sm text-destructive">{sectionErrors[index]}</p>
                   )}
                 </div>
               );
@@ -939,11 +936,6 @@ export default function EditMic() {
 
         {/* Actions */}
         <div className="flex flex-col gap-2 pt-4">
-          {hasBlockingSectionErrors && (
-            <p className="text-sm text-destructive">
-              Please fix the section errors above before saving.
-            </p>
-          )}
           <div className="flex gap-3">
             <Button
               type="button"
@@ -969,7 +961,7 @@ export default function EditMic() {
                   });
                 }
               }}
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasBlockingSectionErrors}
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
             </Button>
@@ -988,7 +980,7 @@ export default function EditMic() {
                   });
                 }
               }}
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasBlockingSectionErrors}
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save & Publish'}
             </Button>
