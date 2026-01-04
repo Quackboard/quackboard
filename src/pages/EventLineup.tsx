@@ -56,6 +56,7 @@ export default function EventLineup() {
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [bookingToRemove, setBookingToRemove] = useState<Booking | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [expandedSlot, setExpandedSlot] = useState<number | null>(null);
 
   // Fetch event
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -169,6 +170,16 @@ export default function EventLineup() {
     queryClient.invalidateQueries({ queryKey: ['event-bookings', id] });
   };
 
+  const handleMobileSlotClick = (slotPosition: number, sectionLabel: string, booking: Booking | undefined) => {
+    if (booking) {
+      // Toggle expand/collapse for booked slots
+      setExpandedSlot(expandedSlot === slotPosition ? null : slotPosition);
+    } else {
+      // Open add modal for empty slots
+      handleAddClick(slotPosition, sectionLabel);
+    }
+  };
+
   if (isLoading) {
     return (
       <ProducerLayout>
@@ -259,47 +270,46 @@ export default function EventLineup() {
               </Table>
             </div>
 
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-2">
+            {/* Mobile List */}
+            <div className="md:hidden space-y-1">
               {section.slots.map((slotPosition) => {
                 const booking = getBookingForSlot(slotPosition);
+                const isExpanded = expandedSlot === slotPosition;
+                
                 return (
-                  <div
-                    key={slotPosition}
-                    className="border rounded-lg p-3 flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="text-sm font-medium text-muted-foreground w-6">
-                        {slotPosition}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        {booking ? (
-                          <>
-                            <p className="font-medium truncate">{booking.guest_name}</p>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {booking.guest_instagram && `@${booking.guest_instagram.replace('@', '')} • `}
-                              {booking.guest_email}
-                            </p>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleAddClick(slotPosition, section.label)}
-                            className="text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
-                          >
-                            [Add someone]
-                          </button>
+                  <div key={slotPosition}>
+                    <button
+                      onClick={() => handleMobileSlotClick(slotPosition, section.label, booking)}
+                      className="w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors"
+                    >
+                      <span className="text-muted-foreground mr-2">{slotPosition}.</span>
+                      {booking ? (
+                        <span className="font-medium">{booking.guest_name}</span>
+                      ) : (
+                        <span className="text-muted-foreground">[Add someone]</span>
+                      )}
+                    </button>
+                    
+                    {/* Expanded details for booked slots */}
+                    {booking && isExpanded && (
+                      <div className="pl-7 pb-2 space-y-2">
+                        {booking.guest_instagram && (
+                          <p className="text-sm text-muted-foreground">
+                            @{booking.guest_instagram.replace('@', '')}
+                          </p>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveClick(booking);
+                          }}
+                        >
+                          Remove
+                        </Button>
                       </div>
-                    </div>
-                    {booking && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                        onClick={() => handleRemoveClick(booking)}
-                      >
-                        Remove
-                      </Button>
                     )}
                   </div>
                 );
@@ -313,7 +323,7 @@ export default function EventLineup() {
           <div className="text-center py-6 space-y-2">
             <p className="text-muted-foreground">No one signed up yet</p>
             <p className="text-sm text-muted-foreground">
-              Click "[Add someone]" to add manually or share your mic page
+              Tap "[Add someone]" to add manually or share your mic page
             </p>
           </div>
         )}
