@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateMic from "./pages/CreateMic";
 import EditMic from "./pages/EditMic";
 import DuplicateMic from "./pages/DuplicateMic";
+import EventLineup from "./pages/EventLineup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/create" element={<ProtectedRoute><CreateMic /></ProtectedRoute>} />
             <Route path="/events/:id/edit" element={<ProtectedRoute><EditMic /></ProtectedRoute>} />
             <Route path="/events/:id/duplicate" element={<ProtectedRoute><DuplicateMic /></ProtectedRoute>} />
+            <Route path="/events/:id/lineup" element={<ProtectedRoute><EventLineup /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
