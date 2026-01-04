@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
@@ -180,6 +180,22 @@ export default function EventLineup() {
     }
   };
 
+  const handleCopyEmails = async () => {
+    if (bookings.length === 0) {
+      toast({ title: 'No emails to copy' });
+      return;
+    }
+
+    const emails = bookings.map(b => b.guest_email).join(', ');
+    
+    try {
+      await navigator.clipboard.writeText(emails);
+      toast({ title: 'Emails copied to clipboard' });
+    } catch {
+      toast({ title: 'Failed to copy emails', variant: 'destructive' });
+    }
+  };
+
   if (isLoading) {
     return (
       <ProducerLayout>
@@ -203,7 +219,18 @@ export default function EventLineup() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyEmails}
+              disabled={bookings.length === 0}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Emails
+            </Button>
+          </div>
         </div>
 
         {/* Section Tables - always show all slots */}
