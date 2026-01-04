@@ -163,10 +163,10 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
               Duplicate
             </Link>
             <Link 
-              to={`/events/${event.id}/roster`}
+              to={`/events/${event.id}/lineup`}
               className="text-muted-foreground hover:text-foreground"
             >
-              Roster
+              Lineup
             </Link>
           </div>
         </div>
