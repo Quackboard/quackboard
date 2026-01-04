@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddToSlotModal } from '@/components/lineup/AddToSlotModal';
 import { RemoveFromLineupModal } from '@/components/lineup/RemoveFromLineupModal';
+import { ExportCsvModal } from '@/components/lineup/ExportCsvModal';
 import { toast } from '@/hooks/use-toast';
 
 interface Section {
@@ -57,6 +58,7 @@ export default function EventLineup() {
   const [bookingToRemove, setBookingToRemove] = useState<Booking | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   // Fetch event
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -64,7 +66,7 @@ export default function EventLineup() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, producer_id, sections_config')
+        .select('id, title, date, producer_id, sections_config')
         .eq('id', id!)
         .maybeSingle();
 
@@ -221,15 +223,26 @@ export default function EventLineup() {
           </Link>
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyEmails}
-              disabled={bookings.length === 0}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy Emails
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyEmails}
+                disabled={bookings.length === 0}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Emails
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setExportModalOpen(true)}
+                disabled={bookings.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download CSV
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -379,6 +392,16 @@ export default function EventLineup() {
           isRemoving={isRemoving}
         />
       )}
+
+      {/* Export CSV Modal */}
+      <ExportCsvModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        bookings={bookings}
+        sectionSlots={sectionSlots}
+        eventTitle={event?.title || 'lineup'}
+        eventDate={event?.date}
+      />
     </ProducerLayout>
   );
 }
