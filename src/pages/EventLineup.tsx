@@ -16,6 +16,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddToSlotModal } from '@/components/lineup/AddToSlotModal';
+import { RemoveFromLineupModal } from '@/components/lineup/RemoveFromLineupModal';
+import { toast } from '@/hooks/use-toast';
 
 interface Section {
   label: string;
@@ -51,6 +53,9 @@ export default function EventLineup() {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ position: number; sectionLabel: string } | null>(null);
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [bookingToRemove, setBookingToRemove] = useState<Booking | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Fetch event
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -125,15 +130,34 @@ export default function EventLineup() {
     return bookings.find(b => b.slot_position === slotPosition);
   };
 
-  const handleRemove = async (bookingId: string) => {
+  const handleRemoveClick = (booking: Booking) => {
+    setBookingToRemove(booking);
+    setRemoveModalOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!bookingToRemove) return;
+    
+    setIsRemoving(true);
     const { error } = await supabase
       .from('bookings')
       .update({ cancelled_at: new Date().toISOString() })
-      .eq('id', bookingId);
+      .eq('id', bookingToRemove.id);
 
     if (!error) {
+      toast({
+        title: `${bookingToRemove.guest_name} removed from lineup`,
+      });
       queryClient.invalidateQueries({ queryKey: ['event-bookings', id] });
+      setRemoveModalOpen(false);
+      setBookingToRemove(null);
+    } else {
+      toast({
+        title: 'Failed to remove from lineup',
+        variant: 'destructive',
+      });
     }
+    setIsRemoving(false);
   };
 
   const handleAddClick = (slotPosition: number, sectionLabel: string) => {
@@ -222,7 +246,7 @@ export default function EventLineup() {
                               variant="ghost"
                               size="sm"
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleRemove(booking.id)}
+                              onClick={() => handleRemoveClick(booking)}
                             >
                               Remove
                             </Button>
@@ -272,7 +296,7 @@ export default function EventLineup() {
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                        onClick={() => handleRemove(booking.id)}
+                        onClick={() => handleRemoveClick(booking)}
                       >
                         Remove
                       </Button>
@@ -304,6 +328,18 @@ export default function EventLineup() {
           slotPosition={selectedSlot.position}
           sectionLabel={selectedSlot.sectionLabel}
           onSuccess={handleAddSuccess}
+        />
+      )}
+
+      {/* Remove Confirmation Modal */}
+      {bookingToRemove && (
+        <RemoveFromLineupModal
+          open={removeModalOpen}
+          onOpenChange={setRemoveModalOpen}
+          guestName={bookingToRemove.guest_name}
+          slotPosition={bookingToRemove.slot_position}
+          onConfirm={handleConfirmRemove}
+          isRemoving={isRemoving}
         />
       )}
     </ProducerLayout>
