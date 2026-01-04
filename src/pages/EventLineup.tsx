@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddToSlotModal } from '@/components/lineup/AddToSlotModal';
 
 interface Section {
   label: string;
@@ -45,7 +46,11 @@ function parseSections(config: unknown): Section[] {
 export default function EventLineup() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ position: number; sectionLabel: string } | null>(null);
 
   // Fetch event
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -127,9 +132,17 @@ export default function EventLineup() {
       .eq('id', bookingId);
 
     if (!error) {
-      // Refetch bookings
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: ['event-bookings', id] });
     }
+  };
+
+  const handleAddClick = (slotPosition: number, sectionLabel: string) => {
+    setSelectedSlot({ position: slotPosition, sectionLabel });
+    setAddModalOpen(true);
+  };
+
+  const handleAddSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-bookings', id] });
   };
 
   if (isLoading) {
@@ -142,8 +155,6 @@ export default function EventLineup() {
       </ProducerLayout>
     );
   }
-
-  const hasNoBookings = bookings.length === 0;
 
   return (
     <ProducerLayout>
@@ -160,18 +171,8 @@ export default function EventLineup() {
           <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
         </div>
 
-        {/* Empty State */}
-        {hasNoBookings && (
-          <div className="text-center py-12 space-y-2">
-            <p className="text-muted-foreground">No one signed up yet</p>
-            <p className="text-sm text-muted-foreground">
-              Add someone manually or share your mic page
-            </p>
-          </div>
-        )}
-
-        {/* Section Tables */}
-        {!hasNoBookings && sectionSlots.map((section, sectionIndex) => (
+        {/* Section Tables - always show all slots */}
+        {sectionSlots.map((section, sectionIndex) => (
           <div key={sectionIndex} className="space-y-2">
             <h2 className="text-lg font-medium text-foreground">{section.label}</h2>
             
@@ -197,7 +198,12 @@ export default function EventLineup() {
                           {booking ? (
                             booking.guest_name
                           ) : (
-                            <span className="text-muted-foreground">[Add someone]</span>
+                            <button
+                              onClick={() => handleAddClick(slotPosition, section.label)}
+                              className="text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                            >
+                              [Add someone]
+                            </button>
                           )}
                         </TableCell>
                         <TableCell>
@@ -252,7 +258,12 @@ export default function EventLineup() {
                             </p>
                           </>
                         ) : (
-                          <p className="text-muted-foreground">[Add someone]</p>
+                          <button
+                            onClick={() => handleAddClick(slotPosition, section.label)}
+                            className="text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                          >
+                            [Add someone]
+                          </button>
                         )}
                       </div>
                     </div>
@@ -273,56 +284,28 @@ export default function EventLineup() {
           </div>
         ))}
 
-        {/* Show sections with empty slots even when no bookings */}
-        {hasNoBookings && sectionSlots.map((section, sectionIndex) => (
-          <div key={sectionIndex} className="space-y-2">
-            <h2 className="text-lg font-medium text-foreground">{section.label}</h2>
-            
-            {/* Desktop Table */}
-            <div className="hidden md:block border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Slot</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Instagram</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="w-24">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {section.slots.map((slotPosition) => (
-                    <TableRow key={slotPosition}>
-                      <TableCell className="font-medium">{slotPosition}</TableCell>
-                      <TableCell>
-                        <span className="text-muted-foreground">[Add someone]</span>
-                      </TableCell>
-                      <TableCell />
-                      <TableCell />
-                      <TableCell />
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-2">
-              {section.slots.map((slotPosition) => (
-                <div
-                  key={slotPosition}
-                  className="border rounded-lg p-3 flex items-center gap-3"
-                >
-                  <span className="text-sm font-medium text-muted-foreground w-6">
-                    {slotPosition}
-                  </span>
-                  <p className="text-muted-foreground">[Add someone]</p>
-                </div>
-              ))}
-            </div>
+        {/* Empty state message when no bookings */}
+        {bookings.length === 0 && sectionSlots.length > 0 && (
+          <div className="text-center py-6 space-y-2">
+            <p className="text-muted-foreground">No one signed up yet</p>
+            <p className="text-sm text-muted-foreground">
+              Click "[Add someone]" to add manually or share your mic page
+            </p>
           </div>
-        ))}
+        )}
       </div>
+
+      {/* Add to Slot Modal */}
+      {selectedSlot && (
+        <AddToSlotModal
+          open={addModalOpen}
+          onOpenChange={setAddModalOpen}
+          eventId={id!}
+          slotPosition={selectedSlot.position}
+          sectionLabel={selectedSlot.sectionLabel}
+          onSuccess={handleAddSuccess}
+        />
+      )}
     </ProducerLayout>
   );
 }
