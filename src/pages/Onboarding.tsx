@@ -134,9 +134,8 @@ export default function Onboarding() {
       })
       .eq('id', user.id);
 
-    setIsSubmitting(false);
-
     if (error) {
+      setIsSubmitting(false);
       if (error.code === '23505') { // Unique constraint violation
         setSlugTaken(true);
         toast({
@@ -154,8 +153,11 @@ export default function Onboarding() {
       return;
     }
 
+    // Clear draft before navigating
     clearDraft();
-    navigate('/dashboard');
+    
+    // Navigate to dashboard - keep isSubmitting true to prevent re-render issues
+    navigate('/dashboard', { replace: true });
   };
 
   return (
