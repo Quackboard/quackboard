@@ -41,7 +41,7 @@ export function useFormDraft<T extends FieldValues>({
   const serializeFn = serialize || defaultSerialize;
   const deserializeFn = deserialize || defaultDeserialize;
 
-  // Load draft on mount
+  // Load draft on mount - only once
   useEffect(() => {
     if (initialLoadRef.current) return;
     initialLoadRef.current = true;
@@ -59,7 +59,8 @@ export function useFormDraft<T extends FieldValues>({
       // Invalid data, clear it
       localStorage.removeItem(storageKey);
     }
-  }, [storageKey, form, deserializeFn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-save on changes with debounce
   useEffect(() => {
