@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,36 +7,58 @@ import { ProducerHeader } from '@/components/producer/ProducerHeader';
 import { DaySelector } from '@/components/producer/DaySelector';
 import { EventCard } from '@/components/producer/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isUUID } from '@/lib/slug';
 
 export default function ProducerPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: producer, isLoading: producerLoading } = useQuery({
-    queryKey: ['producer', id],
+    queryKey: ['producer', slug],
     queryFn: async () => {
+      // Check if it's a UUID (backwards compatibility)
+      if (isUUID(slug!)) {
+        const { data, error } = await supabase
+          .from('producers')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        // If found by UUID and has a slug, redirect to slug URL
+        if (data?.slug) {
+          navigate(`/producer/${data.slug}`, { replace: true });
+          return data as Producer;
+        }
+        
+        return data as Producer | null;
+      }
+      
+      // Fetch by slug
       const { data, error } = await supabase
         .from('producers')
         .select('*')
-        .eq('id', id)
+        .eq('slug', slug)
         .maybeSingle();
       
       if (error) throw error;
       return data as Producer | null;
     },
-    enabled: !!id,
+    enabled: !!slug,
   });
 
   const today = new Date().toISOString().split('T')[0];
 
   const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ['producer-events', id],
+    queryKey: ['producer-events', producer?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .eq('producer_id', id)
+        .eq('producer_id', producer!.id)
         .eq('status', 'published')
         .gte('date', today)
         .order('date', { ascending: true });
@@ -44,7 +66,7 @@ export default function ProducerPage() {
       if (error) throw error;
       return data as Event[];
     },
-    enabled: !!id,
+    enabled: !!producer?.id,
   });
 
   // Get all event IDs to fetch bookings
