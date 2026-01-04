@@ -2,6 +2,7 @@ export interface Producer {
   id: string;
   email: string;
   name: string;
+  slug: string | null;
   venue_name: string | null;
   bio_markdown: string | null;
 }

@@ -4,9 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Loader2, Plus, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, ExternalLink, Copy, Check } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
 import { parseISO, isPast } from 'date-fns';
+import { useProducerSlug } from '@/hooks/useProducerSlug';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface EventWithBookings {
   id: string;
@@ -24,6 +27,9 @@ interface EventWithBookings {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { slug } = useProducerSlug();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
 
   const { data: events, isLoading } = useQuery({
     queryKey: ['producer-events', user?.id],
@@ -56,14 +62,58 @@ export default function Dashboard() {
   const upcomingEvents = events?.filter(e => !isPast(parseISO(e.date))) || [];
   const pastEvents = events?.filter(e => isPast(parseISO(e.date))) || [];
 
+  const producerPageUrl = slug ? `/producer/${slug}` : `/producer/${user?.id}`;
+  const fullPageUrl = `${window.location.origin}${producerPageUrl}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(fullPageUrl);
+      setCopied(true);
+      toast({ title: 'Link copied to clipboard' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: 'Failed to copy link', variant: 'destructive' });
+    }
+  };
+
   return (
     <ProducerLayout>
+        {/* Share Section */}
+        {slug && (
+          <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
+            <p className="text-sm font-medium text-foreground mb-2">Your Page</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm text-muted-foreground bg-background px-3 py-2 rounded border border-border truncate">
+                {fullPageUrl.replace('https://', '').replace('http://', '')}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                className="shrink-0"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy Link
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Your Mics</h1>
           <div className="flex items-center gap-3">
             <Link 
-              to={`/producer/${user?.id}`}
+              to={producerPageUrl}
               className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
             >
               View My Page

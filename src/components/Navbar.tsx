@@ -2,15 +2,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Plus, ExternalLink } from 'lucide-react';
+import { useProducerSlug } from '@/hooks/useProducerSlug';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
+  const { slug } = useProducerSlug();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
+
+  const producerPageUrl = slug ? `/producer/${slug}` : `/producer/${user?.id}`;
 
   return (
     <nav className="border-b border-border bg-background">
@@ -37,7 +41,7 @@ export function Navbar() {
               size="sm" 
               asChild
             >
-              <Link to={`/producer/${user.id}`}>
+              <Link to={producerPageUrl}>
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View My Page
               </Link>
