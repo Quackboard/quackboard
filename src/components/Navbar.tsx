@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Plus, ExternalLink } from 'lucide-react';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
+import logo from '@/assets/logo.png';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -19,8 +20,8 @@ export function Navbar() {
   return (
     <nav className="border-b border-border bg-background">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/dashboard" className="text-lg font-semibold text-foreground hover:text-foreground/80">
-          Quackboard
+        <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
+          <img src={logo} alt="Quackboard" className="h-8" />
         </Link>
         
         <div className="flex items-center gap-2">
