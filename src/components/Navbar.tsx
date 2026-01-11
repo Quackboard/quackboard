@@ -41,10 +41,10 @@ export function Navbar() {
               size="sm" 
               asChild
             >
-              <Link to={producerPageUrl}>
+              <a href={producerPageUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View My Page
-              </Link>
+              </a>
             </Button>
           )}
           

@@ -112,13 +112,15 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Your Mics</h1>
           <div className="flex items-center gap-3">
-            <Link 
-              to={producerPageUrl}
+            <a 
+              href={producerPageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
             >
               View My Page
               <ExternalLink className="h-3 w-3" />
-            </Link>
+            </a>
             <Button asChild size="sm">
               <Link to="/create">
                 <Plus className="h-4 w-4 mr-1" />
