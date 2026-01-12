@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, CheckCircle } from 'lucide-react';
+import logoVertical from '@/assets/logo-vertical.png';
 
 const passwordSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
@@ -127,6 +128,11 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
+          <img 
+            src={logoVertical} 
+            alt="Quackboard" 
+            className="h-24 mx-auto mb-6"
+          />
           <h1 className="text-2xl font-semibold text-foreground">Sign up for Quackboard</h1>
           <p className="text-muted-foreground mt-2">
             {authMethod === 'password' ? 'Create your account' : "We'll send you a magic link"}
