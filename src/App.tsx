@@ -16,7 +16,11 @@ import CreateMic from "./pages/CreateMic";
 import EditMic from "./pages/EditMic";
 import DuplicateMic from "./pages/DuplicateMic";
 import EventLineup from "./pages/EventLineup";
+import CancelBooking from "./pages/CancelBooking";
 import NotFound from "./pages/NotFound";
+import { EditProfile } from "./pages/EditProfile";
+import EmbedWidgetPage from "./pages/EmbedWidgetPage";
+import EmbedPreviewPage from "./pages/EmbedPreviewPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,12 @@ const App = () => (
             <Route path="/events/:id/edit" element={<ProtectedRoute><EditMic /></ProtectedRoute>} />
             <Route path="/events/:id/duplicate" element={<ProtectedRoute><DuplicateMic /></ProtectedRoute>} />
             <Route path="/events/:id/lineup" element={<ProtectedRoute><EventLineup /></ProtectedRoute>} />
+            <Route path="/cancel/:token" element={<CancelBooking />} />
+            <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+
+            <Route path="/embed/:slug" element={<EmbedWidgetPage />} />
+            <Route path="/preview/embed/:slug" element={<EmbedPreviewPage />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

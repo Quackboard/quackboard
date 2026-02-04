@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { sendMicGoesLiveEmail } from '@/lib/email';
 
 interface Section {
   label: string;
@@ -55,23 +58,65 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const now = new Date();
   const sections = parseSections(event.sections_config);
   const activeBookings = event.bookings.filter(b => !b.cancelled_at);
+  const emailSentRef = useRef(false);
 
-  // Status logic
+  // Status logic - status is declared when creating the mic
   const getStatus = () => {
     if (event.status === 'draft') {
       return { label: 'Draft', className: 'text-muted-foreground' };
     }
     if (event.status === 'published') {
+      // If publish_at is in the future, show scheduled
       if (event.publish_at && isAfter(parseISO(event.publish_at), now)) {
         return { 
           label: `Scheduled — goes live ${formatDateTime(event.publish_at)}`, 
           className: 'text-muted-foreground' 
         };
       }
-      return { label: 'Live', className: 'text-green-600' };
+      // Otherwise, if published, show Live
+      return { label: 'Live', className: 'text-green-500' };
     }
     return { label: event.status, className: 'text-muted-foreground' };
   };
+
+  const status = getStatus();
+  const isLive = status.label === 'Live';
+
+  // Send email when event transitions to "Live" status
+  useEffect(() => {
+    if (!isLive || emailSentRef.current) return;
+
+    const sendEmail = async () => {
+      // Check for pending scheduled message (only send once)
+      const { data: scheduledMessages } = await supabase
+        .from('scheduled_messages')
+        .select('id, producer_id')
+        .eq('event_id', event.id)
+        .eq('status', 'pending')
+        .limit(1);
+
+      if (scheduledMessages && scheduledMessages.length > 0) {
+        try {
+          await sendMicGoesLiveEmail({
+            eventId: event.id,
+            producerId: scheduledMessages[0].producer_id || '',
+          });
+          
+          // Mark scheduled message as sent
+          await supabase
+            .from('scheduled_messages')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', scheduledMessages[0].id);
+          
+          emailSentRef.current = true;
+        } catch (error) {
+          console.error('Error sending mic goes live email:', error);
+        }
+      }
+    };
+
+    sendEmail();
+  }, [isLive, event.id]);
 
   // Signup status logic
   const getSignupStatus = () => {
@@ -93,7 +138,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
     return { label: 'Open', className: 'text-foreground' };
   };
 
-  const status = getStatus();
   const signupStatus = getSignupStatus();
 
   // Calculate slot ranges and booking counts per section
@@ -129,7 +173,7 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
               </span>
             </div>
             
-            <p className="text-sm text-muted-foreground">{event.venue_name}</p>
+            <p className="font-medium text-foreground">{event.title}</p>
             
             {sectionStats.length > 0 && (
               <div className="text-sm text-muted-foreground space-y-0.5">

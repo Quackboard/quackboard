@@ -1,5 +1,6 @@
 import { Event, Booking, Section } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin } from 'lucide-react';
 import { SpotList } from './SpotList';
 import { parseISO, isAfter, format } from 'date-fns';
@@ -9,6 +10,7 @@ interface EventCardProps {
   bookings: Booking[];
   producerVenueName?: string | null;
   onBookingSuccess: () => void;
+  status: 'upcoming' | 'active' | 'past';
 }
 
 function formatTime(time: string): string {
@@ -52,20 +54,36 @@ function getSignupStatus(event: Event): { label: string; isOpen: boolean } {
   return { label: '', isOpen: true };
 }
 
-export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
+export function EventCard({ event, bookings, producerVenueName, onBookingSuccess, status }: EventCardProps) {
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
   const signupStatus = getSignupStatus(event);
 
+  const getStatusBadge = () => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-500">Live</Badge>;
+      case 'upcoming':
+        return <Badge variant="outline" className="text-blue-500 border-blue-500">Upcoming</Badge>;
+      case 'past':
+        return <Badge variant="secondary">Past</Badge>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card className="bg-card border-border">
       <CardContent className="pt-4 space-y-2">
-        <div className="flex items-center gap-2 text-foreground">
-          <Clock className="h-4 w-4" />
-          <span className="text-sm font-medium">
-            {eventTime}
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-foreground">
+            <Clock className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {eventTime}
+            </span>
+          </div>
+          {getStatusBadge()}
         </div>
         
         {showVenue && (
