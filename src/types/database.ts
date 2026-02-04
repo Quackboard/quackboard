@@ -23,7 +23,7 @@ export interface Event {
   start_time: string;
   end_time: string;
   sections_config: Section[];
-  status: 'draft' | 'published' | 'cancelled';
+  status: 'upcoming' | 'active' | 'past';
   allow_multiple_slots: boolean | null;
   publish_at: string | null;
   signup_opens_at: string | null;

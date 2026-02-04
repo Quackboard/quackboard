@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { fromZonedTime } from 'date-fns-tz';
-import { CalendarIcon, Plus, Trash2, Loader2 } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
@@ -18,9 +18,15 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { sendMicGoesLiveEmail } from '@/lib/email';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BulkCreateMic from '@/components/producer/BulkCreateMic';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +46,7 @@ const sectionSchema = z.object({
 });
 
 const formSchema = z.object({
-  date: z.date({ 
+  date: z.date({
     required_error: 'Date is required',
     invalid_type_error: 'Please select a valid date',
   }),
@@ -57,6 +63,8 @@ const formSchema = z.object({
   signupOption: z.enum(['live', 'later']),
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
+  producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
+  emailFrequency: z.enum(['none', 'daily', 'weekly', 'monthly']).optional(),
 }).refine((data) => {
   if (!data.startTime || !data.endTime) return true;
   return data.startTime < data.endTime;
@@ -162,7 +170,7 @@ export default function CreateMic() {
         .select('venue_name, venue_address, timezone')
         .eq('id', user!.id)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -250,7 +258,7 @@ export default function CreateMic() {
 
       const seriesId = crypto.randomUUID();
 
-      const { error } = await supabase.from('events').insert({
+      const { data: createdEvent, error } = await supabase.from('events').insert({
         producer_id: user.id,
         date: format(data.date, 'yyyy-MM-dd'),
         start_time: data.startTime,
@@ -264,9 +272,39 @@ export default function CreateMic() {
         publish_at: publishAt,
         signup_opens_at: signupOpensAt,
         series_id: seriesId,
-      });
+        email_frequency: data.emailFrequency || null,
+        producer_message: data.producerMessage || null,
+      }).select('id').single();
 
       if (error) throw error;
+      if (!createdEvent) throw new Error('Failed to create event');
+
+      // Handle email notification based on publish option
+      if (status === 'published') {
+        if (data.publishOption === 'now') {
+          // Send email immediately
+          await sendMicGoesLiveEmail({
+            eventId: createdEvent.id,
+            producerId: user.id,
+          });
+        } else if (data.publishOption === 'later' && publishAt) {
+          // Schedule email to be sent when mic goes live (at publish_at time)
+          // Store in scheduled_messages table
+          const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
+            producer_id: user.id,
+            event_id: createdEvent.id,
+            subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
+            body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
+            send_at: publishAt,
+            status: 'pending',
+          });
+
+          if (scheduleError) {
+            console.error('Error scheduling mic goes live email:', scheduleError);
+            // Don't throw - scheduling email failure shouldn't break mic creation
+          }
+        }
+      }
 
       toast({
         title: 'Mic created!',
@@ -328,328 +366,411 @@ export default function CreateMic() {
   }
 
   return (
-    <ProducerLayout className="max-w-xl">
-      <h1 className="text-2xl font-semibold text-foreground mb-8">Create Mic</h1>
+    <ProducerLayout className="max-w-2xl">
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/dashboard')}
+          className="-ml-2 h-8 w-8"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-semibold text-foreground">Create Mic</h1>
+      </div>
 
-      <form className="space-y-8">
-        {/* Event Details */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium text-foreground">Event Details</h2>
-          
-          {/* Date */}
-          <div className="space-y-2">
-            <Label>Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !watchDate && 'text-muted-foreground'
+      <Tabs defaultValue="single" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="single">Single Mic</TabsTrigger>
+          <TabsTrigger value="recurring">Recurring Mics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="single" className="mt-8">
+          <form className="space-y-8">
+            {/* Event Details */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-foreground">Event Details</h2>
+
+              {/* Date */}
+              <div className="space-y-2">
+                <Label>Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !watchDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {watchDate ? format(watchDate, 'PPP') : 'Pick a date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={watchDate}
+                      onSelect={(date) => date && setValue('date', date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.date && (
+                  <p className="text-sm text-destructive">{errors.date.message}</p>
+                )}
+              </div>
+
+              {/* Time Range */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Start Time *</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    {...register('startTime')}
+                  />
+                  {errors.startTime && (
+                    <p className="text-sm text-destructive">{errors.startTime.message}</p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endTime">End Time *</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    {...register('endTime')}
+                  />
+                  {errors.endTime && (
+                    <p className="text-sm text-destructive">{errors.endTime.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Title (optional)</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g., Tuesday Night Open Mic"
+                  {...register('title')}
+                />
+                <p className="text-sm text-muted-foreground">Just for you — comics won't see this</p>
+              </div>
+            </section>
+
+            {/* Venue */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-foreground">Venue</h2>
+
+              <div className="space-y-2">
+                <Label htmlFor="venueName">Venue Name *</Label>
+                <Input
+                  id="venueName"
+                  placeholder="e.g., The Comedy Store"
+                  defaultValue={producer?.venue_name || ''}
+                  {...register('venueName')}
+                />
+                {errors.venueName && (
+                  <p className="text-sm text-destructive">{errors.venueName.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="venueAddress">Venue Address *</Label>
+                <Input
+                  id="venueAddress"
+                  placeholder="e.g., 123 Main St, Los Angeles, CA"
+                  defaultValue={producer?.venue_address || ''}
+                  {...register('venueAddress')}
+                />
+                {errors.venueAddress && (
+                  <p className="text-sm text-destructive">{errors.venueAddress.message}</p>
+                )}
+              </div>
+            </section>
+
+            {/* Sections Builder */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-foreground">Sections</h2>
+
+              <div className="space-y-3">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex gap-3 items-start">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        placeholder="e.g., $5 for 5 min"
+                        {...register(`sections.${index}.label`)}
+                      />
+                      {errors.sections?.[index]?.label && (
+                        <p className="text-sm text-destructive">
+                          {errors.sections[index]?.label?.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-24 space-y-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="Spots"
+                        {...register(`sections.${index}.slots`, { valueAsNumber: true })}
+                      />
+                      {errors.sections?.[index]?.slots && (
+                        <p className="text-sm text-destructive">
+                          {errors.sections[index]?.slots?.message}
+                        </p>
+                      )}
+                    </div>
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ label: '', slots: 10 })}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Section
+              </Button>
+
+              {errors.sections?.root && (
+                <p className="text-sm text-destructive">{errors.sections.root.message}</p>
+              )}
+
+              {/* Allow Multiple Slots Toggle */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div className="space-y-0.5">
+                  <Label htmlFor="allowMultipleSlots">Allow multiple spots per comic</Label>
+                  <p className="text-sm text-muted-foreground">
+                    When disabled, each comic can only sign up for one spot
+                  </p>
+                </div>
+                <Switch
+                  id="allowMultipleSlots"
+                  checked={watch('allowMultipleSlots')}
+                  onCheckedChange={(checked) => setValue('allowMultipleSlots', checked)}
+                />
+              </div>
+            </section>
+
+            {/* Scheduling */}
+            <section className="space-y-6">
+              <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
+
+              {/* Publish Option */}
+              <div className="space-y-3">
+                <Label>When should this mic go live?</Label>
+                <RadioGroup
+                  value={watchPublishOption}
+                  onValueChange={(value: 'now' | 'later') => setValue('publishOption', value)}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {watchDate ? format(watchDate, 'PPP') : 'Pick a date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={watchDate}
-                  onSelect={(date) => date && setValue('date', date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.date && (
-              <p className="text-sm text-destructive">{errors.date.message}</p>
-            )}
-          </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="now" id="publish-now" />
+                    <Label htmlFor="publish-now" className="font-normal">Now</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="later" id="publish-later" />
+                    <Label htmlFor="publish-later" className="font-normal">Schedule for later</Label>
+                  </div>
+                </RadioGroup>
 
-          {/* Time Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time *</Label>
-              <Input
-                id="startTime"
-                type="time"
-                {...register('startTime')}
-              />
-              {errors.startTime && (
-                <p className="text-sm text-destructive">{errors.startTime.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endTime">End Time *</Label>
-              <Input
-                id="endTime"
-                type="time"
-                {...register('endTime')}
-              />
-              {errors.endTime && (
-                <p className="text-sm text-destructive">{errors.endTime.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title (optional)</Label>
-            <Input
-              id="title"
-              placeholder="e.g., Tuesday Night Open Mic"
-              {...register('title')}
-            />
-            <p className="text-sm text-muted-foreground">Just for you — comics won't see this</p>
-          </div>
-        </section>
-
-        {/* Venue */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium text-foreground">Venue</h2>
-          
-          <div className="space-y-2">
-            <Label htmlFor="venueName">Venue Name *</Label>
-            <Input
-              id="venueName"
-              placeholder="e.g., The Comedy Store"
-              defaultValue={producer?.venue_name || ''}
-              {...register('venueName')}
-            />
-            {errors.venueName && (
-              <p className="text-sm text-destructive">{errors.venueName.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="venueAddress">Venue Address *</Label>
-            <Input
-              id="venueAddress"
-              placeholder="e.g., 123 Main St, Los Angeles, CA"
-              defaultValue={producer?.venue_address || ''}
-              {...register('venueAddress')}
-            />
-            {errors.venueAddress && (
-              <p className="text-sm text-destructive">{errors.venueAddress.message}</p>
-            )}
-          </div>
-        </section>
-
-        {/* Sections Builder */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium text-foreground">Sections</h2>
-          
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-3 items-start">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    placeholder="e.g., $5 for 5 min"
-                    {...register(`sections.${index}.label`)}
-                  />
-                  {errors.sections?.[index]?.label && (
-                    <p className="text-sm text-destructive">
-                      {errors.sections[index]?.label?.message}
-                    </p>
-                  )}
-                </div>
-                <div className="w-24 space-y-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Spots"
-                    {...register(`sections.${index}.slots`, { valueAsNumber: true })}
-                  />
-                  {errors.sections?.[index]?.slots && (
-                    <p className="text-sm text-destructive">
-                      {errors.sections[index]?.slots?.message}
-                    </p>
-                  )}
-                </div>
-                {fields.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(index)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                {watchPublishOption === 'later' && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'justify-start text-left font-normal',
+                            !watch('publishAt') && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {watch('publishAt') ? format(watch('publishAt')!, 'PP') : 'Date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={watch('publishAt')}
+                          onSelect={(date) => date && setValue('publishAt', date)}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      type="time"
+                      {...register('publishAtTime')}
+                    />
+                    {errors.publishAt && (
+                      <p className="text-sm text-destructive col-span-2">{errors.publishAt.message}</p>
+                    )}
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ label: '', slots: 10 })}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Section
-          </Button>
+              {/* Signup Option */}
+              <div className="space-y-3">
+                <Label>When do sign-ups open?</Label>
+                <RadioGroup
+                  value={watchSignupOption}
+                  onValueChange={(value: 'live' | 'later') => setValue('signupOption', value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="live" id="signup-live" />
+                    <Label htmlFor="signup-live" className="font-normal">When mic goes live</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="later" id="signup-later" />
+                    <Label htmlFor="signup-later" className="font-normal">Schedule for later</Label>
+                  </div>
+                </RadioGroup>
 
-          {errors.sections?.root && (
-            <p className="text-sm text-destructive">{errors.sections.root.message}</p>
-          )}
+                {watchSignupOption === 'later' && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'justify-start text-left font-normal',
+                            !watch('signupOpensAt') && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {watch('signupOpensAt') ? format(watch('signupOpensAt')!, 'PP') : 'Date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={watch('signupOpensAt')}
+                          onSelect={(date) => date && setValue('signupOpensAt', date)}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      type="time"
+                      {...register('signupOpensAtTime')}
+                    />
+                    {errors.signupOpensAt && (
+                      <p className="text-sm text-destructive col-span-2">{errors.signupOpensAt.message}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
 
-          {/* Allow Multiple Slots Toggle */}
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <div className="space-y-0.5">
-              <Label htmlFor="allowMultipleSlots">Allow multiple spots per comic</Label>
+            {/* Message for Performers */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-foreground">Message for Performers</h2>
               <p className="text-sm text-muted-foreground">
-                When disabled, each comic can only sign up for one spot
+                This message will be included in all event-related emails.
               </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="producerMessage">Message (optional)</Label>
+                <Controller
+                  name="producerMessage"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MarkdownEditor
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      placeholder="Rules, instructions, or important notes for comedians."
+                    />
+                  )}
+                />
+                {errors.producerMessage && (
+                  <p className="text-sm text-destructive">{errors.producerMessage.message}</p>
+                )}
+              </div>
+            </section>
+
+            {/* Email Notifications */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-foreground">Email Notifications</h2>
+              <p className="text-sm text-muted-foreground">
+                Get notified about your mic activity. Leave empty to disable notifications.
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="emailFrequency">Email Frequency</Label>
+                <Select
+                  value={watch('emailFrequency') || 'none'}
+                  onValueChange={(value: 'none' | 'daily' | 'weekly' | 'monthly') =>
+                    setValue('emailFrequency', value === 'none' ? undefined : value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No notifications" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No notifications</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {watch('emailFrequency') === 'daily' && 'Receive daily emails with activity from that day'}
+                  {watch('emailFrequency') === 'weekly' && 'Receive one weekly email with all activity from that week'}
+                  {watch('emailFrequency') === 'monthly' && 'Receive one monthly email with all activity from that month'}
+                  {(!watch('emailFrequency') || watch('emailFrequency') === 'none') && 'No email notifications will be sent'}
+                </p>
+              </div>
+            </section>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSubmit((data) => onSubmit(data, 'draft'))}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit((data) => onSubmit(data, 'published'))}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+              </Button>
             </div>
-            <Switch
-              id="allowMultipleSlots"
-              checked={watch('allowMultipleSlots')}
-              onCheckedChange={(checked) => setValue('allowMultipleSlots', checked)}
-            />
-          </div>
-        </section>
+          </form>
+        </TabsContent>
 
-        {/* Scheduling */}
-        <section className="space-y-6">
-          <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
-          
-          {/* Publish Option */}
-          <div className="space-y-3">
-            <Label>When should this mic go live?</Label>
-            <RadioGroup
-              value={watchPublishOption}
-              onValueChange={(value: 'now' | 'later') => setValue('publishOption', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="now" id="publish-now" />
-                <Label htmlFor="publish-now" className="font-normal">Now</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="later" id="publish-later" />
-                <Label htmlFor="publish-later" className="font-normal">Schedule for later</Label>
-              </div>
-            </RadioGroup>
-
-            {watchPublishOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('publishAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('publishAt') ? format(watch('publishAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('publishAt')}
-                      onSelect={(date) => date && setValue('publishAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('publishAtTime')}
-                />
-                {errors.publishAt && (
-                  <p className="text-sm text-destructive col-span-2">{errors.publishAt.message}</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Signup Option */}
-          <div className="space-y-3">
-            <Label>When do sign-ups open?</Label>
-            <RadioGroup
-              value={watchSignupOption}
-              onValueChange={(value: 'live' | 'later') => setValue('signupOption', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="live" id="signup-live" />
-                <Label htmlFor="signup-live" className="font-normal">When mic goes live</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="later" id="signup-later" />
-                <Label htmlFor="signup-later" className="font-normal">Schedule for later</Label>
-              </div>
-            </RadioGroup>
-
-            {watchSignupOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('signupOpensAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('signupOpensAt') ? format(watch('signupOpensAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('signupOpensAt')}
-                      onSelect={(date) => date && setValue('signupOpensAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('signupOpensAtTime')}
-                />
-                {errors.signupOpensAt && (
-                  <p className="text-sm text-destructive col-span-2">{errors.signupOpensAt.message}</p>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSubmit((data) => onSubmit(data, 'draft'))}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit((data) => onSubmit(data, 'published'))}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
-          </Button>
-        </div>
-      </form>
+        <TabsContent value="recurring" className="mt-8">
+          <BulkCreateMic />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>

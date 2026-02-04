@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, parseISO, isPast, startOfDay } from 'date-fns';
@@ -19,8 +19,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { sendMicGoesLiveEmail } from '@/lib/email';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +57,7 @@ const sectionSchema = z.object({
 });
 
 const formSchema = z.object({
-  date: z.date({ 
+  date: z.date({
     required_error: 'Date is required',
     invalid_type_error: 'Please select a valid date',
   }),
@@ -71,6 +74,7 @@ const formSchema = z.object({
   signupOption: z.enum(['live', 'later']),
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
+  producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
 }).refine((data) => {
   if (!data.startTime || !data.endTime) return true;
   return data.startTime < data.endTime;
@@ -143,7 +147,7 @@ export default function EditMic() {
         `)
         .eq('id', id!)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -159,7 +163,7 @@ export default function EditMic() {
         .select('timezone')
         .eq('id', user!.id)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -204,7 +208,7 @@ export default function EditMic() {
   useEffect(() => {
     if (event && producer && !isEventPast) {
       const sections = parseSections(event.sections_config);
-      
+
       // Parse publish_at to local timezone
       let publishOption: 'now' | 'later' = 'now';
       let publishAtDate: Date | undefined;
@@ -245,6 +249,7 @@ export default function EditMic() {
           signupOption,
           signupOpensAt: signupOpensAtDate,
           signupOpensAtTime,
+          producerMessage: event.producer_message || '',
         });
       }
 
@@ -311,11 +316,11 @@ export default function EditMic() {
     if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
       const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
       const utcPublish = fromZonedTime(publishDateTime, timezone);
-      
+
       // Only validate future if it's a new value or changed
       const originalWasScheduled = !!originalPublishAt;
       const isChanged = !originalWasScheduled || utcPublish.toISOString() !== originalPublishAt;
-      
+
       if (isChanged && utcPublish <= now) {
         return 'Publish time must be in the future';
       }
@@ -325,10 +330,10 @@ export default function EditMic() {
     if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
       const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
       const utcSignup = fromZonedTime(signupDateTime, timezone);
-      
+
       const originalWasScheduled = !!originalSignupOpensAt;
       const isChanged = !originalWasScheduled || utcSignup.toISOString() !== originalSignupOpensAt;
-      
+
       if (isChanged && utcSignup <= now) {
         return 'Signup time must be in the future';
       }
@@ -398,6 +403,11 @@ export default function EditMic() {
         signupOpensAt = fromZonedTime(localDateTime, timezone).toISOString();
       }
 
+      const previousStatus = event?.status;
+      const previousPublishAt = event?.publish_at;
+      const isBeingPublished = previousStatus !== 'published' && status === 'published';
+      const publishAtChanged = previousPublishAt !== publishAt;
+
       const { error } = await supabase
         .from('events')
         .update({
@@ -412,10 +422,73 @@ export default function EditMic() {
           status,
           publish_at: publishAt,
           signup_opens_at: signupOpensAt,
+          producer_message: data.producerMessage || null,
         })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Handle email notification based on publish option
+      if (status === 'published') {
+        if (isBeingPublished) {
+          // Event is being published for the first time
+          if (data.publishOption === 'now') {
+            // Send email immediately
+            await sendMicGoesLiveEmail({
+              eventId: id!,
+              producerId: user.id,
+            });
+          } else if (data.publishOption === 'later' && publishAt) {
+            // Schedule email to be sent when mic goes live (at publish_at time)
+            const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
+              producer_id: user.id,
+              event_id: id!,
+              subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
+              body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
+              send_at: publishAt,
+              status: 'pending',
+            });
+
+            if (scheduleError) {
+              console.error('Error scheduling mic goes live email:', scheduleError);
+            }
+          }
+        } else if (publishAtChanged && data.publishOption === 'later' && publishAt) {
+          // Event was already published but publish_at changed - update scheduled message
+          // First, delete any existing scheduled messages for this event
+          await supabase
+            .from('scheduled_messages')
+            .delete()
+            .eq('event_id', id!)
+            .eq('status', 'pending');
+
+          // Create new scheduled message with updated time
+          const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
+            producer_id: user.id,
+            event_id: id!,
+            subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
+            body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
+            send_at: publishAt,
+            status: 'pending',
+          });
+
+          if (scheduleError) {
+            console.error('Error updating scheduled mic goes live email:', scheduleError);
+          }
+        } else if (publishAtChanged && data.publishOption === 'now') {
+          // Changed from scheduled to now - send immediately and delete scheduled message
+          await supabase
+            .from('scheduled_messages')
+            .delete()
+            .eq('event_id', id!)
+            .eq('status', 'pending');
+
+          await sendMicGoesLiveEmail({
+            eventId: id!,
+            producerId: user.id,
+          });
+        }
+      }
 
       toast({
         title: 'Mic updated!',
@@ -523,7 +596,7 @@ export default function EditMic() {
   // Past event - read-only view
   if (isEventPast) {
     const sections = parseSections(event.sections_config);
-    
+
     // Calculate section stats
     const getSectionStats = () => {
       let startSlot = 1;
@@ -532,10 +605,10 @@ export default function EditMic() {
         const sectionBookings = activeBookings.filter(
           b => b.slot_position >= startSlot && b.slot_position <= endSlot
         );
-        const stats = { 
-          label: section.label, 
+        const stats = {
+          label: section.label,
           bookings: sectionBookings,
-          total: section.slots 
+          total: section.slots
         };
         startSlot = endSlot + 1;
         return stats;
@@ -636,7 +709,7 @@ export default function EditMic() {
         {/* Event Details */}
         <section className="space-y-4">
           <h2 className="text-lg font-medium text-foreground">Event Details</h2>
-          
+
           {/* Date */}
           <div className="space-y-2">
             <Label>Date *</Label>
@@ -709,7 +782,7 @@ export default function EditMic() {
         {/* Venue */}
         <section className="space-y-4">
           <h2 className="text-lg font-medium text-foreground">Venue</h2>
-          
+
           <div className="space-y-2">
             <Label htmlFor="venueName">Venue Name *</Label>
             <Input
@@ -738,13 +811,13 @@ export default function EditMic() {
         {/* Sections Builder */}
         <section className="space-y-4">
           <h2 className="text-lg font-medium text-foreground">Sections</h2>
-          
+
           <div className="space-y-3">
             {fields.map((field, index) => {
-              const bookedCount = index < parseSections(event.sections_config).length 
-                ? getBookingsInSection(index) 
+              const bookedCount = index < parseSections(event.sections_config).length
+                ? getBookingsInSection(index)
                 : 0;
-              
+
               return (
                 <div key={field.id} className="space-y-2">
                   <div className="flex gap-3 items-start">
@@ -832,7 +905,7 @@ export default function EditMic() {
         {/* Scheduling */}
         <section className="space-y-6">
           <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
-          
+
           {/* Publish Option */}
           <div className="space-y-3">
             <Label>When should this mic go live?</Label>
@@ -930,6 +1003,32 @@ export default function EditMic() {
                   {...register('signupOpensAtTime')}
                 />
               </div>
+            )}
+          </div>
+        </section>
+
+        {/* Message for Performers */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-medium text-foreground">Message for Performers</h2>
+          <p className="text-sm text-muted-foreground">
+            This message will be included in all event-related emails.
+          </p>
+
+          <div className="space-y-2">
+            <Label htmlFor="producerMessage">Message (optional)</Label>
+            <Controller
+              name="producerMessage"
+              control={form.control}
+              render={({ field }) => (
+                <MarkdownEditor
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  placeholder="Rules, instructions, or important notes for comedians."
+                />
+              )}
+            />
+            {errors.producerMessage && (
+              <p className="text-sm text-destructive">{errors.producerMessage.message}</p>
             )}
           </div>
         </section>

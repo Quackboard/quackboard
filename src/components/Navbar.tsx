@@ -35,6 +35,15 @@ export function Navbar() {
               Create Mic
             </Link>
           </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            asChild
+          >
+            <Link to="/edit-profile">
+              Edit Profile
+            </Link>
+          </Button>
           
           {user && (
             <Button 

@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 const formSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -105,14 +106,22 @@ export function SignUpModal({
         }
       }
 
+      // Generate cancel token
+      const cancelToken = crypto.randomUUID();
+
       // Insert booking
-      const { error } = await supabase.from('bookings').insert({
-        event_id: eventId,
-        slot_position: spotNumber,
-        guest_name: data.name,
-        guest_email: data.email,
-        guest_instagram: data.instagram || null,
-      });
+      const { data: bookingData, error } = await supabase
+        .from('bookings')
+        .insert({
+          event_id: eventId,
+          slot_position: spotNumber,
+          guest_name: data.name,
+          guest_email: data.email,
+          guest_instagram: data.instagram || null,
+          cancel_token: cancelToken,
+        })
+        .select('id')
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -126,6 +135,39 @@ export function SignUpModal({
         }
         setIsSubmitting(false);
         return;
+      }
+
+      // Fetch event details for email
+      const { data: eventData } = await supabase
+        .from('events')
+        .select('title, date, start_time, end_time, venue_name, venue_address, producer_id, producer_message')
+        .eq('id', eventId)
+        .maybeSingle();
+
+      // Send confirmation email (non-blocking)
+      if (eventData && bookingData && eventData.producer_id) {
+        sendBookingConfirmationEmail({
+          bookingId: bookingData.id,
+          cancelToken,
+          guestEmail: data.email,
+          guestName: data.name,
+          slotPosition: spotNumber,
+          sectionLabel,
+          event: {
+            title: eventData.title || 'Open Mic',
+            date: eventData.date,
+            start_time: eventData.start_time || '',
+            end_time: eventData.end_time || '',
+            venue_name: eventData.venue_name || '',
+            venue_address: eventData.venue_address,
+            producer_id: eventData.producer_id,
+            producer_message: eventData.producer_message,
+          },
+          isManualAdd: false,
+        }).catch((err) => {
+          console.error('Failed to send confirmation email:', err);
+          // Don't show error to user - booking was successful
+        });
       }
 
       toast({
@@ -153,7 +195,7 @@ export function SignUpModal({
         <DialogHeader>
           <DialogTitle>Grab a Spot</DialogTitle>
         </DialogHeader>
-        
+
         <div className="text-sm text-muted-foreground mb-4">
           <p>{eventTime}</p>
           {sectionLabel && <p className="text-xs">{sectionLabel} · Spot #{spotNumber}</p>}
