@@ -6,7 +6,11 @@ import { Copy, Check, Code, Eye, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CalendarWidget from './CalendarWidget';
 
-// Component to simulate external website embed
+interface EmbedSectionProps {
+  producerSlug: string;
+  supabaseUrl: string;
+}
+
 // Section component in the dashboard
 export function EmbedSection({ producerSlug, supabaseUrl }: EmbedSectionProps) {
   const { toast } = useToast();

@@ -155,6 +155,7 @@ export default function CancelBooking() {
           venue_name: booking.event.venue_name,
           venue_address: booking.event.venue_address,
           producer_id: booking.event.producer_id,
+          producer_message: null,
         },
       }).catch((err) => {
         console.error('Failed to send cancellation email:', err);

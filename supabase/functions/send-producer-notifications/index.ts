@@ -395,7 +395,7 @@ serve(async (req) => {
                       <tbody>
       `;
 
-      bookings.forEach((booking, bookingIdx) => {
+      bookings.forEach((booking: { slot_position: number; guest_name: string; guest_email: string }, bookingIdx: number) => {
         const sectionLabel = (() => {
           if (!event.sections_config || !Array.isArray(event.sections_config)) {
             return 'General';
