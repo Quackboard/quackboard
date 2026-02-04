@@ -25,18 +25,47 @@ serve(async (req) => {
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
     // Get all producers who have events with daily email notifications enabled
+    // First, get the event producer IDs
+    const { data: eventProducerIds, error: eventError } = await supabase
+      .from('events')
+      .select('producer_id')
+      .eq('email_frequency', 'daily')
+      .gte('date', yesterdayStr)
+      .lt('date', new Date().toISOString().split('T')[0]);
+
+    if (eventError) {
+      console.error("Error fetching event producer IDs:", eventError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch events" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    const producerIds = [...new Set((eventProducerIds || []).map(e => e.producer_id).filter(Boolean))];
+    
+    if (producerIds.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, message: "No producers with daily notifications" }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
     const { data: producers, error } = await supabase
       .from('producers')
       .select('id, email, name')
-      .in(
-        'id',
-        supabase
-          .from('events')
-          .select('producer_id')
-          .eq('email_frequency', 'daily')
-          .gte('date', yesterdayStr)
-          .lt('date', new Date().toISOString().split('T')[0])
-      );
+      .in('id', producerIds);
 
     if (error) {
       console.error("Error fetching producers:", error);
@@ -99,10 +128,10 @@ serve(async (req) => {
         },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error in send-daily-notifications function:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ error: "Internal server error", details: error instanceof Error ? error.message : String(error) }),
       {
         status: 500,
         headers: {
