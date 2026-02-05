@@ -36,7 +36,13 @@ All colors MUST be HSL.
     --input: 200 15% 88%;
     --ring: 170 55% 45%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
+
+    /* Status colors */
+    --status-live: 142 76% 36%;
+    --status-upcoming: 217 91% 60%;
+    --status-past: 220 9% 46%;
+    --status-draft: 38 92% 50%;
 
     --sidebar-background: 200 20% 97%;
     --sidebar-foreground: 200 20% 30%;
@@ -76,6 +82,12 @@ All colors MUST be HSL.
     --border: 200 20% 20%;
     --input: 200 20% 20%;
     --ring: 170 55% 48%;
+
+    /* Status colors - dark mode */
+    --status-live: 142 70% 45%;
+    --status-upcoming: 217 85% 65%;
+    --status-past: 220 9% 55%;
+    --status-draft: 38 85% 55%;
     
     --sidebar-background: 200 28% 10%;
     --sidebar-foreground: 200 10% 95%;
@@ -94,6 +106,27 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    @apply font-semibold tracking-tight;
+  }
+}
+
+/* Subtle background texture */
+.bg-texture {
+  background-image: 
+    radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.05) 0%, transparent 50%);
+}
+
+/* Card hover lift effect */
+.card-hover {
+  @apply transition-all duration-200;
+}
+
+.card-hover:hover {
+  @apply shadow-lg -translate-y-0.5;
 }
