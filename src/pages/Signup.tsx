@@ -84,9 +84,9 @@ export default function Signup() {
             alt="Quackboard" 
             className="h-24 mx-auto mb-6"
           />
-          <h1 className="text-2xl font-semibold text-foreground">Sign up for Quackboard</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
           <p className="text-muted-foreground mt-2">
-            We'll send you a magic link
+            Start managing your open mics in minutes
           </p>
         </div>
 
@@ -128,10 +128,7 @@ export default function Signup() {
                   Sending...
                 </>
               ) : (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Magic Link
-                </>
+                'Get Started'
               )}
             </Button>
           </form>
@@ -139,8 +136,8 @@ export default function Signup() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-foreground hover:underline">
-            Log in
+          <Link to="/login" className="text-primary font-medium hover:underline">
+            Sign in
           </Link>
         </p>
       </div>

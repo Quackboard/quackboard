@@ -84,9 +84,9 @@ export default function Login() {
             alt="Quackboard" 
             className="h-24 mx-auto mb-6"
           />
-          <h1 className="text-2xl font-semibold text-foreground">Log in to Quackboard</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
           <p className="text-muted-foreground mt-2">
-            We'll send you a magic link
+            Enter your email to sign in to your account
           </p>
         </div>
 
@@ -128,19 +128,16 @@ export default function Login() {
                   Sending...
                 </>
               ) : (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Magic Link
-                </>
+                'Continue with Email'
               )}
             </Button>
           </form>
         )}
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-foreground hover:underline">
-            Sign up
+          New to Quackboard?{' '}
+          <Link to="/signup" className="text-primary font-medium hover:underline">
+            Create an account
           </Link>
         </p>
       </div>
