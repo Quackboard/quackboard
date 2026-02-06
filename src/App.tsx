@@ -21,6 +21,8 @@ import NotFound from "./pages/NotFound";
 import { EditProfile } from "./pages/EditProfile";
 import EmbedWidgetPage from "./pages/EmbedWidgetPage";
 import EmbedPreviewPage from "./pages/EmbedPreviewPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,8 @@ const App = () => (
 
             <Route path="/embed/:slug" element={<EmbedWidgetPage />} />
             <Route path="/preview/embed/:slug" element={<EmbedPreviewPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
