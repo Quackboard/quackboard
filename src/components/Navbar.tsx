@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Plus, ExternalLink } from 'lucide-react';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
-import logoHorizontal from '@/assets/logo-horizontal.png';
+import logoHorizontal from '@/assets/logo-header.png';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
