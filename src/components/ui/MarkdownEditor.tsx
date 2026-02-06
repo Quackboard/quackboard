@@ -11,6 +11,7 @@ interface MarkdownEditorProps {
     onChange: (value: string) => void;
     placeholder?: string;
     className?: string;
+    showLink?: boolean;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -18,6 +19,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     onChange,
     placeholder,
     className,
+    showLink = true,
 }) => {
     const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -204,17 +206,21 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                         >
                             <ListOrdered className="h-4 w-4" />
                         </Button>
-                        <div className="w-[1px] h-4 bg-muted-foreground/20 mx-1" />
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={handleLink}
-                            title="Link"
-                        >
-                            <LinkIcon className="h-4 w-4" />
-                        </Button>
+                        {showLink && (
+                            <>
+                                <div className="w-[1px] h-4 bg-muted-foreground/20 mx-1" />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={handleLink}
+                                    title="Link"
+                                >
+                                    <LinkIcon className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     <TabsList className="h-8">
@@ -263,7 +269,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             [&_p]:whitespace-pre-wrap">
                         {value ? (
                             <ReactMarkdown>
-                                {value.replace(/(?<!\]\()(https?:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}(?:\/[^\s\)]*)?(?<![\.\,\!\?\)]))/g, '[$1]($1)')}
+                                {showLink
+                                    ? value.replace(/(?<!\]\()(https?:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}(?:\/[^\s\)]*)?(?<![\.\,\!\?\)]))/g, '[$1]($1)')
+                                    : value
+                                }
                             </ReactMarkdown>
                         ) : (
                             <p className="text-muted-foreground italic">Nothing to preview</p>

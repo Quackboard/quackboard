@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { Loader2 } from 'lucide-react';
 import { generateSlug, validateSlug, RESERVED_SLUGS } from '@/lib/slug';
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 
 const ONBOARDING_DRAFT_KEY = 'quackboard_onboarding_draft';
 
@@ -54,6 +55,7 @@ export default function Onboarding() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
     watch,
@@ -70,7 +72,7 @@ export default function Onboarding() {
 
   // Auto-generate slug from name (only if slug hasn't been manually edited)
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  
+
   useEffect(() => {
     if (!slugManuallyEdited && nameValue) {
       const generatedSlug = generateSlug(nameValue);
@@ -155,9 +157,9 @@ export default function Onboarding() {
 
     // Clear draft before navigating
     clearDraft();
-    
+
     // Navigate to dashboard - keep isSubmitting true to prevent re-render issues
-    navigate('/dashboard', { replace: true });
+    navigate('/dashboard', { replace: true, state: { fromOnboarding: true } });
   };
 
   return (
@@ -167,99 +169,104 @@ export default function Onboarding() {
         <p className="text-muted-foreground mt-2">Let's set up your page.</p>
       </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="Your name"
-              {...register('name')}
-              className={errors.name ? 'border-destructive' : ''}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            placeholder="Your name"
+            {...register('name')}
+            className={errors.name ? 'border-destructive' : ''}
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name.message}</p>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slug">Your Page URL</Label>
-            <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-              <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
-                quackboard.com/producer/
-              </span>
-              <Input
-                id="slug"
-                placeholder="your-name"
-                {...register('slug', {
-                  onChange: () => setSlugManuallyEdited(true),
-                })}
-                className={`border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.slug || slugTaken ? 'text-destructive' : ''}`}
+        <div className="space-y-2">
+          <Label htmlFor="slug">Your Page URL</Label>
+          <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+              quackboard.com/producer/
+            </span>
+            <Input
+              id="slug"
+              placeholder="your-name"
+              {...register('slug', {
+                onChange: () => setSlugManuallyEdited(true),
+              })}
+              className={`border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.slug || slugTaken ? 'text-destructive' : ''}`}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This is what people will see in the link
+          </p>
+          {errors.slug && (
+            <p className="text-sm text-destructive">{errors.slug.message}</p>
+          )}
+          {slugTaken && !errors.slug && (
+            <p className="text-sm text-destructive">This URL is already taken. Try another.</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="venue_name">Venue name</Label>
+          <Input
+            id="venue_name"
+            placeholder="The Comedy Club"
+            {...register('venue_name')}
+            className={errors.venue_name ? 'border-destructive' : ''}
+          />
+          {errors.venue_name && (
+            <p className="text-sm text-destructive">{errors.venue_name.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="venue_address">Venue address</Label>
+          <Input
+            id="venue_address"
+            placeholder="123 Main St, City, State"
+            {...register('venue_address')}
+            className={errors.venue_address ? 'border-destructive' : ''}
+          />
+          {errors.venue_address && (
+            <p className="text-sm text-destructive">{errors.venue_address.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="bio">
+            Bio <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Controller
+            name="bio"
+            control={control}
+            render={({ field }) => (
+              <MarkdownEditor
+                value={field.value || ''}
+                onChange={field.onChange}
+                placeholder="Tell comics about yourself and your shows..."
+                showLink={false}
               />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This is what people will see in the link
-            </p>
-            {errors.slug && (
-              <p className="text-sm text-destructive">{errors.slug.message}</p>
             )}
-            {slugTaken && !errors.slug && (
-              <p className="text-sm text-destructive">This URL is already taken. Try another.</p>
-            )}
-          </div>
+          />
+          {errors.bio && (
+            <p className="text-sm text-destructive">{errors.bio.message}</p>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="venue_name">Venue name</Label>
-            <Input
-              id="venue_name"
-              placeholder="The Comedy Club"
-              {...register('venue_name')}
-              className={errors.venue_name ? 'border-destructive' : ''}
-            />
-            {errors.venue_name && (
-              <p className="text-sm text-destructive">{errors.venue_name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="venue_address">Venue address</Label>
-            <Input
-              id="venue_address"
-              placeholder="123 Main St, City, State"
-              {...register('venue_address')}
-              className={errors.venue_address ? 'border-destructive' : ''}
-            />
-            {errors.venue_address && (
-              <p className="text-sm text-destructive">{errors.venue_address.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">
-              Bio <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell comics about yourself and your shows..."
-              rows={4}
-              {...register('bio')}
-              className={errors.bio ? 'border-destructive' : ''}
-            />
-            {errors.bio && (
-              <p className="text-sm text-destructive">{errors.bio.message}</p>
-            )}
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isSubmitting || slugTaken || isCheckingSlug}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Continue to Dashboard'
-            )}
-          </Button>
-        </form>
+        <Button type="submit" className="w-full" disabled={isSubmitting || slugTaken || isCheckingSlug}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Continue to Dashboard'
+          )}
+        </Button>
+      </form>
     </ProducerLayout>
   );
 }

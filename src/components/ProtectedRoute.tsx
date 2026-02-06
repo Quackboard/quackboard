@@ -55,8 +55,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
+  // Check if we came from onboarding and need to stay on dashboard
+  const fromOnboarding = location.state?.fromOnboarding;
+
   // Redirect to onboarding if user doesn't have a slug (except if already on onboarding)
-  if (hasSlug === false && location.pathname !== '/onboarding') {
+  if (hasSlug === false && location.pathname !== '/onboarding' && !fromOnboarding) {
     return <Navigate to="/onboarding" replace />;
   }
 
