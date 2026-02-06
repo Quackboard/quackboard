@@ -147,6 +147,15 @@ export default function Signup() {
               {form.formState.errors.accessCode && (
                 <p className="text-sm text-destructive">{form.formState.errors.accessCode.message}</p>
               )}
+              <p className="text-sm text-muted-foreground">
+                Don't have a code?{' '}
+                <a 
+                  href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Request access
+                </a>
+              </p>
             </div>
 
             <div className="space-y-2">
