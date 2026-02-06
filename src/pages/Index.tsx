@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock, Repeat, Bell, ExternalLink } from 'lucide-react';
-import logoVertical from '@/assets/logo-vertical.png';
 
 const features = [
   {
@@ -42,7 +41,7 @@ export default function Index() {
       {/* Hero Section */}
       <header className="px-4 py-6">
         <nav className="max-w-5xl mx-auto flex items-center justify-between">
-          <img src={logoVertical} alt="Quackboard" className="h-12" />
+          <span className="text-xl font-bold text-foreground">Quackboard</span>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
               <Link to="/login">Log in</Link>
