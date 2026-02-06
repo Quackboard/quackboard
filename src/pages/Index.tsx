@@ -120,8 +120,13 @@ export default function Index() {
 
       {/* Footer */}
       <footer className="px-4 py-8 border-t border-border">
-        <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground">
+        <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground space-y-2">
           <p>© {new Date().getFullYear()} Quackboard. Built for comedy producers.</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-foreground">Terms of Service</Link>
+          </div>
         </div>
       </footer>
     </div>
