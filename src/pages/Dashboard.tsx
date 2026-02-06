@@ -104,7 +104,7 @@ export default function Dashboard() {
         <>
           <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
             <p className="text-sm font-medium text-foreground mb-2">Your Page</p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <code className="flex-1 text-sm text-muted-foreground bg-background px-3 py-2 rounded border border-border truncate">
                 {fullPageUrl.replace('https://', '').replace('http://', '')}
               </code>
@@ -112,7 +112,7 @@ export default function Dashboard() {
                 variant="outline"
                 size="sm"
                 onClick={handleCopyLink}
-                className="shrink-0"
+                className="shrink-0 w-full sm:w-auto"
               >
                 {copied ? (
                   <>
@@ -139,19 +139,19 @@ export default function Dashboard() {
       }
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <h1 className="text-2xl font-semibold text-foreground">Your Mics</h1>
         <div className="flex items-center gap-3">
           <a
             href={producerPageUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+            className="hidden sm:flex text-sm text-muted-foreground hover:text-foreground items-center gap-1"
           >
             View My Page
             <ExternalLink className="h-3 w-3" />
           </a>
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="w-full sm:w-auto">
             <Link to="/create">
               <Plus className="h-4 w-4 mr-1" />
               Create Mic
@@ -170,23 +170,23 @@ export default function Dashboard() {
       }
       {/* View Toggle */}
       <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')} className="mb-6">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="list" className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
               <List className="h-4 w-4" />
-              List View
+              <span className="hidden xs:inline">List</span>
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <TabsTrigger value="calendar" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
               <Calendar className="h-4 w-4" />
-              Calendar View
+              <span className="hidden xs:inline">Calendar</span>
             </TabsTrigger>
           </TabsList>
 
           {viewMode === 'calendar' && (
             <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
-              <TabsList>
-                <TabsTrigger value="event_date">By Event Date</TabsTrigger>
-                <TabsTrigger value="created_date">By Created Date</TabsTrigger>
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="event_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Event Date</TabsTrigger>
+                <TabsTrigger value="created_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Created</TabsTrigger>
               </TabsList>
             </Tabs>
           )}

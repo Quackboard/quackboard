@@ -221,7 +221,7 @@ export default function EventLineup() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Link>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
             <div className="flex items-center gap-2">
               <Button
@@ -229,18 +229,20 @@ export default function EventLineup() {
                 size="sm"
                 onClick={handleCopyEmails}
                 disabled={bookings.length === 0}
+                className="flex-1 sm:flex-none"
               >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Emails
+                <Copy className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Copy Emails</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setExportModalOpen(true)}
                 disabled={bookings.length === 0}
+                className="flex-1 sm:flex-none"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Download CSV
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Download CSV</span>
               </Button>
             </div>
           </div>
