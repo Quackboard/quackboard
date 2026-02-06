@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Plus, ExternalLink, Menu, X } from 'lucide-react';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
-import logoHorizontal from '@/assets/logo-header.png';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
@@ -27,7 +26,7 @@ export function Navbar() {
       <div className="max-w-4xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
-            <img src={logoHorizontal} alt="Quackboard" className="h-8" />
+            <span className="text-xl font-bold text-foreground">Quackboard</span>
           </Link>
           
           {/* Desktop Navigation */}

@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail } from 'lucide-react';
-import logoVertical from '@/assets/logo-vertical.png';
 
 const emailSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
@@ -79,12 +78,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img 
-            src={logoVertical} 
-            alt="Quackboard" 
-            className="h-24 mx-auto mb-6"
-          />
-          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Quackboard</h1>
+          <h2 className="text-2xl font-semibold text-foreground">Welcome back</h2>
           <p className="text-muted-foreground mt-2">
             Enter your email to sign in to your account
           </p>
