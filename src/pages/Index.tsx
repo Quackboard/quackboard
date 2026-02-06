@@ -60,8 +60,11 @@ export default function Index() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight">
               The simplest way to run your open mic
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Create events, manage sign-ups, and keep your comics informed—all from one place. No spreadsheets, no group chats, no hassle.
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto font-medium">
+              We'll get your ducks in a row, so you can focus on being funny.
+            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Create events, manage sign-ups, and keep your comics informed without hassle.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
               <Button size="lg" asChild>
