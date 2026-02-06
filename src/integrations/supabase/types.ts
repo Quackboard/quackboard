@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      beta_access_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_uses: number | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           cancel_token: string
@@ -487,7 +520,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_beta_code: { Args: { code_input: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

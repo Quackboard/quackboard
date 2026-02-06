@@ -9,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import logoDuck from '@/assets/logo-duck-clean.png';
 
-const emailSchema = z.object({
+const signupSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
+  accessCode: z.string().min(1, 'Access code is required'),
 });
 
-type EmailFormData = z.infer<typeof emailSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
 export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,8 +26,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const form = useForm<EmailFormData>({
-    resolver: zodResolver(emailSchema),
+  const form = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
   });
 
   useEffect(() => {
@@ -35,36 +36,64 @@ export default function Signup() {
     }
   }, [user, loading, navigate]);
 
-  const onSubmit = async (data: EmailFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: data.email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      // First validate the access code
+      const { data: isValid, error: codeError } = await supabase
+        .rpc('validate_beta_code', { code_input: data.accessCode });
 
-    setIsSubmitting(false);
-
-    if (error) {
-      if (error.status === 429) {
-        toast({
-          title: 'Too many attempts',
-          description: 'Try again later.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
+      if (codeError) {
+        throw new Error('Failed to validate access code');
       }
-      return;
-    }
 
-    setEmailSent(true);
+      if (!isValid) {
+        toast({
+          title: 'Invalid access code',
+          description: 'Please check your code and try again.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Access code is valid, proceed with signup
+      const { error } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        if (error.status === 429) {
+          toast({
+            title: 'Too many attempts',
+            description: 'Try again later.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          });
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      setEmailSent(true);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Something went wrong',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -88,6 +117,10 @@ export default function Signup() {
           <p className="text-muted-foreground mt-2">
             Start managing your open mics in minutes
           </p>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            <Lock className="h-3 w-3" />
+            Beta Access Required
+          </div>
         </div>
 
         {emailSent ? (
@@ -108,6 +141,20 @@ export default function Signup() {
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="accessCode">Access Code</Label>
+              <Input
+                id="accessCode"
+                type="text"
+                placeholder="Enter your beta access code"
+                {...form.register('accessCode')}
+                className={form.formState.errors.accessCode ? 'border-destructive' : ''}
+              />
+              {form.formState.errors.accessCode && (
+                <p className="text-sm text-destructive">{form.formState.errors.accessCode.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -125,7 +172,7 @@ export default function Signup() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
+                  Verifying...
                 </>
               ) : (
                 'Get Started'
