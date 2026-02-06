@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail } from 'lucide-react';
-import logoVertical from '@/assets/logo-vertical.png';
+import logoDuck from '@/assets/logo-duck-clean.png';
 
 const emailSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
@@ -80,7 +80,7 @@ export default function Signup() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <img 
-            src={logoVertical} 
+            src={logoDuck} 
             alt="Quackboard" 
             className="h-24 mx-auto mb-6"
           />
