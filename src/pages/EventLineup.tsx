@@ -363,7 +363,7 @@ export default function EventLineup() {
           <div className="text-center py-6 space-y-2">
             <p className="text-muted-foreground">No one signed up yet</p>
             <p className="text-sm text-muted-foreground">
-              Tap "[Add someone]" to add manually or share your mic page
+              Tap "[Add someone]" to add manually.
             </p>
           </div>
         )}
