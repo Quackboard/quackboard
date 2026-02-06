@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { toast } from 'sonner';
 import { Plus, Check, X, Edit, Trash, ExternalLink, Loader2, ArrowLeft } from 'lucide-react';
 
@@ -55,6 +56,7 @@ export function EditProfile() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
@@ -316,12 +318,17 @@ export function EditProfile() {
           <Label htmlFor="bio_markdown">
             Bio <span className="text-muted-foreground font-normal">(optional)</span>
           </Label>
-          <Textarea
-            id="bio_markdown"
-            placeholder="Tell us about yourself..."
-            rows={5}
-            {...register('bio_markdown')}
-            className={errors.bio_markdown ? 'border-destructive' : ''}
+          <Controller
+            name="bio_markdown"
+            control={control}
+            render={({ field }) => (
+              <MarkdownEditor
+                value={field.value || ''}
+                onChange={field.onChange}
+                placeholder="Tell us about yourself..."
+                showLink={false}
+              />
+            )}
           />
           {errors.bio_markdown && (
             <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
