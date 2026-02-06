@@ -302,7 +302,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "message_logs_host_id_fkey"
+            foreignKeyName: "message_logs_producer_id_fkey"
             columns: ["producer_id"]
             isOneToOne: false
             referencedRelation: "producers"
