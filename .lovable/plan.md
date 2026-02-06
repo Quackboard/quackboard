@@ -1,75 +1,81 @@
 
-# Remove Duck Logo from Header, Lineup, and Signup
+
+# Add "Request Access Code" Option to Signup Page
 
 ## Overview
-Remove the duck logo imagery from the specified pages while maintaining the "Quackboard" text branding. The duck appears in various logo assets used across the application.
+Add a clear path for users who don't have an access code to request one, making the signup flow more complete and user-friendly.
 
-## Current Logo Usage
-
-| Location | File | Logo Asset Used |
-|----------|------|-----------------|
-| Navbar (header) | `src/components/Navbar.tsx` | `logo-header.png` |
-| Signup page | `src/pages/Signup.tsx` | `logo-duck-clean.png` |
-| Login page | `src/pages/Login.tsx` | `logo-vertical.png` |
-| Landing page | `src/pages/Index.tsx` | `logo-vertical.png` |
-| EventLineup | Uses `ProducerLayout` which includes Navbar | (inherits from Navbar) |
+## Current State
+- The signup page requires an access code to proceed
+- There's a "Beta Access Required" badge but no way to request a code
+- Users without a code have no clear next step
 
 ## Proposed Changes
 
-### 1. Navbar (Header) - `src/components/Navbar.tsx`
-**Current:** Shows `logo-header.png` (horizontal logo with duck)
-**Change:** Replace image with styled text "Quackboard"
+### `src/pages/Signup.tsx`
+
+Add a "Request Access" link/button below the access code field that allows users to request a code. This will be implemented as a mailto link (simple and immediate) with a pre-filled subject line.
+
+**Visual Layout:**
 
 ```text
-Before: <img src={logoHorizontal} alt="Quackboard" className="h-8" />
-After:  <span className="text-xl font-bold text-foreground">Quackboard</span>
+┌─────────────────────────────────────┐
+│            Quackboard               │
+│       Create your account           │
+│  Start managing your open mics...   │
+│       [Beta Access Required]        │
+│                                     │
+│  Access Code                        │
+│  ┌─────────────────────────────┐    │
+│  │ Enter your beta access code │    │
+│  └─────────────────────────────┘    │
+│  Don't have a code? Request access  │  ← NEW
+│                                     │
+│  Email                              │
+│  ┌─────────────────────────────┐    │
+│  │ you@example.com             │    │
+│  └─────────────────────────────┘    │
+│                                     │
+│       [ Get Started ]               │
+│                                     │
+│  Already have an account? Sign in   │
+└─────────────────────────────────────┘
 ```
 
-This change automatically applies to the EventLineup page since it uses `ProducerLayout`.
+**Code Changes:**
 
-### 2. Signup Page - `src/pages/Signup.tsx`
-**Current:** Shows `logo-duck-clean.png` (duck icon)
-**Change:** Replace with styled text heading
+1. Add a help text below the access code input field:
+   ```tsx
+   <p className="text-sm text-muted-foreground">
+     Don't have a code?{' '}
+     <a 
+       href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
+       className="text-primary font-medium hover:underline"
+     >
+       Request access
+     </a>
+   </p>
+   ```
 
-```text
-Before: <img src={logoDuck} alt="Quackboard" className="h-24 mx-auto mb-6" />
-After:  <h1 className="text-3xl font-bold text-foreground mb-2">Quackboard</h1>
-```
+2. The mailto link will:
+   - Open the user's email client
+   - Pre-fill the subject line with "Quackboard Beta Access Request"
+   - Allow the user to write their request
 
-Also update the existing `<h1>` to become the subheading.
+## Technical Details
 
-### 3. Login Page - `src/pages/Login.tsx` (for consistency)
-**Current:** Shows `logo-vertical.png` (duck + text stacked)
-**Change:** Replace with styled text
+| Element | Implementation |
+|---------|---------------|
+| Request link | `mailto:` link with pre-filled subject |
+| Placement | Below the access code input, before email field |
+| Styling | Matches existing link style (`text-primary font-medium hover:underline`) |
 
-```text
-Before: <img src={logoVertical} alt="Quackboard" className="h-24 mx-auto mb-6" />
-After:  <h1 className="text-3xl font-bold text-foreground mb-2">Quackboard</h1>
-```
+## Alternative Consideration
+If you'd prefer a different email address or want to use an external form instead, let me know and I can adjust the implementation.
 
-### 4. Landing Page - `src/pages/Index.tsx`
-**Current:** Shows `logo-vertical.png` in nav
-**Change:** Replace with styled text
-
-```text
-Before: <img src={logoVertical} alt="Quackboard" className="h-12" />
-After:  <span className="text-xl font-bold text-foreground">Quackboard</span>
-```
-
----
-
-## Summary of File Changes
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/Navbar.tsx` | Replace logo image with text |
-| `src/pages/Signup.tsx` | Replace duck image with text heading |
-| `src/pages/Login.tsx` | Replace logo image with text heading |
-| `src/pages/Index.tsx` | Replace logo image with text in nav |
+| `src/pages/Signup.tsx` | Add "Request access" link below the access code field |
 
-## Technical Notes
-
-- Remove unused logo imports from each file
-- Use the "Outfit" font family (already applied to headings via CSS)
-- Maintain consistent text styling across all locations
-- The logo asset files themselves will remain in `/src/assets/` in case needed later
