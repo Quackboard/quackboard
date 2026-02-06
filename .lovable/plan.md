@@ -1,81 +1,71 @@
 
-
-# Add "Request Access Code" Option to Signup Page
+# Add Privacy Policy and Terms of Service Links
 
 ## Overview
-Add a clear path for users who don't have an access code to request one, making the signup flow more complete and user-friendly.
+Add Privacy Policy and Terms of Service pages to the application and include links to them in the landing page footer.
 
 ## Current State
-- The signup page requires an access code to proceed
-- There's a "Beta Access Required" badge but no way to request a code
-- Users without a code have no clear next step
+- The footer in `Index.tsx` only shows copyright text
+- No privacy policy or terms of service pages exist
+- No routes for these pages in `App.tsx`
 
 ## Proposed Changes
 
-### `src/pages/Signup.tsx`
+### 1. Create Privacy Policy Page
+**New file:** `src/pages/PrivacyPolicy.tsx`
 
-Add a "Request Access" link/button below the access code field that allows users to request a code. This will be implemented as a mailto link (simple and immediate) with a pre-filled subject line.
+A simple, clean page with:
+- Consistent styling with the rest of the app
+- Navigation back to home
+- Placeholder content for privacy policy (you can update the actual content later)
 
-**Visual Layout:**
+### 2. Create Terms of Service Page
+**New file:** `src/pages/TermsOfService.tsx`
+
+A simple, clean page with:
+- Consistent styling with the rest of the app
+- Navigation back to home
+- Placeholder content for terms of service (you can update the actual content later)
+
+### 3. Add Routes
+**File:** `src/App.tsx`
+
+Add two new routes:
+- `/privacy` → PrivacyPolicy component
+- `/terms` → TermsOfService component
+
+### 4. Update Footer
+**File:** `src/pages/Index.tsx`
+
+Update the footer to include links:
 
 ```text
-┌─────────────────────────────────────┐
-│            Quackboard               │
-│       Create your account           │
-│  Start managing your open mics...   │
-│       [Beta Access Required]        │
-│                                     │
-│  Access Code                        │
-│  ┌─────────────────────────────┐    │
-│  │ Enter your beta access code │    │
-│  └─────────────────────────────┘    │
-│  Don't have a code? Request access  │  ← NEW
-│                                     │
-│  Email                              │
-│  ┌─────────────────────────────┐    │
-│  │ you@example.com             │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│       [ Get Started ]               │
-│                                     │
-│  Already have an account? Sign in   │
-└─────────────────────────────────────┘
+Before:
+┌─────────────────────────────────────────────────┐
+│  © 2025 Quackboard. Built for comedy producers. │
+└─────────────────────────────────────────────────┘
+
+After:
+┌─────────────────────────────────────────────────┐
+│  © 2025 Quackboard. Built for comedy producers. │
+│          Privacy Policy · Terms of Service      │
+└─────────────────────────────────────────────────┘
 ```
 
-**Code Changes:**
-
-1. Add a help text below the access code input field:
-   ```tsx
-   <p className="text-sm text-muted-foreground">
-     Don't have a code?{' '}
-     <a 
-       href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
-       className="text-primary font-medium hover:underline"
-     >
-       Request access
-     </a>
-   </p>
-   ```
-
-2. The mailto link will:
-   - Open the user's email client
-   - Pre-fill the subject line with "Quackboard Beta Access Request"
-   - Allow the user to write their request
-
-## Technical Details
-
-| Element | Implementation |
-|---------|---------------|
-| Request link | `mailto:` link with pre-filled subject |
-| Placement | Below the access code input, before email field |
-| Styling | Matches existing link style (`text-primary font-medium hover:underline`) |
-
-## Alternative Consideration
-If you'd prefer a different email address or want to use an external form instead, let me know and I can adjust the implementation.
-
-## Files to Modify
+## Files to Create/Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/Signup.tsx` | Add "Request access" link below the access code field |
+| `src/pages/PrivacyPolicy.tsx` | New page with privacy policy content |
+| `src/pages/TermsOfService.tsx` | New page with terms of service content |
+| `src/App.tsx` | Add routes for `/privacy` and `/terms` |
+| `src/pages/Index.tsx` | Add footer links to Privacy Policy and Terms of Service |
 
+## Page Layout
+
+Both legal pages will follow this structure:
+- Header with "Quackboard" branding and navigation
+- Content area with the policy text
+- Footer with copyright and links (same as landing page)
+
+The placeholder content will include common sections that you can customize with your actual legal text later.
