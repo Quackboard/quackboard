@@ -175,10 +175,12 @@ export type Database = {
           created_at: string | null
           date: string
           description: string | null
+          email_frequency: string | null
           end_time: string
           id: string
           is_info_only: boolean | null
           producer_id: string | null
+          producer_message: string | null
           publish_at: string | null
           sections_config: Json
           series_id: string | null
@@ -196,10 +198,12 @@ export type Database = {
           created_at?: string | null
           date: string
           description?: string | null
+          email_frequency?: string | null
           end_time: string
           id?: string
           is_info_only?: boolean | null
           producer_id?: string | null
+          producer_message?: string | null
           publish_at?: string | null
           sections_config?: Json
           series_id?: string | null
@@ -217,10 +221,12 @@ export type Database = {
           created_at?: string | null
           date?: string
           description?: string | null
+          email_frequency?: string | null
           end_time?: string
           id?: string
           is_info_only?: boolean | null
           producer_id?: string | null
+          producer_message?: string | null
           publish_at?: string | null
           sections_config?: Json
           series_id?: string | null
@@ -371,6 +377,7 @@ export type Database = {
           slug: string | null
           social_links: Json | null
           timezone: string | null
+          updated_at: string | null
           venue_address: string | null
           venue_name: string | null
         }
@@ -386,6 +393,7 @@ export type Database = {
           slug?: string | null
           social_links?: Json | null
           timezone?: string | null
+          updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
         }
@@ -401,6 +409,7 @@ export type Database = {
           slug?: string | null
           social_links?: Json | null
           timezone?: string | null
+          updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
         }

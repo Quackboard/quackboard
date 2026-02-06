@@ -1,9 +1,10 @@
 import { Event, Booking, Section } from '@/types/database';
-import { Card, CardContent } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin } from 'lucide-react';
 import { SpotList } from './SpotList';
 import { parseISO, isAfter, format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface EventCardProps {
   event: Event;
@@ -54,18 +55,32 @@ function getSignupStatus(event: Event): { label: string; isOpen: boolean } {
   return { label: '', isOpen: true };
 }
 
+function getStatusStyles(status: 'upcoming' | 'active' | 'past') {
+  switch (status) {
+    case 'active':
+      return 'border-l-4 border-l-status-live';
+    case 'upcoming':
+      return 'border-l-4 border-l-status-upcoming';
+    case 'past':
+      return 'border-l-4 border-l-status-past';
+    default:
+      return '';
+  }
+}
+
 export function EventCard({ event, bookings, producerVenueName, onBookingSuccess, status }: EventCardProps) {
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
   const signupStatus = getSignupStatus(event);
+  const statusStyles = getStatusStyles(status);
 
   const getStatusBadge = () => {
     switch (status) {
       case 'active':
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-500">Live</Badge>;
+        return <Badge variant="default" className="bg-status-live hover:bg-status-live">Live</Badge>;
       case 'upcoming':
-        return <Badge variant="outline" className="text-blue-500 border-blue-500">Upcoming</Badge>;
+        return <Badge variant="outline" className="text-status-upcoming border-status-upcoming">Upcoming</Badge>;
       case 'past':
         return <Badge variant="secondary">Past</Badge>;
       default:
@@ -74,7 +89,10 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
   };
 
   return (
-    <Card className="bg-card border-border">
+    <div className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm card-hover",
+      statusStyles
+    )}>
       <CardContent className="pt-4 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-foreground">
@@ -111,6 +129,6 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           />
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { marked } from "https://esm.sh/marked@9.1.5";
 
-const ZEPTOMAIL_API_URL = "https://api.zeptomail.in/v1.1/email";
+const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
 const ZEPTOMAIL_FROM_NAME = Deno.env.get("ZEPTOMAIL_FROM_NAME") || "QuackBoard";
@@ -204,16 +204,16 @@ serve(async (req) => {
           </style>
           <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px;">
             <h1 style="color: #1a1a1a; margin-top: 0;">${body.isCancellation ? "Booking Canceled" : (body.isManualAdd ? "You've been added to a slot!" : "Booking Confirmed!")}</h1>
-            
+
             <p>Hi ${body.guestName},</p>
-            
+
             ${body.isCancellation
         ? `<p>Your booking for <strong>${body.event.title}</strong>, slot #${body.slotPosition}, has been successfully canceled.</p>`
         : (body.isManualAdd
           ? `<p>You've been added to <strong>${body.event.title}</strong> by the producer.</p>`
           : `<p>Your booking for <strong>${body.event.title}</strong> has been confirmed!</p>`)
       }
-            
+
             <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #007bff;">
               <h2 style="margin-top: 0; color: #1a1a1a;">Event Details</h2>
               <p style="margin: 8px 0;"><strong>Event:</strong> ${body.event.title}</p>
@@ -223,16 +223,16 @@ serve(async (req) => {
               <p style="margin: 8px 0;"><strong>Section:</strong> ${body.sectionLabel}</p>
               <p style="margin: 8px 0;"><strong>Your Slot:</strong> #${body.slotPosition}</p>
             </div>
-            
+
             ${body.event.producer_message ? `
               <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 8px;">
                 <p style="margin: 0 0 6px 0; font-weight: 600; color: #000000; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Instruction from the Producer</p>
                 <div style="margin: 0; color: #000000; font-size: 15px; line-height: 1.5;">${formattedProducerMessage}</div>
               </div>
             ` : ''}
-            
+
             <p style="margin-top: 30px;">We look forward to seeing you there!</p>
-            
+
             <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 15px; margin: 20px 0;">
               <p style="margin: 0 0 10px 0; font-weight: 600; color: #856404;">Manage Your Booking</p>
               <p style="margin: 0 0 15px 0; color: #856404; font-size: 14px;">
@@ -242,7 +242,7 @@ serve(async (req) => {
                 ${body.isCancellation ? "View Event Details" : "Manage Booking & Alerts"}
               </a>
             </div>
-            
+
             <p style="color: #666; font-size: 14px; margin-top: 30px;">
               If you have any questions or need to make changes, please contact the event producer.
             </p>
@@ -350,14 +350,14 @@ serve(async (req) => {
             </style>
             <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px;">
               <h1 style="color: #1a1a1a; margin-top: 0;">${body.isCancellation ? "Booking Canceled" : "New Booking Made!"}</h1>
-              
+
               <p>Hi ${producer.name},</p>
-              
+
               ${body.isCancellation
           ? `<p>A booking for your event <strong>${body.event.title}</strong>, slot #${body.slotPosition}, made by ${body.guestName} has been canceled.</p>`
           : `<p><strong>${body.guestName}</strong> (${body.guestEmail}) has signed up for your event <strong>${body.event.title}</strong>!</p>`
         }
-              
+
               <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #28a745;">
                 <h2 style="margin-top: 0; color: #1a1a1a;">Event & Booking Details</h2>
                 <p style="margin: 8px 0;"><strong>Event Name:</strong> ${body.event.title}</p>
@@ -380,14 +380,14 @@ serve(async (req) => {
                   <div style="margin: 0; color: #000000; font-size: 15px; line-height: 1.5;">${formattedProducerMessage}</div>
                 </div>
               ` : ''}
-              
+
               <p style="margin-top: 30px;">
                 You can manage all bookings and event details from your dashboard:
               </p>
               <a href="${producerDashboardUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
                 Go to Dashboard
               </a>
-              
+
               <p style="color: #666; font-size: 14px; margin-top: 30px;">
                 This is an automated notification. Please do not reply directly to this email.
               </p>
@@ -448,10 +448,10 @@ serve(async (req) => {
         },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error in send-booking-email function:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ error: "Internal server error", details: error instanceof Error ? error.message : String(error) }),
       {
         status: 500,
         headers: {

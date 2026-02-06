@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { marked } from "https://esm.sh/marked@9.1.5";
 
-const ZEPTOMAIL_API_URL = "https://api.zeptomail.in/v1.1/email";
+const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
 const ZEPTOMAIL_FROM_NAME = Deno.env.get("ZEPTOMAIL_FROM_NAME") || "QuackBoard";
@@ -320,7 +320,7 @@ serve(async (req) => {
     <tr>
       <td align="center">
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          
+
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
@@ -328,7 +328,7 @@ serve(async (req) => {
               <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.95;">${periodLabel}</p>
             </td>
           </tr>
-          
+
           <!-- Content -->
           <tr>
             <td style="padding: 40px 30px;">
@@ -359,7 +359,7 @@ serve(async (req) => {
       emailContent += `
               <!-- Event Section -->
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: ${idx < newBookings.length - 1 ? '30px' : '0'}; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
-                
+
                 <!-- Event Header -->
                 <tr>
                   <td style="background-color: #f9fafb; padding: 24px; border-bottom: 2px solid #e5e7eb;">
@@ -380,7 +380,7 @@ serve(async (req) => {
                     </table>
                   </td>
                 </tr>
-                
+
                 <!-- Bookings Table -->
                 <tr>
                   <td style="padding: 0;">
@@ -395,7 +395,7 @@ serve(async (req) => {
                       <tbody>
       `;
 
-      bookings.forEach((booking, bookingIdx) => {
+      bookings.forEach((booking: { slot_position: number; guest_name: string; guest_email: string }, bookingIdx: number) => {
         const sectionLabel = (() => {
           if (!event.sections_config || !Array.isArray(event.sections_config)) {
             return 'General';
@@ -443,7 +443,7 @@ serve(async (req) => {
     emailContent += `
             </td>
           </tr>
-          
+
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
@@ -452,7 +452,7 @@ serve(async (req) => {
               <p style="margin: 0;"><a href="#" style="color: #4F46E5; text-decoration: none; font-size: 13px; font-weight: 500;">Unsubscribe</a></p>
             </td>
           </tr>
-          
+
         </table>
       </td>
     </tr>

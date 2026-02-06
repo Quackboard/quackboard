@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { marked } from "https://esm.sh/marked@9.1.5";
 
-const ZEPTOMAIL_API_URL = "https://api.zeptomail.in/v1.1/email";
+const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
 const ZEPTOMAIL_FROM_NAME = Deno.env.get("ZEPTOMAIL_FROM_NAME") || "QuackBoard";
@@ -147,21 +147,21 @@ serve(async (req) => {
     <tr>
       <td align="center">
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          
+
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">🎤 Your Mic is Live!</h1>
             </td>
           </tr>
-          
+
           <!-- Content -->
           <tr>
             <td style="padding: 40px 30px;">
               <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">
                 Hi ${producer.name || 'there'},
               </p>
-              
+
               <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">
                 Great news! Your mic <strong>"${event.title}"</strong> is now live and accepting sign-ups.
               </p>
@@ -188,7 +188,7 @@ serve(async (req) => {
                   </td>
                 </tr>
               </table>
-              
+
               ${event.producer_message ? `
                 <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 8px;">
                   <p style="margin: 0 0 6px 0; font-weight: 600; color: #000000; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Instruction from the Producer</p>
@@ -201,7 +201,7 @@ serve(async (req) => {
               </p>
             </td>
           </tr>
-          
+
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
@@ -209,7 +209,7 @@ serve(async (req) => {
               <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">&copy; ${new Date().getFullYear()} QuackBoard. All rights reserved.</p>
             </td>
           </tr>
-          
+
         </table>
       </td>
     </tr>
