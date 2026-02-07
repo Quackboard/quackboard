@@ -158,8 +158,8 @@ export default function Onboarding() {
     // Clear draft before navigating
     clearDraft();
 
-    // Navigate to dashboard - keep isSubmitting true to prevent re-render issues
-    navigate('/dashboard', { replace: true, state: { fromOnboarding: true } });
+    // Navigate to dashboard
+    window.location.href = '/dashboard';
   };
 
   return (
