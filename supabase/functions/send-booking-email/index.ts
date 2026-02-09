@@ -7,7 +7,7 @@ const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
 const ZEPTOMAIL_FROM_NAME = Deno.env.get("ZEPTOMAIL_FROM_NAME") || "QuackBoard";
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://dkbahxjibpobbefqufqa.supabase.co";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://quackboard1.lovable.app";
 
 interface EmailRequest {
   bookingId: string;
@@ -153,12 +153,8 @@ serve(async (req) => {
     }
 
     // Build cancellation and preferences URL
-    // Remove .supabase.co if present and ensure we have the frontend URL
-    const baseUrl = FRONTEND_URL.includes('.supabase.co')
-      ? FRONTEND_URL.replace('.supabase.co', '').replace('https://', 'https://')
-      : FRONTEND_URL;
-    const cancelUrl = `${baseUrl}/cancel/${body.cancelToken}`;
-    const producerDashboardUrl = `${baseUrl}/dashboard`;
+    const cancelUrl = `${FRONTEND_URL}/cancel/${body.cancelToken}`;
+    const producerDashboardUrl = `${FRONTEND_URL}/dashboard`;
 
     // Format date and time
     const eventDate = new Date(body.event.date).toLocaleDateString("en-US", {
