@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, ExternalLink, Menu, X } from 'lucide-react';
+import { LogOut, Plus, ExternalLink, Menu, X, LayoutDashboard, UserPen } from 'lucide-react';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +37,7 @@ export function Navbar() {
               asChild
             >
               <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-1" />
                 Dashboard
               </Link>
             </Button>
@@ -56,6 +57,7 @@ export function Navbar() {
               asChild
             >
               <Link to="/edit-profile">
+                <UserPen className="h-4 w-4 mr-1" />
                 Edit Profile
               </Link>
             </Button>
@@ -116,6 +118,7 @@ export function Navbar() {
               onClick={closeMobileMenu}
             >
               <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
                 Dashboard
               </Link>
             </Button>
@@ -139,6 +142,7 @@ export function Navbar() {
               onClick={closeMobileMenu}
             >
               <Link to="/edit-profile">
+                <UserPen className="h-4 w-4 mr-2" />
                 Edit Profile
               </Link>
             </Button>
