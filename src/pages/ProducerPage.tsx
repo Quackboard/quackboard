@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
 import { ProducerHeader } from '@/components/producer/ProducerHeader';
@@ -40,6 +41,7 @@ export default function ProducerPage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const [showPastEvents, setShowPastEvents] = useState(false);
 
   const { data: producer, isLoading: producerLoading } = useQuery({
     queryKey: ['producer', slug],
@@ -126,9 +128,10 @@ export default function ProducerPage() {
     status: getEventStatus(event),
   })) || [];
 
-  // Get unique dates that have events
-  const eventDates = allEventsWithStatus
-    ? [...new Set(allEventsWithStatus.map(e => e.date))].sort()
+  // Get unique dates that have events (exclude past-only dates when past events hidden)
+  const visibleEvents = showPastEvents ? allEventsWithStatus : allEventsWithStatus.filter(e => e.status !== 'past');
+  const eventDates = visibleEvents.length > 0
+    ? [...new Set(visibleEvents.map(e => e.date))].sort()
     : [];
 
   const activeEvents = allEventsWithStatus.filter(e => e.status === 'active');
@@ -240,22 +243,33 @@ export default function ProducerPage() {
                 </div>
               )}
 
-              {filteredPastEvents.length > 0 && (
+              {pastEvents.length > 0 && (
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    Past Events
-                    <Badge variant="secondary">Past</Badge>
-                  </h2>
-                  {filteredPastEvents.map(event => (
-                    <EventCard
-                      key={event.id}
-                      event={event as unknown as Event}
-                      bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                      producerVenueName={producer.venue_name}
-                      onBookingSuccess={refetchBookings}
-                      status={event.status}
-                    />
-                  ))}
+                  <button
+                    onClick={() => setShowPastEvents(!showPastEvents)}
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+                  >
+                    {showPastEvents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    {showPastEvents ? 'Hide' : 'Show'} past events ({pastEvents.length})
+                  </button>
+                  {showPastEvents && filteredPastEvents.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-xl font-semibold flex items-center gap-2">
+                        Past Events
+                        <Badge variant="secondary">Past</Badge>
+                      </h2>
+                      {filteredPastEvents.map(event => (
+                        <EventCard
+                          key={event.id}
+                          event={event as unknown as Event}
+                          bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                          producerVenueName={producer.venue_name}
+                          onBookingSuccess={refetchBookings}
+                          status={event.status}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
