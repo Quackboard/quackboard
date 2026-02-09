@@ -4,15 +4,16 @@ import { supabase, SUPABASE_URL_PUBLIC } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List } from 'lucide-react';
+import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
 import { CalendarDashboard } from '@/components/dashboard/CalendarDashboard';
-import { parseISO, isPast } from 'date-fns';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EmbedSection } from '@/components/embed/EmbedSection';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EventWithBookings {
   id: string;
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [calendarViewType, setCalendarViewType] = useState<'event_date' | 'created_date'>('event_date');
+  const isMobile = useIsMobile();
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ['producer-events', user?.id],
@@ -65,7 +67,6 @@ export default function Dashboard() {
     enabled: !!user?.id,
   });
 
-  // Check if event has ended (past the end time, not just the date)
   const hasEventEnded = (event: EventWithBookings): boolean => {
     const now = new Date();
     const eventDate = new Date(event.date);
@@ -97,50 +98,9 @@ export default function Dashboard() {
 
   return (
     <ProducerLayout>
-      {/* Share Section */}
-      {(slugLoading || authLoading) ? (
-        <div className="mb-6 h-24 rounded-lg border border-border bg-muted/20 animate-pulse" />
-      ) : displaySlug ? (
-        <>
-          <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
-            <p className="text-sm font-medium text-foreground mb-2">Your Page</p>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <code className="flex-1 text-sm text-muted-foreground bg-background px-3 py-2 rounded border border-border truncate">
-                {fullPageUrl.replace('https://', '').replace('http://', '')}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-                className="shrink-0 w-full sm:w-auto"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy Link
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Embed Section */}
-          <EmbedSection
-            producerSlug={displaySlug}
-            supabaseUrl={SUPABASE_URL_PUBLIC}
-          />
-        </>
-      ) : null
-      }
-
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
-        <h1 className="text-2xl font-semibold text-foreground">Your Mics</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-3">
           <a
             href={producerPageUrl}
@@ -160,49 +120,44 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Loading State */}
-      {
-        eventsLoading && (
+      {/* Your Mics Section */}
+      <section>
+        <h2 className="text-lg font-medium text-foreground mb-4">Your Mics</h2>
+
+        {/* View Toggle */}
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')} className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
+                <List className="h-4 w-4" />
+                <span className="hidden xs:inline">List</span>
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span className="hidden xs:inline">Calendar</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {viewMode === 'calendar' && (
+              <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
+                <TabsList className="w-full sm:w-auto">
+                  <TabsTrigger value="event_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Event Date</TabsTrigger>
+                  <TabsTrigger value="created_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Created</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+          </div>
+        </Tabs>
+
+        {/* Loading State */}
+        {eventsLoading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        )
-      }
-      {/* View Toggle */}
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'calendar')} className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
-              <List className="h-4 w-4" />
-              <span className="hidden xs:inline">List</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex-1 sm:flex-none flex items-center justify-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden xs:inline">Calendar</span>
-            </TabsTrigger>
-          </TabsList>
+        )}
 
-          {viewMode === 'calendar' && (
-            <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
-              <TabsList className="w-full sm:w-auto">
-                <TabsTrigger value="event_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Event Date</TabsTrigger>
-                <TabsTrigger value="created_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Created</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
-        </div>
-      </Tabs>
-
-      {/* Loading State */}
-      {eventsLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {/* Empty State */}
-      {
-        !eventsLoading && events?.length === 0 && (
+        {/* Empty State */}
+        {!eventsLoading && events?.length === 0 && (
           <div className="text-center py-16">
             <p className="text-muted-foreground mb-4">No mics yet</p>
             <Button asChild>
@@ -212,38 +167,80 @@ export default function Dashboard() {
               </Link>
             </Button>
           </div>
-        )
-      }
+        )}
 
-      {/* Events Display */}
-      {!eventsLoading && events && events.length > 0 && (
-        <div>
-          {viewMode === 'list' ? (
-            <div className="space-y-6">
-              {/* Upcoming Events */}
-              {upcomingEvents.length > 0 && (
-                <div className="space-y-3">
-                  {upcomingEvents.map(event => (
-                    <EventRow key={event.id} event={event} />
-                  ))}
-                </div>
-              )}
+        {/* Events Display */}
+        {!eventsLoading && events && events.length > 0 && (
+          <div>
+            {viewMode === 'list' ? (
+              <div className="space-y-6">
+                {upcomingEvents.length > 0 && (
+                  <div className="space-y-3">
+                    {upcomingEvents.map(event => (
+                      <EventRow key={event.id} event={event} />
+                    ))}
+                  </div>
+                )}
+                {pastEvents.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="text-sm font-medium text-muted-foreground pt-4">Past</h2>
+                    {pastEvents.map(event => (
+                      <EventRow key={event.id} event={event} isPast />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <CalendarDashboard events={events} viewType={calendarViewType} />
+            )}
+          </div>
+        )}
+      </section>
 
-              {/* Past Events */}
-              {pastEvents.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-sm font-medium text-muted-foreground pt-4">Past</h2>
-                  {pastEvents.map(event => (
-                    <EventRow key={event.id} event={event} isPast />
-                  ))}
-                </div>
-              )}
+      {/* Share & Embed Section (Collapsible) */}
+      {(slugLoading || authLoading) ? (
+        <div className="mt-8 h-24 rounded-lg border border-border bg-muted/20 animate-pulse" />
+      ) : displaySlug ? (
+        <Collapsible defaultOpen={!isMobile} className="mt-8">
+          <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full group">
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90" />
+            Share & Embed
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-6">
+            <div className="p-4 rounded-lg border border-border bg-muted/30">
+              <p className="text-sm font-medium text-foreground mb-2">Your Page</p>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <code className="flex-1 text-sm text-muted-foreground bg-background px-3 py-2 rounded border border-border truncate">
+                  {fullPageUrl.replace('https://', '').replace('http://', '')}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="shrink-0 w-full sm:w-auto"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          ) : (
-            <CalendarDashboard events={events} viewType={calendarViewType} />
-          )}
-        </div>
-      )}
-    </ProducerLayout >
+
+            <EmbedSection
+              producerSlug={displaySlug}
+              supabaseUrl={SUPABASE_URL_PUBLIC}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+      ) : null}
+    </ProducerLayout>
   );
 }
