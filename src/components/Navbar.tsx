@@ -37,7 +37,7 @@ export function Navbar() {
               asChild
             >
               <Link to="/dashboard">
-                Dashboard
+                Your Mics
               </Link>
             </Button>
             <Button 
@@ -116,7 +116,7 @@ export function Navbar() {
               onClick={closeMobileMenu}
             >
               <Link to="/dashboard">
-                Dashboard
+                Your Mics
               </Link>
             </Button>
             <Button 
