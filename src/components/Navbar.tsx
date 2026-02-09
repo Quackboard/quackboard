@@ -42,7 +42,7 @@ export function Navbar() {
               </Link>
             </Button>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm" 
               asChild
             >
