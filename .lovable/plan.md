@@ -1,24 +1,39 @@
 
 
-## Rename Page Title and Nav Labels to "Dashboard"
+## Fix Unreadable Calendar on Mobile
 
-**Goal**: Change the page-level title and navigation labels from "Your Mics" to "Dashboard", while keeping "Your Mics" as the section header above the mic list.
+**Problem**: The calendar uses a 7-column grid regardless of screen size. On mobile (~375px wide), each day cell is roughly 45px -- far too small to display event titles, times, or status text.
 
-### Changes
+**Solution**: Switch to a responsive layout that uses different approaches for mobile vs desktop.
 
-**1. `src/components/Navbar.tsx`**
-- Change both desktop and mobile nav link labels from "Your Mics" to "Dashboard"
+### Mobile Layout: Agenda-style list
 
-**2. `src/pages/Dashboard.tsx`**
-- Change the page heading from "Your Mics" to "Dashboard"
-- Keep "Your Mics" as a section header above the mic list/calendar (currently the heading doubles as both -- we'll separate them)
+On mobile (below 768px), replace the traditional calendar grid with a **month agenda view**:
 
-**3. Update the collapsible reorganization plan**
-- When implementing the layout reorder (mics at top, share/embed collapsed below), the "Your Mics" label will serve as the section header for the events list, sitting above the view toggle and event rows
-- "Dashboard" will be the main page title at the very top
+- Keep the same month navigation header (arrows + month/year title)
+- Show only the days that have events, rendered as a vertical list
+- Each day shows the date as a heading (e.g. "Tue, Feb 10") followed by the event cards beneath it
+- Event cards display title, time, and status -- all fully readable
+- Days without events are simply not shown, keeping the view compact
+- If no events exist in the current month, show a "No mics this month" empty state
+
+### Desktop Layout: Keep the grid (unchanged)
+
+On desktop (768px+), the existing 7-column calendar grid remains exactly as-is since it has enough space.
+
+### Technical Details
+
+**File: `src/components/dashboard/CalendarDashboard.tsx`**
+
+- Import `useIsMobile` from `@/hooks/use-mobile`
+- Add a mobile agenda renderer that:
+  - Filters `calendarDays` to only days with events in the current month
+  - Sorts them chronologically
+  - Renders each as a date heading + event card list
+- Wrap the return in a conditional: `isMobile ? <AgendaView /> : <GridView />`
+- Remove the bottom legend card (it adds clutter and the view type toggle above already communicates this)
 
 ### Result
-- Nav menu says "Dashboard"
-- Page title says "Dashboard"
-- The mic list section is labeled "Your Mics"
+
+Mobile users get a clean, scrollable list of their mics grouped by date -- fully readable with no truncation. Desktop users keep the familiar calendar grid.
 
