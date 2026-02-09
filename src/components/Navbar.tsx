@@ -32,6 +32,15 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
             <Button 
+              variant="ghost" 
+              size="sm" 
+              asChild
+            >
+              <Link to="/dashboard">
+                Dashboard
+              </Link>
+            </Button>
+            <Button 
               variant="outline" 
               size="sm" 
               asChild
@@ -99,6 +108,17 @@ export function Navbar() {
           )}
         >
           <div className="flex flex-col gap-1 py-2 border-t border-border">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              asChild
+              className="justify-start"
+              onClick={closeMobileMenu}
+            >
+              <Link to="/dashboard">
+                Dashboard
+              </Link>
+            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
