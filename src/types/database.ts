@@ -10,6 +10,8 @@ export interface Producer {
 export interface Section {
   label: string;
   slots: number;
+  type?: 'regular' | 'wildcard';
+  signup_opens_at?: string;
 }
 
 export interface Event {
