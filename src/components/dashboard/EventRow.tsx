@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { sendMicGoesLiveEmail } from '@/lib/email';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Section {
   label: string;
@@ -56,6 +58,7 @@ function parseSections(config: unknown): Section[] {
 
 export function EventRow({ event, isPast = false }: EventRowProps) {
   const now = new Date();
+  const isMobile = useIsMobile();
   const sections = parseSections(event.sections_config);
   const activeBookings = event.bookings.filter(b => !b.cancelled_at);
   const emailSentRef = useRef(false);
@@ -192,27 +195,41 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
             </div>
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3 text-sm">
-            <Link 
-              to={`/events/${event.id}/edit`}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Edit
-            </Link>
-            <Link 
-              to={`/events/${event.id}/duplicate`}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Duplicate
-            </Link>
-            <Link 
-              to={`/events/${event.id}/lineup`}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Lineup
-            </Link>
-          </div>
+          {/* Actions */}
+          {isMobile ? (
+            <div className="grid grid-cols-3 gap-2 w-full mt-2">
+              <Button variant="outline" size="sm" className="h-10" asChild>
+                <Link to={`/events/${event.id}/edit`}>Edit</Link>
+              </Button>
+              <Button variant="outline" size="sm" className="h-10" asChild>
+                <Link to={`/events/${event.id}/duplicate`}>Duplicate</Link>
+              </Button>
+              <Button variant="outline" size="sm" className="h-10" asChild>
+                <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 text-sm">
+              <Link 
+                to={`/events/${event.id}/edit`}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Edit
+              </Link>
+              <Link 
+                to={`/events/${event.id}/duplicate`}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Duplicate
+              </Link>
+              <Link 
+                to={`/events/${event.id}/lineup`}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Lineup
+              </Link>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
