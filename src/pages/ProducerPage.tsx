@@ -8,32 +8,15 @@ import { ProducerHeader } from '@/components/producer/ProducerHeader';
 import { DaySelector } from '@/components/producer/DaySelector';
 import { EventCard } from '@/components/producer/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { isUUID } from '@/lib/slug';
 
-interface EventWithStatus extends Omit<Event, 'status'> {
-  status: 'upcoming' | 'active' | 'past';
-}
-
-function getEventStatus(event: Event): 'upcoming' | 'active' | 'past' {
+function isEventPast(event: Event): boolean {
   const now = new Date();
   const eventDate = new Date(event.date);
-  const [startHour, startMinute] = event.start_time.split(':').map(Number);
   const [endHour, endMinute] = event.end_time.split(':').map(Number);
-
-  const eventStart = new Date(eventDate);
-  eventStart.setHours(startHour, startMinute, 0, 0);
-
   const eventEnd = new Date(eventDate);
   eventEnd.setHours(endHour, endMinute, 0, 0);
-
-  if (now < eventStart) {
-    return 'upcoming';
-  } else if (now >= eventStart && now <= eventEnd) {
-    return 'active';
-  } else {
-    return 'past';
-  }
+  return now > eventEnd;
 }
 
 export default function ProducerPage() {
@@ -121,44 +104,36 @@ export default function ProducerPage() {
     queryClient.invalidateQueries({ queryKey: ['event-bookings', eventIds] });
   };
 
-  // Group and sort events by status
-  const now = new Date();
-  const allEventsWithStatus: EventWithStatus[] = events?.map(event => ({
-    ...event,
-    status: getEventStatus(event),
-  })) || [];
+  // Split events into current and past
+  const allEvents = events || [];
+  const currentEvents = allEvents.filter(e => !isEventPast(e));
+  const pastEvents = allEvents.filter(e => isEventPast(e));
 
-  // Get unique dates that have events (exclude past-only dates when past events hidden)
-  const visibleEvents = showPastEvents ? allEventsWithStatus : allEventsWithStatus.filter(e => e.status !== 'past');
+  // Get unique dates (exclude past-only dates when past events hidden)
+  const visibleEvents = showPastEvents ? allEvents : currentEvents;
   const eventDates = visibleEvents.length > 0
     ? [...new Set(visibleEvents.map(e => e.date))].sort()
     : [];
 
-  const activeEvents = allEventsWithStatus.filter(e => e.status === 'active');
-  const upcomingEvents = allEventsWithStatus.filter(e => e.status === 'upcoming');
-  const pastEvents = allEventsWithStatus.filter(e => e.status === 'past');
-
-  // Auto-select first upcoming/active date, otherwise first past date
+  // Auto-select first current date, otherwise first past date
   useEffect(() => {
     if (events && !selectedDate) {
-      const firstActiveOrUpcomingDate = allEventsWithStatus
-        .filter(e => e.status === 'active' || e.status === 'upcoming')
+      const firstCurrentDate = currentEvents
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .map(e => e.date)[0];
 
-      if (firstActiveOrUpcomingDate) {
-        setSelectedDate(firstActiveOrUpcomingDate);
+      if (firstCurrentDate) {
+        setSelectedDate(firstCurrentDate);
       } else if (eventDates.length > 0) {
-        // If no active/upcoming, select the first past date
         setSelectedDate(eventDates[0]);
       }
     }
-  }, [events, selectedDate, allEventsWithStatus, eventDates]);
+  }, [events, selectedDate, currentEvents, eventDates]);
 
-  // Filter events for selected date
-  const filteredActiveEvents = activeEvents.filter(e => e.date === selectedDate);
-  const filteredUpcomingEvents = upcomingEvents.filter(e => e.date === selectedDate);
-  const filteredPastEvents = pastEvents.filter(e => e.date === selectedDate);
+  // All events for selected date, sorted chronologically
+  const filteredEvents = visibleEvents
+    .filter(e => e.date === selectedDate)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   if (producerLoading) {
     return (
@@ -204,75 +179,27 @@ export default function ProducerPage() {
               onSelectDate={setSelectedDate}
             />
 
-            <div className="space-y-6">
-              {filteredActiveEvents.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    Active Events
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-500">Live</Badge>
-                  </h2>
-                  {filteredActiveEvents.map(event => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                      producerVenueName={producer.venue_name}
-                      onBookingSuccess={refetchBookings}
-                      status={event.status}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {filteredUpcomingEvents.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    Upcoming Events
-                    <Badge variant="outline" className="text-blue-500 border-blue-500">Upcoming</Badge>
-                  </h2>
-                  {filteredUpcomingEvents.map(event => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                      producerVenueName={producer.venue_name}
-                      onBookingSuccess={refetchBookings}
-                      status={event.status}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {pastEvents.length > 0 && (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setShowPastEvents(!showPastEvents)}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-                  >
-                    {showPastEvents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    {showPastEvents ? 'Hide' : 'Show'} past events ({pastEvents.length})
-                  </button>
-                  {showPastEvents && filteredPastEvents.length > 0 && (
-                    <div className="space-y-4">
-                      <h2 className="text-xl font-semibold flex items-center gap-2">
-                        Past Events
-                        <Badge variant="secondary">Past</Badge>
-                      </h2>
-                      {filteredPastEvents.map(event => (
-                        <EventCard
-                          key={event.id}
-                          event={event as unknown as Event}
-                          bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                          producerVenueName={producer.venue_name}
-                          onBookingSuccess={refetchBookings}
-                          status={event.status}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            <div className="space-y-2">
+              {filteredEvents.map(event => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                  producerVenueName={producer.venue_name}
+                  onBookingSuccess={refetchBookings}
+                />
+              ))}
             </div>
+
+            {pastEvents.length > 0 && (
+              <button
+                onClick={() => setShowPastEvents(!showPastEvents)}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+              >
+                {showPastEvents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {showPastEvents ? 'Hide' : 'Show'} past events ({pastEvents.length})
+              </button>
+            )}
           </div>
         )}
       </div>

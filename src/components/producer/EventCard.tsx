@@ -1,17 +1,18 @@
+import { useState } from 'react';
 import { Event, Booking, Section } from '@/types/database';
 import { CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { SpotList } from './SpotList';
 import { parseISO, isAfter, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface EventCardProps {
   event: Event;
   bookings: Booking[];
   producerVenueName?: string | null;
   onBookingSuccess: () => void;
-  status: 'upcoming' | 'active' | 'past';
 }
 
 function formatTime(time: string): string {
@@ -43,92 +44,115 @@ function formatDateTime(dateStr: string): string {
 function getSignupStatus(event: Event): { label: string; isOpen: boolean } {
   const now = new Date();
   
-  // If signup_opens_at is set and in the future
   if (event.signup_opens_at && isAfter(parseISO(event.signup_opens_at), now)) {
     return { label: `Sign-ups open ${formatDateTime(event.signup_opens_at)}`, isOpen: false };
   }
-  // If signup_opens_at is null but publish_at is in the future
   if (!event.signup_opens_at && event.publish_at && isAfter(parseISO(event.publish_at), now)) {
     return { label: `Sign-ups open ${formatDateTime(event.publish_at)}`, isOpen: false };
   }
-  // Otherwise sign-ups are open
   return { label: '', isOpen: true };
 }
 
-function getStatusStyles(status: 'upcoming' | 'active' | 'past') {
-  switch (status) {
-    case 'active':
-      return 'border-l-4 border-l-status-live';
-    case 'upcoming':
-      return 'border-l-4 border-l-status-upcoming';
-    case 'past':
-      return 'border-l-4 border-l-status-past';
-    default:
-      return '';
-  }
-}
-
-export function EventCard({ event, bookings, producerVenueName, onBookingSuccess, status }: EventCardProps) {
+export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const isMobile = useIsMobile();
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
   const signupStatus = getSignupStatus(event);
-  const statusStyles = getStatusStyles(status);
 
-  const getStatusBadge = () => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="default" className="bg-status-live hover:bg-status-live">Live</Badge>;
-      case 'upcoming':
-        return <Badge variant="outline" className="text-status-upcoming border-status-upcoming">Upcoming</Badge>;
-      case 'past':
-        return <Badge variant="secondary">Past</Badge>;
-      default:
-        return null;
-    }
-  };
+  const totalSlots = sections.reduce((sum, s) => sum + s.slots, 0);
+  const bookedCount = bookings.length;
 
-  return (
-    <div className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm card-hover",
-      statusStyles
-    )}>
-      <CardContent className="pt-4 space-y-2">
-        <div className="flex items-center justify-between">
+  // Desktop: fully expanded card (unchanged)
+  if (!isMobile) {
+    return (
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
+        <CardContent className="pt-4 space-y-2">
           <div className="flex items-center gap-2 text-foreground">
             <Clock className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              {eventTime}
-            </span>
+            <span className="text-sm font-medium">{eventTime}</span>
           </div>
-          {getStatusBadge()}
-        </div>
-        
-        {showVenue && (
-          <div className="flex items-start gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium text-card-foreground">{event.venue_name}</p>
-              <p>{event.venue_address}</p>
+          
+          {showVenue && (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-card-foreground">{event.venue_name}</p>
+                <p>{event.venue_address}</p>
+              </div>
             </div>
+          )}
+          
+          {!signupStatus.isOpen && (
+            <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
+          )}
+          
+          {signupStatus.isOpen && sections.length > 0 && (
+            <SpotList 
+              sectionsConfig={sections} 
+              bookings={bookings} 
+              eventId={event.id}
+              eventTime={eventTime}
+              allowMultipleSpots={event.allow_multiple_slots ?? false}
+              onBookingSuccess={onBookingSuccess}
+            />
+          )}
+        </CardContent>
+      </div>
+    );
+  }
+
+  // Mobile: compact collapsible schedule row
+  return (
+    <Collapsible open={expanded} onOpenChange={setExpanded}>
+      <CollapsibleTrigger asChild>
+        <button className={cn(
+          "w-full flex items-center justify-between px-3 py-2.5 rounded-lg border bg-card text-card-foreground text-left",
+          expanded && "rounded-b-none border-b-0"
+        )}>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-foreground">{eventTime}</span>
           </div>
-        )}
-        
-        {!signupStatus.isOpen && (
-          <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
-        )}
-        
-        {signupStatus.isOpen && sections.length > 0 && (
-          <SpotList 
-            sectionsConfig={sections} 
-            bookings={bookings} 
-            eventId={event.id}
-            eventTime={eventTime}
-            allowMultipleSpots={event.allow_multiple_slots ?? false}
-            onBookingSuccess={onBookingSuccess}
-          />
-        )}
-      </CardContent>
-    </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {bookedCount}/{totalSlots} filled
+            </span>
+            {expanded 
+              ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> 
+              : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            }
+          </div>
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="rounded-b-lg border border-t-0 bg-card px-3 pb-3">
+        <div className="space-y-2 pt-1">
+          {showVenue && (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-card-foreground">{event.venue_name}</p>
+                <p>{event.venue_address}</p>
+              </div>
+            </div>
+          )}
+          
+          {!signupStatus.isOpen && (
+            <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
+          )}
+          
+          {signupStatus.isOpen && sections.length > 0 && (
+            <SpotList 
+              sectionsConfig={sections} 
+              bookings={bookings} 
+              eventId={event.id}
+              eventTime={eventTime}
+              allowMultipleSpots={event.allow_multiple_slots ?? false}
+              onBookingSuccess={onBookingSuccess}
+            />
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
