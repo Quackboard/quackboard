@@ -1,24 +1,44 @@
 
 
-## Make Dashboard Action Buttons Mobile-Friendly
+## Schedule View for Mobile on Public Profile (`/producer/:slug`)
 
-### Problem
-The Edit, Duplicate, and Lineup links on mic cards are plain text links with no padding, making them nearly impossible to tap accurately on mobile. They sit in a tight horizontal row with minimal spacing.
+### Overview
+Redesign the event cards on the public producer page to display as a compact, scannable schedule -- but only on mobile. Desktop keeps the current fully-expanded card layout.
 
-### Solution
-On mobile, switch the action links to full-width, properly-sized buttons stacked below the card content. On desktop, keep the current compact inline style.
+### How It Works
 
-### Changes
+**Mobile (collapsed by default):**
+```text
+ 7:00 - 9:00 PM        3/10 spots filled    ▼
+ 9:30 - 11:00 PM       0/8 spots filled     ▼
+```
+Tapping a row expands it to reveal venue info and the full SpotList with "Grab Spot" buttons.
 
-**File: `src/components/dashboard/EventRow.tsx`**
+**Desktop:** No changes -- cards remain fully expanded as they are today.
 
-- Import `useIsMobile` hook and the `Button` component
-- Replace the current actions `<div>` with a responsive layout:
-  - **Mobile**: Render 3 equally-spaced buttons using the `outline` variant, each with proper height (`h-10`) and touch-friendly sizing, displayed in a horizontal row spanning the full card width
-  - **Desktop**: Keep the current compact text links as-is
-- This ensures each button meets the 44px minimum touch target on mobile
+### Technical Changes
 
-### Technical Detail
+**`src/components/producer/EventCard.tsx`**
+- Import `useIsMobile` hook (already used elsewhere in the project)
+- Add `expanded` state (default: `false`)
+- Compute `totalSlots` and `bookedCount` from `sectionsConfig` and `bookings`
+- When `isMobile`:
+  - Render a compact clickable header row: time, availability summary ("X/Y spots filled"), and a chevron icon
+  - Wrap venue info, signup status, and SpotList inside `CollapsibleContent` from `@radix-ui/react-collapsible`
+  - Reduce padding for schedule-like density
+- When not mobile: render the current layout unchanged
+- Remove `status` prop usage (badges, colored borders) since all public events are live -- this simplifies the card for the public page context
 
-The mobile layout will use a `grid grid-cols-3 gap-2 w-full` container with `Button` components (variant `outline`, size `sm`) wrapping the existing `Link` elements via `asChild`. Desktop continues with the current `flex items-center gap-3 text-sm` layout.
+**`src/pages/ProducerPage.tsx`**
+- Remove the grouped section headers ("Active Events", "Upcoming Events", "Past Events") and their Badge imports
+- Merge all events for the selected date into a single chronologically sorted list
+- Use tighter spacing (`space-y-2`) for mobile density
+- Past events toggle remains unchanged at the bottom
+
+### What Stays the Same
+- DaySelector at top
+- Desktop layout (fully expanded cards)
+- SpotList and SignUpModal internals
+- All booking logic and data fetching
+- Venue display logic
 
