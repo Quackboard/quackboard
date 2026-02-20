@@ -23,6 +23,8 @@ import { toast } from '@/hooks/use-toast';
 interface Section {
   label: string;
   slots: number;
+  type?: 'regular' | 'wildcard';
+  signup_opens_at?: string;
 }
 
 interface Booking {
@@ -41,7 +43,11 @@ function parseSections(config: unknown): Section[] {
         item !== null &&
         typeof item.label === 'string' &&
         typeof item.slots === 'number'
-    );
+    ).map(item => ({
+      ...item,
+      type: (item as any).type || undefined,
+      signup_opens_at: (item as any).signup_opens_at || undefined,
+    }));
   }
   return [];
 }
@@ -113,9 +119,27 @@ export default function EventLineup() {
   const sections = event ? parseSections(event.sections_config) : [];
 
   // Calculate slot ranges for each section
+  // For wildcard sections, compute dynamic slot count
+  const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
+  const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
+  const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
+  const availableWildcardSlots = Math.max(0, totalRegularSlots - bookedRegularCount - bookedWildcardCount);
+
   const getSectionSlots = () => {
     let startSlot = 1;
     return sections.map(section => {
+      if (section.type === 'wildcard') {
+        // Wildcard slots: show booked ones + available ones
+        const wildcardBookedSlots = bookings
+          .filter(b => b.slot_position > totalRegularSlots)
+          .map(b => b.slot_position);
+        const availableSlotPositions = Array.from(
+          { length: availableWildcardSlots },
+          (_, i) => totalRegularSlots + bookedWildcardCount + i + 1
+        );
+        const allSlots = [...wildcardBookedSlots, ...availableSlotPositions];
+        return { label: `${section.label} (${availableWildcardSlots} available)`, slots: allSlots, startSlot: totalRegularSlots + 1 };
+      }
       const slots: number[] = [];
       for (let i = 0; i < section.slots; i++) {
         slots.push(startSlot + i);

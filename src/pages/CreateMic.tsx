@@ -5,11 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { fromZonedTime } from 'date-fns-tz';
-import { CalendarIcon, Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Loader2, ArrowLeft, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProducerFeatures } from '@/hooks/useProducerFeatures';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,8 +43,20 @@ const CREATE_MIC_DRAFT_KEY = 'quackboard_create_mic_draft';
 
 const sectionSchema = z.object({
   label: z.string(),
-  slots: z.number().min(1, 'At least 1 spot required'),
-});
+  slots: z.number().min(0),
+  type: z.enum(['regular', 'wildcard']).optional(),
+  signup_opens_at_date: z.date().optional(),
+  signup_opens_at_time: z.string().optional(),
+}).refine((data) => {
+  if (data.type === 'wildcard') return true;
+  return data.slots >= 1;
+}, { message: 'At least 1 spot required', path: ['slots'] }).refine((data) => {
+  if (data.type === 'wildcard' && !data.signup_opens_at_date) return false;
+  return true;
+}, { message: 'Cutoff date is required', path: ['signup_opens_at_date'] }).refine((data) => {
+  if (data.type === 'wildcard' && !data.signup_opens_at_time) return false;
+  return true;
+}, { message: 'Cutoff time is required', path: ['signup_opens_at_time'] });
 
 const formSchema = z.object({
   date: z.date({
@@ -158,6 +171,7 @@ export default function CreateMic() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { hasFeature } = useProducerFeatures();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -237,10 +251,14 @@ export default function CreateMic() {
 
     try {
       // Build sections config
-      const sectionsConfig = data.sections.map(s => ({
-        label: s.label,
-        slots: s.slots,
-      }));
+      const sectionsConfig = data.sections.map(s => {
+        if (s.type === 'wildcard' && s.signup_opens_at_date && s.signup_opens_at_time) {
+          const localCutoff = combineDateAndTime(s.signup_opens_at_date, s.signup_opens_at_time);
+          const utcCutoff = fromZonedTime(localCutoff, timezone).toISOString();
+          return { label: s.label, slots: 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
+        }
+        return { label: s.label, slots: s.slots };
+      });
 
       // Handle publish_at
       let publishAt: string | null = null;
@@ -496,56 +514,144 @@ export default function CreateMic() {
               <h2 className="text-lg font-medium text-foreground">Sections</h2>
 
               <div className="space-y-3">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex gap-3 items-start">
-                    <div className="flex-1 space-y-2">
-                      <Input
-                        placeholder="e.g., $5 for 5 min"
-                        {...register(`sections.${index}.label`)}
-                      />
-                      {errors.sections?.[index]?.label && (
-                        <p className="text-sm text-destructive">
-                          {errors.sections[index]?.label?.message}
+                {fields.map((field, index) => {
+                  const sectionType = watch(`sections.${index}.type`);
+                  const isWildcard = sectionType === 'wildcard';
+
+                  if (isWildcard) {
+                    return (
+                      <div key={field.id} className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium text-foreground">Wildcard Section</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => remove(index)}
+                            className="text-muted-foreground hover:text-destructive h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder="Section label (e.g., Wildcards)"
+                          {...register(`sections.${index}.label`)}
+                        />
+                        <div className="space-y-2">
+                          <Label className="text-sm">Cutoff / Signup opens at</Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'justify-start text-left font-normal',
+                                    !watch(`sections.${index}.signup_opens_at_date`) && 'text-muted-foreground'
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {watch(`sections.${index}.signup_opens_at_date`)
+                                    ? format(watch(`sections.${index}.signup_opens_at_date`)!, 'PP')
+                                    : 'Date'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={watch(`sections.${index}.signup_opens_at_date`)}
+                                  onSelect={(date) => date && setValue(`sections.${index}.signup_opens_at_date`, date)}
+                                  initialFocus
+                                  className="pointer-events-auto"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <Input
+                              type="time"
+                              {...register(`sections.${index}.signup_opens_at_time`)}
+                            />
+                          </div>
+                          {errors.sections?.[index] && (
+                            <p className="text-sm text-destructive">
+                              {(errors.sections[index] as any)?.signup_opens_at_date?.message ||
+                               (errors.sections[index] as any)?.signup_opens_at_time?.message}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Unfilled regular spots become available as wildcards after this time.
                         </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={field.id} className="flex gap-3 items-start">
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          placeholder="e.g., $5 for 5 min"
+                          {...register(`sections.${index}.label`)}
+                        />
+                        {errors.sections?.[index]?.label && (
+                          <p className="text-sm text-destructive">
+                            {errors.sections[index]?.label?.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="w-24 space-y-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="Spots"
+                          {...register(`sections.${index}.slots`, { valueAsNumber: true })}
+                        />
+                        {errors.sections?.[index]?.slots && (
+                          <p className="text-sm text-destructive">
+                            {errors.sections[index]?.slots?.message}
+                          </p>
+                        )}
+                      </div>
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => remove(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
-                    <div className="w-24 space-y-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="Spots"
-                        {...register(`sections.${index}.slots`, { valueAsNumber: true })}
-                      />
-                      {errors.sections?.[index]?.slots && (
-                        <p className="text-sm text-destructive">
-                          {errors.sections[index]?.slots?.message}
-                        </p>
-                      )}
-                    </div>
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(index)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({ label: '', slots: 10 })}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Section
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ label: '', slots: 10 })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Section
+                </Button>
+
+                {hasFeature('wildcard') && !fields.some((_, i) => watch(`sections.${i}.type`) === 'wildcard') && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ label: 'Wildcards', slots: 0, type: 'wildcard' })}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Add Wildcard Section
+                  </Button>
+                )}
+              </div>
 
               {errors.sections?.root && (
                 <p className="text-sm text-destructive">{errors.sections.root.message}</p>

@@ -397,6 +397,35 @@ export type Database = {
           },
         ]
       }
+      producer_features: {
+        Row: {
+          feature: string
+          granted_at: string
+          id: string
+          producer_id: string
+        }
+        Insert: {
+          feature: string
+          granted_at?: string
+          id?: string
+          producer_id: string
+        }
+        Update: {
+          feature?: string
+          granted_at?: string
+          id?: string
+          producer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producer_features_producer_id_fkey"
+            columns: ["producer_id"]
+            isOneToOne: false
+            referencedRelation: "producers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producers: {
         Row: {
           bio_markdown: string | null

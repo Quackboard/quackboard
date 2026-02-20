@@ -14,6 +14,13 @@ export interface Section {
   signup_opens_at?: string;
 }
 
+export interface ProducerFeature {
+  id: string;
+  producer_id: string;
+  feature: string;
+  granted_at: string;
+}
+
 export interface Event {
   id: string;
   producer_id: string;

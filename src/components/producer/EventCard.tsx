@@ -61,7 +61,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
   const signupStatus = getSignupStatus(event);
 
-  const totalSlots = sections.reduce((sum, s) => sum + s.slots, 0);
+  const totalSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
   const bookedCount = bookings.length;
 
   // Desktop: fully expanded card (unchanged)
