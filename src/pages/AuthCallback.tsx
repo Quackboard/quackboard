@@ -7,30 +7,56 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      // Supabase auto-processes the URL hash tokens
-      const { data: { session }, error } = await supabase.auth.getSession();
+    // Listen for the auth state change triggered by the URL hash tokens
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Check if producer has completed onboarding
+          const { data: producer } = await supabase
+            .from('producers')
+            .select('name')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-      if (error || !session) {
-        navigate('/login');
-        return;
+          if (!producer || producer.name === null) {
+            navigate('/onboarding');
+          } else {
+            navigate('/dashboard');
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Ignore token refresh events
+        } else if (event === 'SIGNED_OUT') {
+          navigate('/login');
+        }
       }
+    );
 
-      // Check if producer has completed onboarding
-      const { data: producer } = await supabase
-        .from('producers')
-        .select('name')
-        .eq('id', session.user.id)
-        .maybeSingle();
+    // Also check if already signed in (e.g. session was restored before listener fired)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const { data: producer } = await supabase
+          .from('producers')
+          .select('name')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-      if (!producer || producer.name === null) {
-        navigate('/onboarding');
-      } else {
-        navigate('/dashboard');
+        if (!producer || producer.name === null) {
+          navigate('/onboarding');
+        } else {
+          navigate('/dashboard');
+        }
       }
+    });
+
+    // Timeout fallback - if nothing happens after 10s, redirect to login
+    const timeout = setTimeout(() => {
+      navigate('/login');
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-
-    handleCallback();
   }, [navigate]);
 
   return (
