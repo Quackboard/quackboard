@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
 import { ProducerHeader } from '@/components/producer/ProducerHeader';
@@ -24,7 +24,7 @@ export default function ProducerPage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const [showPastEvents, setShowPastEvents] = useState(false);
+  
 
   const { data: producer, isLoading: producerLoading } = useQuery({
     queryKey: ['producer', slug],
@@ -104,15 +104,11 @@ export default function ProducerPage() {
     queryClient.invalidateQueries({ queryKey: ['event-bookings', eventIds] });
   };
 
-  // Split events into current and past
-  const allEvents = events || [];
-  const currentEvents = allEvents.filter(e => !isEventPast(e));
-  const pastEvents = allEvents.filter(e => isEventPast(e));
+  // Only show current/future events
+  const currentEvents = (events || []).filter(e => !isEventPast(e));
 
-  // Get unique dates (exclude past-only dates when past events hidden)
-  const visibleEvents = showPastEvents ? allEvents : currentEvents;
-  const eventDates = visibleEvents.length > 0
-    ? [...new Set(visibleEvents.map(e => e.date))].sort()
+  const eventDates = currentEvents.length > 0
+    ? [...new Set(currentEvents.map(e => e.date))].sort()
     : [];
 
   // Auto-select first current date, otherwise first past date
@@ -130,8 +126,7 @@ export default function ProducerPage() {
     }
   }, [events, selectedDate, currentEvents, eventDates]);
 
-  // All events for selected date, sorted chronologically
-  const filteredEvents = visibleEvents
+  const filteredEvents = currentEvents
     .filter(e => e.date === selectedDate)
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
@@ -191,15 +186,6 @@ export default function ProducerPage() {
               ))}
             </div>
 
-            {pastEvents.length > 0 && (
-              <button
-                onClick={() => setShowPastEvents(!showPastEvents)}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                {showPastEvents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                {showPastEvents ? 'Hide' : 'Show'} past events ({pastEvents.length})
-              </button>
-            )}
           </div>
         )}
       </div>
