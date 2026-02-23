@@ -36,7 +36,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
-  const [calendarViewType, setCalendarViewType] = useState<'event_date' | 'created_date'>('event_date');
+  
   const isMobile = useIsMobile();
 
   const { data: events, isLoading: eventsLoading } = useQuery({
@@ -138,14 +138,8 @@ export default function Dashboard() {
               </TabsTrigger>
             </TabsList>
 
-            {viewMode === 'calendar' && (
-              <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
-                <TabsList className="w-full sm:w-auto">
-                  <TabsTrigger value="event_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Event Date</TabsTrigger>
-                  <TabsTrigger value="created_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Created</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+
+
           </div>
         </Tabs>
 
@@ -191,7 +185,7 @@ export default function Dashboard() {
                 )}
               </div>
             ) : (
-              <CalendarDashboard events={events} viewType={calendarViewType} />
+              <CalendarDashboard events={events} viewType="event_date" />
             )}
           </div>
         )}
