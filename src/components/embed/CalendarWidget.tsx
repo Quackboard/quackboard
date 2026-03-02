@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, MapPin } from 'lucide-react';
+import { formatTime } from '@/lib/utils';
 
 interface EmbedEvent {
   id: string;
@@ -369,7 +370,8 @@ export default function CalendarWidget({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#4b5563' }}>
                     <Clock size={18} strokeWidth={2.5} color="#111827" style={{ opacity: 0.8 }} />
-                    <span style={{ fontWeight: '500' }}>{event.start_time.substring(0, 5)} - {event.end_time.substring(0, 5)}</span>
+                    {/* Sanitized time display: ensures 12-hour format for both Start and End times */}
+                    <span style={{ fontWeight: '500' }}>{formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
                   </div>
                 </div>
 

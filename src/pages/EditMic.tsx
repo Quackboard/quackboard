@@ -90,6 +90,7 @@ const formSchema = z.object({
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
+  emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
 }).refine((data) => {
   if (!data.startTime || !data.endTime) return true;
   return data.startTime < data.endTime;
@@ -204,6 +205,7 @@ export default function EditMic() {
       allowMultipleSlots: false,
       publishOption: 'now',
       signupOption: 'live',
+      emailFrequency: 'none',
     },
   });
 
@@ -285,6 +287,11 @@ export default function EditMic() {
           signupOpensAt: signupOpensAtDate,
           signupOpensAtTime,
           producerMessage: event.producer_message || '',
+          emailFrequency: event.email_frequency === 'disabled' || event.email_frequency === 'Email setting not active'
+            ? 'none'
+            : (event.email_frequency === 'immediate' || event.email_frequency === 'daily'
+              ? event.email_frequency
+              : 'none'),
         });
       }
 
@@ -462,6 +469,8 @@ export default function EditMic() {
           publish_at: publishAt,
           signup_opens_at: signupOpensAt,
           producer_message: data.producerMessage || null,
+          // Explicit mapping to 'disabled' for backend clarity
+          email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
         })
         .eq('id', id);
 
@@ -1157,6 +1166,57 @@ export default function EditMic() {
               <p className="text-sm text-destructive">{errors.producerMessage.message}</p>
             )}
           </div>
+        </section>
+
+        {/*
+          Email Notifications Section
+          Provides a clear toggle and chooses between immediate per-signup alerts or a daily summary.
+        */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-medium text-foreground">Email Notifications</h2>
+              <p className="text-sm text-muted-foreground">
+                Get notified when someone signs up for your mic.
+              </p>
+            </div>
+            <Switch
+              id="enable-notifications"
+              // Checking form state to drive the UI toggle
+              checked={watch('emailFrequency') !== 'none' && !!watch('emailFrequency')}
+              onCheckedChange={(checked) => {
+                // Instantly update form state
+                setValue('emailFrequency', checked ? 'immediate' : 'none');
+              }}
+            />
+          </div>
+
+          {/* Contextual Frequency Selection */}
+          {(watch('emailFrequency') === 'immediate' || watch('emailFrequency') === 'daily') && (
+            <div className="pl-6 space-y-3 pt-2 animate-in fade-in slide-in-from-top-1">
+              <Label>Frequency</Label>
+              <RadioGroup
+                value={watch('emailFrequency')}
+                onValueChange={(value: 'immediate' | 'daily') => {
+                  setValue('emailFrequency', value);
+                }}
+                className="flex flex-col gap-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="immediate" id="notify-immediate" />
+                  <Label htmlFor="notify-immediate" className="font-normal cursor-pointer">
+                    Immediate <span className="text-xs text-muted-foreground ml-1 block sm:inline">(Email sent for every signup)</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="daily" id="notify-daily" />
+                  <Label htmlFor="notify-daily" className="font-normal cursor-pointer">
+                    Daily Summary <span className="text-xs text-muted-foreground ml-1 block sm:inline">(One email per day with all activity)</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
         </section>
 
         {/* Actions */}

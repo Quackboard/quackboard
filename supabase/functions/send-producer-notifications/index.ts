@@ -6,6 +6,8 @@ const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
 const ZEPTOMAIL_FROM_NAME = Deno.env.get("ZEPTOMAIL_FROM_NAME") || "QuackBoard";
+// Set STUB_EMAILS=true in Supabase secrets to enable stub mode (no real emails sent)
+const STUB_EMAILS = Deno.env.get("STUB_EMAILS") === "true";
 
 interface NotificationRequest {
   producerId: string;
@@ -28,17 +30,16 @@ serve(async (req) => {
   }
 
   try {
-    if (!ZEPTOMAIL_API_TOKEN) {
+    // Guard: token must be present unless explicitly in stub mode
+    if (!ZEPTOMAIL_API_TOKEN && !STUB_EMAILS) {
+      console.error("ZEPTOMAIL_API_TOKEN not configured");
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+        { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
+    }
+    if (STUB_EMAILS) {
+      console.warn("[EMAIL STUB] Running in stub mode - no real emails will be sent");
     }
 
     const supabase = createClient(
@@ -94,6 +95,10 @@ serve(async (req) => {
           },
         }
       );
+    }
+    // [TEMP STUB] Token check bypassed - no Zeptomail credits
+    if (!ZEPTOMAIL_API_TOKEN) {
+      console.warn("[EMAIL STUB] ZEPTOMAIL_API_TOKEN not set - running in stub mode");
     }
 
     let periodStart: Date;
@@ -461,83 +466,59 @@ serve(async (req) => {
 </html>
     `;
 
-    const zeptomailPayload = {
-      from: {
-        address: ZEPTOMAIL_FROM_EMAIL,
-      },
-      to: [
-        {
-          email_address: {
-            address: producer.email,
-            name: producer.name,
-          },
-        },
-      ],
-      subject: subject,
-      htmlbody: emailContent,
-    };
+    let emailStatus: 'sent' | 'failed' | 'stubbed' = STUB_EMAILS ? 'stubbed' : 'sent';
 
-    let authHeader: string;
-    if (ZEPTOMAIL_API_TOKEN.startsWith("Zoho-enczapikey")) {
-      authHeader = ZEPTOMAIL_API_TOKEN;
+    if (STUB_EMAILS) {
+      console.log("[EMAIL STUB] send-producer-notifications =>", {
+        to: producer.email,
+        producerName: producer.name,
+        subject,
+        frequency,
+        periodLabel,
+        eventsCount: events.length,
+        bookingsCount: bookings?.length || 0,
+      });
     } else {
-      authHeader = `Zoho-enczapikey ${ZEPTOMAIL_API_TOKEN}`;
-    }
-
-    const zeptomailResponse = await fetch(ZEPTOMAIL_API_URL, {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": authHeader,
-      },
-      body: JSON.stringify(zeptomailPayload),
-    });
-
-    if (!zeptomailResponse.ok) {
-      const errorText = await zeptomailResponse.text();
-      const status = zeptomailResponse.status;
-      console.error("Zeptomail API error:", status, errorText);
-
-      let errorDetails = errorText;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorDetails = JSON.stringify(errorJson, null, 2);
-      } catch {
-        // Keep as text if not JSON
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: "Failed to send email",
-          details: errorDetails || `HTTP ${status}`,
-          status: status
+      const authHeader = ZEPTOMAIL_API_TOKEN!.startsWith("Zoho-enczapikey")
+        ? ZEPTOMAIL_API_TOKEN!
+        : `Zoho-enczapikey ${ZEPTOMAIL_API_TOKEN}`;
+      const res = await fetch(ZEPTOMAIL_API_URL, {
+        method: "POST",
+        headers: { "Authorization": authHeader, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: { address: ZEPTOMAIL_FROM_EMAIL, name: ZEPTOMAIL_FROM_NAME },
+          to: [{ email_address: { address: producer.email, name: producer.name } }],
+          subject,
+          htmlbody: emailContent,
         }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Zeptomail API error:", errorText);
+        emailStatus = 'failed';
+      }
     }
 
+    // Log notification
     await supabase.from('message_logs').insert({
       producer_id: producerId,
       email_address: producer.email,
       message_type: 'producer_notification',
       subject,
-      delivery_status: 'sent',
+      delivery_status: emailStatus,
     });
+
+    const isFailed = emailStatus === 'failed';
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `Notification sent successfully to ${producer.email}`,
-        emailSent: true,
+        success: !isFailed,
+        message: isFailed ? "Notification delivery failed" : `Notification sent successfully to ${producer.email}`,
+        emailSent: !isFailed,
         recipient: producer.email,
         recipientName: producer.name,
+        status: emailStatus,
         stats: {
           eventsCount: events.length,
           bookingsCount: bookings?.length || 0,
@@ -545,7 +526,7 @@ serve(async (req) => {
         }
       }),
       {
-        status: 200,
+        status: isFailed ? 500 : 200,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",

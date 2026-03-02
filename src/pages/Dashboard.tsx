@@ -35,12 +35,16 @@ export default function Dashboard() {
   const { slug, isLoading: slugLoading } = useProducerSlug();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
-  
+  // State for toggling between the main 'list' view and 'calendar' layout
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  // Specific view perspective for the calendar: performance date vs creation date
+  const [calendarViewType, setCalendarViewType] = useState<'event_date' | 'created_date'>('event_date');
+  // Specific view perspective for the list: upcoming or past events
+  const [listViewType, setListViewType] = useState<'upcoming' | 'past'>('upcoming');
   const isMobile = useIsMobile();
 
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ['producer-events', user?.id],
+  const { data: allEvents, isLoading: allEventsLoading } = useQuery({
+    queryKey: ['producer-all-events', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
@@ -64,22 +68,56 @@ export default function Dashboard() {
       if (error) throw error;
       return data as EventWithBookings[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && viewMode === 'calendar',
   });
 
-  const hasEventEnded = (event: EventWithBookings): boolean => {
-    const now = new Date();
-    const eventDate = new Date(event.date);
-    const [endHour, endMinute] = event.end_time.split(':').map(Number);
+  const today = new Date().toISOString().split('T')[0];
 
-    const eventEnd = new Date(eventDate);
-    eventEnd.setHours(endHour, endMinute, 0, 0);
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ['producer-events', user?.id, listViewType],
+    queryFn: async () => {
+      let query = supabase
+        .from('events')
+        .select(`
+          id,
+          title,
+          date,
+          created_at,
+          start_time,
+          end_time,
+          venue_name,
+          sections_config,
+          status,
+          publish_at,
+          signup_opens_at,
+          bookings (id, slot_position, cancelled_at)
+        `)
+        .eq('producer_id', user!.id);
 
-    return now > eventEnd;
-  };
+      // Use date+end_time combined to correctly classify events:
+      // An event that ends at 14:00 today is already past, not upcoming
+      const nowISO = new Date().toISOString();
+      const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
+      if (listViewType === 'upcoming') {
+        // Upcoming: future dates OR today with end_time after now
+        query = query
+          .or(`date.gt.${today},and(date.eq.${today},end_time.gte.${nowTime})`)
+          .order('date', { ascending: true });
+      } else {
+        // Past: past dates OR today with end_time before now
+        query = query
+          .or(`date.lt.${today},and(date.eq.${today},end_time.lt.${nowTime})`)
+          .order('date', { ascending: false });
+      }
 
-  const upcomingEvents = events?.filter(e => !hasEventEnded(e)) || [];
-  const pastEvents = events?.filter(e => hasEventEnded(e)) || [];
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as EventWithBookings[];
+    },
+    enabled: !!user?.id && viewMode === 'list',
+  });
+
+
 
   const displaySlug = slug || user?.id;
   const producerPageUrl = `/producer/${displaySlug}`;
@@ -138,8 +176,25 @@ export default function Dashboard() {
               </TabsTrigger>
             </TabsList>
 
+            {/* Sub-navigation for list: Upcoming vs Past */}
+            {viewMode === 'list' && (
+              <Tabs value={listViewType} onValueChange={(value) => setListViewType(value as 'upcoming' | 'past')}>
+                <TabsList className="w-full sm:w-auto">
+                  <TabsTrigger value="upcoming" className="flex-1 sm:flex-none text-xs sm:text-sm">Upcoming</TabsTrigger>
+                  <TabsTrigger value="past" className="flex-1 sm:flex-none text-xs sm:text-sm">Past</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
 
-
+            {/* Sub-navigation: Only show 'Event Date' vs 'Created' toggle when in Calendar mode to avoid UI clutter */}
+            {viewMode === 'calendar' && (
+              <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
+                <TabsList className="w-full sm:w-auto">
+                  <TabsTrigger value="event_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Event Date</TabsTrigger>
+                  <TabsTrigger value="created_date" className="flex-1 sm:flex-none text-xs sm:text-sm">Created</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
           </div>
         </Tabs>
 
@@ -150,42 +205,33 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Empty State */}
-        {!eventsLoading && events?.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground mb-4">No mics yet</p>
-            <Button asChild>
-              <Link to="/create">
-                <Plus className="h-4 w-4 mr-1" />
-                Create your first mic
-              </Link>
-            </Button>
-          </div>
-        )}
-
         {/* Events Display */}
-        {!eventsLoading && events && events.length > 0 && (
+        {!(eventsLoading || (viewMode === 'calendar' && allEventsLoading)) && (events || allEvents) && (
           <div>
             {viewMode === 'list' ? (
-              <div className="space-y-6">
-                {upcomingEvents.length > 0 && (
-                  <div className="space-y-3">
-                    {upcomingEvents.map(event => (
-                      <EventRow key={event.id} event={event} />
-                    ))}
+              <div className="space-y-3">
+                {(events?.length ?? 0) === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-muted-foreground mb-4">
+                      {listViewType === 'upcoming' ? 'No upcoming mics' : 'No past mics'}
+                    </p>
+                    {listViewType === 'upcoming' && (
+                      <Button asChild>
+                        <Link to="/create">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Create a mic
+                        </Link>
+                      </Button>
+                    )}
                   </div>
-                )}
-                {pastEvents.length > 0 && (
-                  <div className="space-y-3">
-                    <h2 className="text-sm font-medium text-muted-foreground pt-4">Past</h2>
-                    {pastEvents.map(event => (
-                      <EventRow key={event.id} event={event} isPast />
-                    ))}
-                  </div>
+                ) : (
+                  (events || []).map(event => (
+                    <EventRow key={event.id} event={event} isPast={listViewType === 'past'} />
+                  ))
                 )}
               </div>
             ) : (
-              <CalendarDashboard events={events} viewType="event_date" />
+              <CalendarDashboard events={allEvents || []} viewType={calendarViewType} />
             )}
           </div>
         )}

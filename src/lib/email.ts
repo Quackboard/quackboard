@@ -46,8 +46,6 @@ export async function sendBookingConfirmationEmail(
 
     if (error) {
       console.error('Error calling send-booking-email function:', error);
-      // Don't throw - we don't want email failures to break the booking flow
-      // The booking was successful, email is just a notification
       return;
     }
 
@@ -58,7 +56,6 @@ export async function sendBookingConfirmationEmail(
   } catch (error) {
     console.error('Error sending email:', error);
     // Don't throw - we don't want email failures to break the booking flow
-    // The booking was successful, email is just a notification
   }
 }
 
@@ -91,7 +88,6 @@ export async function sendCancellationEmail(
 
     if (error) {
       console.error('Error calling send-booking-email function for cancellation:', error);
-      // Don't throw - we don't want email failures to break the cancellation flow
       return;
     }
 
@@ -126,7 +122,6 @@ export async function sendMicGoesLiveEmail(
 
     if (error) {
       console.error('Error calling send-mic-goes-live-email function:', error);
-      // Don't throw - we don't want email failures to break the mic creation flow
       return;
     }
 
