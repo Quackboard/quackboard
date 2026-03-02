@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { sendMicGoesLiveEmail } from '@/lib/email';
@@ -28,14 +28,6 @@ interface EventRowProps {
     bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
   };
   isPast?: boolean;
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':');
-  const hour = parseInt(hours, 10);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minutes} ${ampm}`;
 }
 
 function formatDateTime(dateStr: string): string {

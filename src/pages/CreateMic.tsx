@@ -26,8 +26,7 @@ import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { sendMicGoesLiveEmail } from '@/lib/email';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BulkCreateMic from '@/components/producer/BulkCreateMic';
+import { RecurrenceSelector, RecurrenceConfig, generateRecurringDates } from '@/components/ui/RecurrenceSelector';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,7 +76,7 @@ const formSchema = z.object({
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
-  emailFrequency: z.enum(['none', 'daily', 'weekly', 'monthly']).optional(),
+  emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
 }).refine((data) => {
   if (!data.startTime || !data.endTime) return true;
   return data.startTime < data.endTime;
@@ -175,6 +174,8 @@ export default function CreateMic() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [recurrence, setRecurrence] = useState<RecurrenceConfig | null>(null);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const { data: producer } = useQuery({
     queryKey: ['producer-profile', user?.id],
@@ -202,6 +203,7 @@ export default function CreateMic() {
       signupOption: 'live',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
+      emailFrequency: 'none',
     },
   });
 
@@ -276,6 +278,79 @@ export default function CreateMic() {
 
       const seriesId = crypto.randomUUID();
 
+      // If recurrence is set, generate multiple events
+      if (recurrence && endDate && data.startTime && data.endTime) {
+        const recurringDates = generateRecurringDates({
+          startDate: data.date,
+          endDate,
+          startTime: data.startTime,
+          dailyEndTime: data.endTime,
+          recurrence,
+        });
+
+        const eventsToInsert = recurringDates.map(dateObj => {
+          const endTimeObj = new Date(dateObj);
+          const [endH, endM] = data.endTime.split(':').map(Number);
+          // keep same duration as original
+          const [startH, startM] = data.startTime.split(':').map(Number);
+          const durationMs = (endH * 60 + endM - startH * 60 - startM) * 60000;
+          const endTimeDate = new Date(dateObj.getTime() + durationMs);
+
+          return {
+            producer_id: user.id,
+            date: format(dateObj, 'yyyy-MM-dd'),
+            start_time: format(dateObj, 'HH:mm'),
+            end_time: format(endTimeDate, 'HH:mm'),
+            title: data.title || `Mic on ${format(dateObj, 'MMM d')}`,
+            venue_name: data.venueName,
+            venue_address: data.venueAddress,
+            sections_config: sectionsConfig,
+            allow_multiple_slots: data.allowMultipleSlots,
+            status,
+            publish_at: publishAt,
+            signup_opens_at: signupOpensAt,
+            series_id: seriesId,
+            email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
+            producer_message: data.producerMessage || null,
+          };
+        });
+
+        const { data: createdEvents, error } = await supabase.from('events').insert(eventsToInsert).select('id, date, start_time').order('date', { ascending: true }).order('start_time', { ascending: true });
+        if (error) throw error;
+        if (!createdEvents || createdEvents.length === 0) throw new Error('Failed to create events');
+
+        // HOURLY/RECURRING EMAIL FIX: Send/Schedule exactly 1 email for the first mic in the series
+        // createdEvents is ordered by date ascending so [0] is guaranteed to be the earliest mic
+        if (status === 'published') {
+          const firstEventId = createdEvents[0].id;
+          if (data.publishOption === 'now') {
+            await sendMicGoesLiveEmail({
+              eventId: firstEventId,
+              producerId: user.id,
+            });
+          } else if (data.publishOption === 'later' && publishAt) {
+            const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
+              producer_id: user.id,
+              event_id: firstEventId,
+              subject: `Your mic series "${data.title || 'mic'}" is now live!`,
+              body_markdown: `Your recurring mic series starting with "${data.title || format(recurringDates[0], 'MMM d')}" is now live/scheduled.`,
+              send_at: publishAt,
+              status: 'pending',
+            });
+            if (scheduleError) console.error('Error scheduling recurring mic email:', scheduleError);
+          }
+        }
+
+        toast({
+          title: `${eventsToInsert.length} mics created!`,
+          description: `Recurring mics scheduled (${recurrence.label}).`,
+        });
+
+        clearDraft();
+        setShowSuccess(true);
+        return;
+      }
+
       const { data: createdEvent, error } = await supabase.from('events').insert({
         producer_id: user.id,
         date: format(data.date, 'yyyy-MM-dd'),
@@ -290,7 +365,8 @@ export default function CreateMic() {
         publish_at: publishAt,
         signup_opens_at: signupOpensAt,
         series_id: seriesId,
-        email_frequency: data.emailFrequency || null,
+        // Explicit mapping to 'disabled' for backend clarity
+        email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
         producer_message: data.producerMessage || null,
       }).select('id').single();
 
@@ -397,13 +473,6 @@ export default function CreateMic() {
         <h1 className="text-2xl font-semibold text-foreground">Create Mic</h1>
       </div>
 
-      <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="single">Single Mic</TabsTrigger>
-          <TabsTrigger value="recurring">Recurring Mics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="single" className="mt-8">
           <form className="space-y-8">
             {/* Event Details */}
             <section className="space-y-4">
@@ -476,6 +545,17 @@ export default function CreateMic() {
                 />
                 <p className="text-sm text-muted-foreground">Just for you — comics won't see this</p>
               </div>
+
+          <RecurrenceSelector
+            value={recurrence}
+            onChange={setRecurrence}
+            endDate={endDate}
+            onEndDateChange={setEndDate}
+            // Pass real-time form values to power the preview list
+            startDate={watchDate}
+            startTime={watch('startTime')}
+            endTime={watch('endTime')}
+          />
             </section>
 
             {/* Venue */}
@@ -810,38 +890,56 @@ export default function CreateMic() {
               </div>
             </section>
 
-            {/* Email Notifications */}
+            {/*
+              Email Notifications Section
+              Provides a clear toggle and chooses between immediate per-signup alerts or a daily summary.
+            */}
             <section className="space-y-4">
-              <h2 className="text-lg font-medium text-foreground">Email Notifications</h2>
-              <p className="text-sm text-muted-foreground">
-                Get notified about your mic activity. Leave empty to disable notifications.
-              </p>
-
-              <div className="space-y-2">
-                <Label htmlFor="emailFrequency">Email Frequency</Label>
-                <Select
-                  value={watch('emailFrequency') || 'none'}
-                  onValueChange={(value: 'none' | 'daily' | 'weekly' | 'monthly') =>
-                    setValue('emailFrequency', value === 'none' ? undefined : value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No notifications" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No notifications</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  {watch('emailFrequency') === 'daily' && 'Receive daily emails with activity from that day'}
-                  {watch('emailFrequency') === 'weekly' && 'Receive one weekly email with all activity from that week'}
-                  {watch('emailFrequency') === 'monthly' && 'Receive one monthly email with all activity from that month'}
-                  {(!watch('emailFrequency') || watch('emailFrequency') === 'none') && 'No email notifications will be sent'}
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-foreground">Email Notifications</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when someone signs up for your mic.
+                  </p>
+                </div>
+                <Switch
+                  id="enable-notifications"
+                  // Mapping: 'none' or falsy turns the switch off.
+                  checked={watch('emailFrequency') !== 'none' && !!watch('emailFrequency')}
+                  onCheckedChange={(checked) => {
+                    // Default to 'immediate' when toggled ON for the best user experience.
+                    setValue('emailFrequency', checked ? 'immediate' : 'none');
+                  }}
+                />
               </div>
+
+              {/* Only show frequency options if notifications are enabled */}
+              {(watch('emailFrequency') === 'immediate' || watch('emailFrequency') === 'daily') && (
+                <div className="pl-6 space-y-3 pt-2 animate-in fade-in slide-in-from-top-1">
+                  <Label>Frequency</Label>
+                  <RadioGroup
+                    value={watch('emailFrequency')}
+                    onValueChange={(value: 'immediate' | 'daily') => {
+                      // Explicitly cast and sanitize the selection
+                      setValue('emailFrequency', value);
+                    }}
+                    className="flex flex-col gap-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="immediate" id="notify-immediate" />
+                      <Label htmlFor="notify-immediate" className="font-normal cursor-pointer">
+                        Immediate <span className="text-xs text-muted-foreground ml-1 block sm:inline">(Email sent for every signup)</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="daily" id="notify-daily" />
+                      <Label htmlFor="notify-daily" className="font-normal cursor-pointer">
+                        Daily Summary <span className="text-xs text-muted-foreground ml-1 block sm:inline">(One email per day with all activity)</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
             </section>
 
             {/* Actions */}
@@ -870,13 +968,7 @@ export default function CreateMic() {
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
               </Button>
             </div>
-          </form>
-        </TabsContent>
-
-        <TabsContent value="recurring" className="mt-8">
-          <BulkCreateMic />
-        </TabsContent>
-      </Tabs>
+      </form>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
