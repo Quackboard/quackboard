@@ -512,7 +512,7 @@ const proposedProducerBooking = `
                   </td>
                 </tr>
               </table>
-              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 8px;">
+              <div style="background-color: #FFF8E1; border-left: 4px solid #F59E0B; padding: 16px; margin: 24px 0; border-radius: 8px;">
                 <p style="margin: 0 0 6px 0; font-weight: 600; color: #000000; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Instruction from the Producer</p>
                 <div style="margin: 0; color: #000000; font-size: 15px; line-height: 1.5;">${sampleData.producerMessage}</div>
               </div>
