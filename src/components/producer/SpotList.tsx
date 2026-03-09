@@ -153,9 +153,9 @@ export function SpotList({
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground px-2 py-2">
-                    Opens {section.signup_opens_at
-                      ? format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")
-                      : 'later'}
+                    {wildcardCountdown || (section.signup_opens_at
+                      ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}`
+                      : 'Opens later')}
                   </p>
                 </div>
               );

@@ -97,9 +97,32 @@ export default function ProducerPage() {
     enabled: eventIds.length > 0,
   });
 
-  const refetchBookings = () => {
-    queryClient.invalidateQueries({ queryKey: ['event-bookings', eventIds] });
-  };
+  const refetchBookings = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['event-bookings'] });
+  }, [queryClient]);
+
+  // Supabase Realtime: subscribe to booking changes for visible events
+  useEffect(() => {
+    if (eventIds.length === 0) return;
+
+    const channel = supabase
+      .channel('public-bookings')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        (payload) => {
+          const eventId = (payload.new as any)?.event_id || (payload.old as any)?.event_id;
+          if (eventId && eventIds.includes(eventId)) {
+            refetchBookings();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventIds.join(','), refetchBookings]);
 
   // Only show current/future events on public page
   const currentEvents = (events || []).filter(e => !isEventPast(e));

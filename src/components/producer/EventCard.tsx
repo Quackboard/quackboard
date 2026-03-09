@@ -156,7 +156,9 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           )}
           
           {!signupStatus.isOpen && (
-            <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
+            <p className="text-sm text-muted-foreground">
+              {countdown || signupStatus.label}
+            </p>
           )}
           
           {signupStatus.isOpen && sections.length > 0 && (
@@ -209,7 +211,9 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           )}
           
           {!signupStatus.isOpen && (
-            <p className="text-sm text-muted-foreground">{signupStatus.label}</p>
+            <p className="text-sm text-muted-foreground">
+              {countdown || signupStatus.label}
+            </p>
           )}
           
           {signupStatus.isOpen && sections.length > 0 && (
