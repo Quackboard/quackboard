@@ -55,6 +55,7 @@ const App = () => (
             <Route path="/preview/embed/:slug" element={<EmbedPreviewPage />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/email-preview" element={<EmailPreview />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
