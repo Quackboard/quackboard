@@ -12,10 +12,7 @@ import { isUUID } from '@/lib/slug';
 
 function isEventPast(event: Event): boolean {
   const now = new Date();
-  const eventDate = new Date(event.date);
-  const [endHour, endMinute] = event.end_time.split(':').map(Number);
-  const eventEnd = new Date(eventDate);
-  eventEnd.setHours(endHour, endMinute, 0, 0);
+  const eventEnd = new Date(`${event.date}T${event.end_time}`);
   return now > eventEnd;
 }
 
