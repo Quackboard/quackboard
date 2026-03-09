@@ -23,6 +23,7 @@ import EmbedWidgetPage from "./pages/EmbedWidgetPage";
 import EmbedPreviewPage from "./pages/EmbedPreviewPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import EmailPreview from "./pages/EmailPreview";
 import { FeedbackButton } from "./components/FeedbackButton";
 
 const queryClient = new QueryClient();
