@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Event, Booking, Section } from '@/types/database';
 import { CardContent } from '@/components/ui/card';
 import { Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { SpotList } from './SpotList';
-import { parseISO, isAfter, format } from 'date-fns';
+import { parseISO, isAfter, format, differenceInMilliseconds, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
