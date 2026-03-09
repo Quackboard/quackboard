@@ -142,7 +142,7 @@ serve(async (req) => {
     // Fetch producer details
     const { data: producer, error: producerError } = await supabase
       .from('producers')
-      .select('email, name')
+      .select('email, name, timezone')
       .eq('id', body.event.producer_id)
       .single();
 
@@ -155,15 +155,23 @@ serve(async (req) => {
     const cancelUrl = `${FRONTEND_URL}/cancel/${body.cancelToken}`;
     const producerDashboardUrl = `${FRONTEND_URL}/dashboard`;
 
-    // Format date and time
-    const eventDate = new Date(body.event.date).toLocaleDateString("en-US", {
+    // Format date — append T00:00 to parse as local midnight, avoiding UTC date shift
+    const eventDate = new Date(`${body.event.date}T00:00:00`).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
     });
 
-    const eventTime = `${body.event.start_time} - ${body.event.end_time}`;
+    // Convert military time (e.g. "18:00") to 12-hour format (e.g. "6:00 PM")
+    function formatTime12h(time24: string): string {
+      const [h, m] = time24.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
+    const eventTime = `${formatTime12h(body.event.start_time)} - ${formatTime12h(body.event.end_time)}`;
     const venueInfo = body.event.venue_address
       ? `${body.event.venue_name}, ${body.event.venue_address}`
       : body.event.venue_name;
@@ -344,8 +352,7 @@ serve(async (req) => {
                 <h2 style="margin-top: 0; color: #1a1a1a;">Event & Booking Details</h2>
                 <p style="margin: 8px 0;"><strong>Event Name:</strong> ${body.event.title}</p>
                 <p style="margin: 8px 0;"><strong>Event Date:</strong> ${eventDate}</p>
-                <p style="margin: 8px 0;"><strong>Event Start Time:</strong> ${body.event.start_time}</p>
-                <p style="margin: 8px 0;"><strong>Event End Time:</strong> ${body.event.end_time}</p>
+                <p style="margin: 8px 0;"><strong>Event Time:</strong> ${eventTime}</p>
                 <p style="margin: 8px 0;"><strong>Venue:</strong> ${venueInfo}</p>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
                   <p style="margin: 8px 0; font-weight: 600; color: #28a745;">Sign Up User Information:</p>
