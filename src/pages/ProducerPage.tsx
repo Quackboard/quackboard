@@ -21,7 +21,7 @@ export default function ProducerPage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const [showPastEvents, setShowPastEvents] = useState(false);
+  
 
   const { data: producer, isLoading: producerLoading } = useQuery({
     queryKey: ['producer', slug],
