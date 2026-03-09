@@ -39,7 +39,7 @@ serve(async (req) => {
 
     let query = supabaseClient
       .from('producers')
-      .select('id, name, venue_name, slug');
+      .select('id, name, venue_name, slug, timezone');
 
     if (isUuid) {
       query = query.or(`slug.eq.${slug},id.eq.${slug}`);
@@ -63,8 +63,10 @@ serve(async (req) => {
       )
     }
 
-    // Get upcoming published events (limit to next 10 events)
-    const today = new Date().toISOString().split('T')[0]
+    // Compute "today" in the producer's timezone so we don't filter out events prematurely
+    const tz = producer.timezone || 'America/Los_Angeles';
+    const nowInTz = new Date().toLocaleString('en-CA', { timeZone: tz }); // en-CA gives YYYY-MM-DD format
+    const today = nowInTz.split(',')[0].trim();
     const { data: events, error: eventsError } = await supabaseClient
       .from('events')
       .select(`

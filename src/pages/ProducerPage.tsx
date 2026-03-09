@@ -58,7 +58,7 @@ export default function ProducerPage() {
     enabled: !!slug,
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ['producer-events', producer?.id],
