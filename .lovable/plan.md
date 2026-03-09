@@ -1,4 +1,102 @@
+## Launch Readiness Checklist
 
+This checklist covers the full booking flow after the **Atomic Server-Side Booking** refactor. The `create-booking` edge function now handles INSERT + email as one atomic operation.
+
+---
+
+### 1. Edge Function: `create-booking` ✅ Automated Tests
+
+Run via Supabase test tool (`supabase/functions/create-booking/index.test.ts`):
+
+- [ ] **Invalid request** — missing fields returns `{ success: false, code: "invalid_request" }` (400)
+- [ ] **Happy path** — valid booking returns `{ success: true, bookingId, slotPosition }` (200)
+- [ ] **Slot taken** — duplicate `(event_id, slot_position)` returns `{ success: false, code: "slot_taken" }`
+- [ ] **Duplicate email** — same email + event with `allowMultipleSpots: false` returns `{ success: false, code: "duplicate_email" }`
+- [ ] **CORS preflight** — `OPTIONS` returns 204 with `access-control-allow-origin: *`
+
+---
+
+### 2. Email Delivery (Manual / Logs Verification)
+
+- [ ] Guest receives booking confirmation email after successful sign-up
+- [ ] Guest email includes correct: event title, date, time, venue, section label, spot number
+- [ ] Guest email has working "Cancel Your Booking" link
+- [ ] Guest email has working "Go to Event Page" link
+- [ ] Producer receives immediate notification email (if `email_frequency = 'immediate'`)
+- [ ] Producer email includes guest name, email, section, and spot number
+- [ ] `message_logs` table records both guest and producer email attempts
+- [ ] If guest email fails → booking is rolled back, slot remains free
+- [ ] If producer email fails → booking is kept, guest email was already sent
+
+---
+
+### 3. Client-Side: SignUpModal (Public Sign-Up)
+
+- [ ] "Grab Spot" button calls `create-booking` edge function (not direct INSERT)
+- [ ] Success → "You're in!" toast, modal closes, spot list refreshes
+- [ ] Slot taken → "Spot already taken — try another" toast
+- [ ] Duplicate email → "One spot per comic" toast
+- [ ] Infrastructure failure → "Oops, that one's on us. Try again!" toast
+- [ ] Loading spinner shows during submission, button disabled
+- [ ] No email-related error messages visible to the user
+
+---
+
+### 4. Client-Side: AddToSlotModal (Producer Manual Add)
+
+- [ ] "Add" button calls `create-booking` with `isManualAdd: true`
+- [ ] Success → success toast, modal closes, lineup refreshes
+- [ ] Slot taken → "Spot already taken" toast
+- [ ] Infrastructure failure → "Oops, that one's on us. Try again!" toast
+- [ ] Guest receives "You've been added" email (not "Booking Confirmed")
+
+---
+
+### 5. Cancellation Flow (Unchanged)
+
+- [ ] Cancel link from email loads `/cancel/:token` page
+- [ ] Cancellation updates `cancelled_at` on the booking
+- [ ] Cancellation email sent to guest via `send-booking-email`
+- [ ] Cancelled slot becomes available again on the public page
+
+---
+
+### 6. Edge Cases & Race Conditions
+
+- [ ] Two users clicking "Grab Spot" on the same slot simultaneously → one gets `slot_taken`
+- [ ] Booking with `allowMultipleSpots: true` allows same email to book multiple slots
+- [ ] Sections with custom labels → email shows correct section name
+- [ ] Events with `producer_message` → message renders as HTML in email
+- [ ] Events without `producer_message` → no empty yellow box in email
+
+---
+
+### 7. Secrets & Configuration
+
+- [ ] `ZEPTOMAIL_API_TOKEN` set in Supabase secrets
+- [ ] `ZEPTOMAIL_FROM_EMAIL` set (or defaults to `noreply@quackboard.com`)
+- [ ] `FRONTEND_URL` set to production URL (`https://quackboard1.lovable.app`)
+- [ ] `STUB_EMAILS` is NOT set to `true` in production
+- [ ] `supabase/config.toml` has `[functions.create-booking]` with `verify_jwt = false`
+
+---
+
+### 8. Database Integrity
+
+- [ ] Unique constraint on `bookings(event_id, slot_position)` where `cancelled_at IS NULL` exists
+- [ ] `cancel_token` is generated server-side (not client-provided)
+- [ ] RLS on `bookings` allows anyone to INSERT (public sign-up)
+- [ ] RLS on `message_logs` allows producers to view/insert own logs
+
+---
+
+### 9. Monitoring & Rollback
+
+- [ ] Check edge function logs after first real bookings: https://supabase.com/dashboard/project/dkbahxjibpobbefqufqa/functions/create-booking/logs
+- [ ] Verify no orphaned bookings (bookings without corresponding `message_logs` entries)
+- [ ] Old `send-booking-email` function still deployed (used by cancellation flow)
+
+---
 
 ## Wildcard Section Feature -- Full Implementation
 
@@ -118,4 +216,3 @@ Both forms get the same section builder enhancement, gated behind `hasFeature('w
 - Public producer page layout
 - Email/notification logic
 - Any edge functions
-
