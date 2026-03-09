@@ -16,6 +16,48 @@ interface EventDetails {
   producer_message: string | null;
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1500;
+
+async function invokeWithRetry(
+  functionName: string,
+  body: Record<string, unknown>,
+): Promise<{ success: boolean; error?: string }> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const { data, error } = await supabase.functions.invoke(functionName, { body });
+
+      if (error) {
+        console.error(`[Email] Attempt ${attempt + 1}/${MAX_RETRIES + 1} failed for ${functionName}:`, error);
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+        return { success: false, error: error.message || 'Edge function error' };
+      }
+
+      if (!data?.success) {
+        console.error(`[Email] Attempt ${attempt + 1}/${MAX_RETRIES + 1} returned failure for ${functionName}:`, data);
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+        return { success: false, error: data?.message || 'Email send failed' };
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error(`[Email] Attempt ${attempt + 1}/${MAX_RETRIES + 1} threw for ${functionName}:`, err);
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+        continue;
+      }
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+  return { success: false, error: 'Max retries exceeded' };
+}
+
 export async function sendBookingConfirmationEmail(
   params: {
     bookingId: string;
@@ -27,36 +69,17 @@ export async function sendBookingConfirmationEmail(
     event: EventDetails;
     isManualAdd?: boolean;
   }
-): Promise<void> {
-  const { bookingId, cancelToken, guestEmail, guestName, slotPosition, sectionLabel, event, isManualAdd = false } = params;
-
-  try {
-    const { data, error } = await supabase.functions.invoke('send-booking-email', {
-      body: {
-        bookingId,
-        cancelToken,
-        guestEmail,
-        guestName,
-        slotPosition,
-        sectionLabel,
-        event,
-        isManualAdd,
-      },
-    });
-
-    if (error) {
-      console.error('Error calling send-booking-email function:', error);
-      return;
-    }
-
-    if (!data?.success) {
-      console.error('Email function returned error:', data);
-      return;
-    }
-  } catch (error) {
-    console.error('Error sending email:', error);
-    // Don't throw - we don't want email failures to break the booking flow
-  }
+): Promise<{ success: boolean; error?: string }> {
+  return invokeWithRetry('send-booking-email', {
+    bookingId: params.bookingId,
+    cancelToken: params.cancelToken,
+    guestEmail: params.guestEmail,
+    guestName: params.guestName,
+    slotPosition: params.slotPosition,
+    sectionLabel: params.sectionLabel,
+    event: params.event,
+    isManualAdd: params.isManualAdd ?? false,
+  });
 }
 
 export async function sendCancellationEmail(
@@ -69,36 +92,17 @@ export async function sendCancellationEmail(
     sectionLabel: string;
     event: EventDetails;
   }
-): Promise<void> {
-  const { bookingId, cancelToken, guestEmail, guestName, slotPosition, sectionLabel, event } = params;
-
-  try {
-    const { data, error } = await supabase.functions.invoke('send-booking-email', {
-      body: {
-        bookingId,
-        cancelToken,
-        guestEmail,
-        guestName,
-        slotPosition,
-        sectionLabel,
-        event,
-        isCancellation: true,
-      },
-    });
-
-    if (error) {
-      console.error('Error calling send-booking-email function for cancellation:', error);
-      return;
-    }
-
-    if (!data?.success) {
-      console.error('Cancellation email function returned error:', data);
-      return;
-    }
-  } catch (error) {
-    console.error('Error sending cancellation email:', error);
-    // Don't throw - we don't want email failures to break the cancellation flow
-  }
+): Promise<{ success: boolean; error?: string }> {
+  return invokeWithRetry('send-booking-email', {
+    bookingId: params.bookingId,
+    cancelToken: params.cancelToken,
+    guestEmail: params.guestEmail,
+    guestName: params.guestName,
+    slotPosition: params.slotPosition,
+    sectionLabel: params.sectionLabel,
+    event: params.event,
+    isCancellation: true,
+  });
 }
 
 /**
@@ -109,28 +113,9 @@ export async function sendMicGoesLiveEmail(
     eventId: string;
     producerId: string;
   }
-): Promise<void> {
-  const { eventId, producerId } = params;
-
-  try {
-    const { data, error } = await supabase.functions.invoke('send-mic-goes-live-email', {
-      body: {
-        eventId,
-        producerId,
-      },
-    });
-
-    if (error) {
-      console.error('Error calling send-mic-goes-live-email function:', error);
-      return;
-    }
-
-    if (!data?.success) {
-      console.error('Mic goes live email function returned error:', data);
-      return;
-    }
-  } catch (error) {
-    console.error('Error sending mic goes live email:', error);
-    // Don't throw - we don't want email failures to break the mic creation flow
-  }
+): Promise<{ success: boolean; error?: string }> {
+  return invokeWithRetry('send-mic-goes-live-email', {
+    eventId: params.eventId,
+    producerId: params.producerId,
+  });
 }
