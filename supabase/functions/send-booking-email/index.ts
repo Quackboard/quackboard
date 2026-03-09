@@ -467,10 +467,12 @@ serve(async (req) => {
           }),
         });
 
+        const responseText = await res.text();
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Zeptomail API error (Producer):", errorText);
+          console.error("Zeptomail API error (Producer):", res.status, responseText);
           producerEmailStatus = 'failed';
+        } else {
+          console.log(`✅ Producer email sent successfully to ${producer.email} | Booking: ${body.bookingId} | Response: ${responseText.substring(0, 200)}`);
         }
       }
       // Log producer notification
