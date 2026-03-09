@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, XCircle, Loader2, Calendar, MapPin, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { sendCancellationEmail } from '@/lib/email';
+
 
 type AlertFrequency = 'none' | 'daily' | 'weekly' | 'immediate';
 
