@@ -119,3 +119,47 @@ export async function sendMicGoesLiveEmail(
     producerId: params.producerId,
   });
 }
+
+/**
+ * Atomic booking creation — calls the create-booking edge function
+ * which handles INSERT + email delivery in one transaction.
+ */
+export async function createBooking(
+  params: {
+    eventId: string;
+    slotPosition: number;
+    guestName: string;
+    guestEmail: string;
+    guestInstagram?: string;
+    allowMultipleSpots: boolean;
+    isManualAdd: boolean;
+  }
+): Promise<{ success: boolean; code?: string; bookingId?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('create-booking', {
+      body: {
+        eventId: params.eventId,
+        slotPosition: params.slotPosition,
+        guestName: params.guestName,
+        guestEmail: params.guestEmail,
+        guestInstagram: params.guestInstagram || undefined,
+        allowMultipleSpots: params.allowMultipleSpots,
+        isManualAdd: params.isManualAdd,
+      },
+    });
+
+    if (error) {
+      console.error('[createBooking] Edge function error:', error);
+      return { success: false, code: 'booking_failed' };
+    }
+
+    return {
+      success: data?.success ?? false,
+      code: data?.code,
+      bookingId: data?.bookingId,
+    };
+  } catch (err) {
+    console.error('[createBooking] Unexpected error:', err);
+    return { success: false, code: 'booking_failed' };
+  }
+}
