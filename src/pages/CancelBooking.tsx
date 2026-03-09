@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, XCircle, Loader2, Calendar, MapPin, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { sendCancellationEmail } from '@/lib/email';
+
 
 type AlertFrequency = 'none' | 'daily' | 'weekly' | 'immediate';
 
@@ -131,36 +131,31 @@ export default function CancelBooking() {
 
     setIsCancelling(true);
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ cancelled_at: new Date().toISOString() })
-        .eq('id', booking.id);
+      const { data, error } = await supabase.functions.invoke('cancel-booking', {
+        body: { cancelToken: token },
+      });
 
       if (error) throw error;
 
-      // Send cancellation emails (non-blocking)
-      const sectionLabel = getSectionLabel(booking.slot_position, booking.event.sections_config);
-      sendCancellationEmail({
-        bookingId: booking.id,
-        cancelToken: booking.cancel_token,
-        guestEmail: booking.guest_email,
-        guestName: booking.guest_name,
-        slotPosition: booking.slot_position,
-        sectionLabel,
-        event: {
-          title: booking.event.title,
-          date: booking.event.date,
-          start_time: booking.event.start_time,
-          end_time: booking.event.end_time,
-          venue_name: booking.event.venue_name,
-          venue_address: booking.event.venue_address,
-          producer_id: booking.event.producer_id,
-          producer_message: null,
-        },
-      }).catch((err) => {
-        console.error('Failed to send cancellation email:', err);
-        // Don't show error to user - cancellation was successful
-      });
+      if (!data?.success) {
+        if (data?.code === 'already_cancelled') {
+          toast({
+            title: 'Already cancelled',
+            description: 'This booking was already cancelled.',
+          });
+          setTimeout(() => window.location.reload(), 1000);
+          return;
+        }
+        if (data?.code === 'not_found') {
+          toast({
+            title: 'Booking not found',
+            description: 'This booking link is invalid or has expired.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw new Error(data?.code || 'cancel_failed');
+      }
 
       toast({
         title: 'Booking cancelled',
