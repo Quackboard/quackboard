@@ -186,7 +186,7 @@ serve(async (req) => {
                       <tr>
                         <td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;">
                           <span style="display: inline-block; margin-right: 6px;">📅</span>
-                          <span>${eventDate} at ${event.start_time} - ${event.end_time}</span>
+                          <span>${eventDate} at ${formatTime12h(event.start_time)} - ${formatTime12h(event.end_time)}</span>
                         </td>
                       </tr>
                       <tr>
