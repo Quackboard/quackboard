@@ -1,121 +1,68 @@
 
 
-## Wildcard Section Feature -- Full Implementation
+## Atomic Server-Side Booking — Implementation Plan
 
-This plan covers two parts: (1) the access control gate so only approved producers see the wildcard option, and (2) the wildcard section behavior itself across all relevant components.
+### Problem
+The client currently performs INSERT → fetch event → send email as separate steps. Under race conditions, the wrong client's data can reach the email function. The booking and email must be atomic: either both succeed, or the user is told they didn't get the spot.
 
----
+### Changes
 
-### Part 1: Access Control (Manual Approval)
+#### 1. Create `supabase/functions/create-booking/index.ts`
 
-**Database: Create `producer_features` table**
+New edge function that handles the entire booking flow server-side:
 
-A new table with columns:
-- `id` (uuid, primary key)
-- `producer_id` (uuid, references producers.id, not null)
-- `feature` (text, not null) -- e.g. `'wildcard'`
-- `granted_at` (timestamptz, default now())
-- Unique constraint on `(producer_id, feature)`
+1. Accept: `eventId`, `slotPosition`, `guestName`, `guestEmail`, `guestInstagram`, `allowMultipleSpots`, `isManualAdd`
+2. Use service role key (bypasses RLS)
+3. If `!allowMultipleSpots`: query bookings for same `guest_email` + `event_id` with no `cancelled_at` → return `{ success: false, code: 'duplicate_email' }`
+4. Generate `cancel_token`, INSERT booking → if `23505` unique violation, return `{ success: false, code: 'slot_taken' }`
+5. Fetch event + producer data from DB (canonical source of truth)
+6. Derive `sectionLabel` from `sections_config` + `slot_position` (same logic as `CancelBooking.tsx` line 37-52)
+7. Build guest + producer email HTML (copied from existing `send-booking-email`)
+8. Send guest email via Zeptomail with 2 retries + backoff
+9. Send producer email if `email_frequency === 'immediate'`
+10. If guest email fails after all retries: DELETE the booking, return `{ success: false, code: 'booking_failed' }`
+11. Log to `message_logs`
+12. Return `{ success: true, bookingId, slotPosition }`
 
-RLS: Enable RLS with a single SELECT policy -- producers can only read their own rows (`auth.uid() = producer_id`). No INSERT/UPDATE/DELETE policies (admin-only via SQL Editor).
+#### 2. Update `supabase/config.toml`
 
-**New file: `src/hooks/useProducerFeatures.ts`**
-- Query `producer_features` for the current user
-- Export `hasFeature(name: string): boolean`
-- Cache for 5 minutes (same pattern as `useProducerSlug`)
+Add `[functions.create-booking]` with `verify_jwt = false` (public sign-up, no auth required).
 
----
+#### 3. Update `src/lib/email.ts`
 
-### Part 2: Data Model Changes
+Add `createBooking()` function that calls the new edge function via `supabase.functions.invoke('create-booking', { body })`. Uses existing `invokeWithRetry`. Returns `{ success, code?, bookingId? }`.
 
-**`src/types/database.ts`** -- already updated with `type?` and `signup_opens_at?` on the `Section` interface. No further changes needed.
+Keep `sendCancellationEmail` and `sendBookingConfirmationEmail` unchanged (still used by `CancelBooking.tsx`).
 
----
+#### 4. Simplify `src/components/producer/SignUpModal.tsx`
 
-### Part 3: Form Changes (CreateMic + EditMic)
+Replace the multi-step `handleSubmit` (SELECT check → INSERT → fetch event → send email) with a single `createBooking()` call. Handle responses:
+- `success: true` → "You're in!" toast, close modal, `onSuccess()`
+- `code: 'slot_taken'` → "Spot already taken" toast
+- `code: 'duplicate_email'` → "One spot per comic" toast
+- `code: 'booking_failed'` → "Oops, that one's on us. Try again!" toast
+- Any other failure → "Oops, that one's on us. Try again!" toast
 
-Both forms get the same section builder enhancement, gated behind `hasFeature('wildcard')`:
+#### 5. Simplify `src/components/lineup/AddToSlotModal.tsx`
 
-**Schema updates:**
-- The `sectionSchema` becomes conditional: when `type` is `'wildcard'`, `slots` min is 0 and `signup_opens_at` is required. Otherwise, `slots` min stays 1.
-- Add `type` and `signup_opens_at` fields to the section schema.
+Same simplification as SignUpModal but with `isManualAdd: true`. Same error code handling (except `duplicate_email` is not applicable since producers can add anyone). Infrastructure failure message: "Oops, that one's on us. Try again!"
 
-**Section builder UI changes (gated by `hasFeature('wildcard')`):**
-- Add an "Add Wildcard Section" button below the existing "Add Section" button
-- When clicked, appends a section with `{ label: 'Wildcards', slots: 0, type: 'wildcard' }`
-- The wildcard section row shows:
-  - Label input (editable, defaults to "Wildcards")
-  - No "Spots" number input (spots are dynamic)
-  - A date/time picker for "Cutoff / signup opens at"
-  - A trash button to remove it
-- Validate: only one wildcard section per event
-- If the producer does not have the wildcard feature, none of this UI appears
+#### 6. No changes to `CancelBooking.tsx`
 
-**On submit:**
-- Regular sections serialize as `{ label, slots }`
-- Wildcard section serializes as `{ label, slots: 0, type: 'wildcard', signup_opens_at: isoString }`
-- The `signup_opens_at` on the wildcard section is converted to UTC using the producer's timezone (same pattern as publish_at)
+Cancellation continues to use `send-booking-email` with `isCancellation: true`. No race condition concern — only the booking holder can cancel.
 
----
+### UX Outcomes
+- Happy path: "Grab Spot" → spinner → "You're in!"
+- Spot taken: "Grab Spot" → spinner → "Spot already taken"
+- Duplicate email: "Grab Spot" → spinner → "One spot per comic"
+- Infrastructure failure: "Grab Spot" → spinner → "Oops, that one's on us. Try again!" (booking rolled back, slot free for retry)
+- No email error messages visible to users, ever
 
-### Part 4: SpotList (Public-Facing Rendering)
-
-**`src/components/producer/SpotList.tsx`:**
-
-1. Detect if a wildcard section exists in `sectionsConfig` (any section with `type === 'wildcard'`)
-2. Determine if the cutoff has passed (`new Date() >= new Date(wildcardSection.signup_opens_at)`)
-3. **Regular sections:**
-   - Before cutoff (or no wildcard): render as today (booked = name, empty = "Grab Spot")
-   - After cutoff: booked slots show names, unfilled slots show a dash "--" (no "Grab Spot" button)
-4. **Wildcard section:**
-   - Before cutoff: render section label with "Opens [formatted time]" message, no slot rows
-   - After cutoff: compute `availableWildcardSlots = totalRegularSlots - bookedRegularCount - bookedWildcardCount`
-     - `totalRegularSlots` = sum of `slots` for all non-wildcard sections
-     - `bookedRegularCount` = bookings with slot positions within regular range (1 to totalRegularSlots)
-     - `bookedWildcardCount` = bookings with slot positions above totalRegularSlots
-   - Render booked wildcard slots with names, then remaining available slots with "Grab Spot" buttons
-   - Wildcard slot positions start at `totalRegularSlots + 1`
-   - If 0 available, show "No wildcard spots available"
-
----
-
-### Part 5: EventCard
-
-**`src/components/producer/EventCard.tsx`:**
-- Update `totalSlots` calculation: only sum slots from sections where `type !== 'wildcard'` (regular sections)
-- `bookedCount` stays as `bookings.length` (includes all bookings)
-- Mobile collapsed summary: "5/12 filled" where 12 = regular slots only
-
----
-
-### Part 6: EventLineup (Producer View)
-
-**`src/pages/EventLineup.tsx`:**
-- For wildcard sections, compute and display the dynamic slot count in the section header: "Wildcards (X available)"
-- Show booked wildcard slots normally
-- Show available wildcard slots as "[Add someone]" links (same as regular empty slots)
-
----
-
-### Technical Details
-
-**Files created:**
-- `src/hooks/useProducerFeatures.ts`
-
-**Files modified:**
-- `src/types/database.ts` (already done -- just needs `type` and `signup_opens_at`)
-- `src/pages/CreateMic.tsx` (schema + section builder + submit logic)
-- `src/pages/EditMic.tsx` (schema + section builder + submit logic)
-- `src/components/producer/SpotList.tsx` (wildcard rendering logic)
-- `src/components/producer/EventCard.tsx` (totalSlots calculation)
-- `src/pages/EventLineup.tsx` (wildcard section display)
-
-**Database migration:**
-- Create `producer_features` table with RLS
-
-**No changes to:**
-- Booking flow / SignUpModal
-- Public producer page layout
-- Email/notification logic
-- Any edge functions
+### Files
+1. **Create** `supabase/functions/create-booking/index.ts`
+2. **Edit** `supabase/config.toml` — add function config
+3. **Edit** `src/lib/email.ts` — add `createBooking()`
+4. **Edit** `src/components/producer/SignUpModal.tsx` — use `createBooking()`
+5. **Edit** `src/components/lineup/AddToSlotModal.tsx` — use `createBooking()`
+6. **Deploy** `create-booking` edge function
 
