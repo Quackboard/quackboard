@@ -182,6 +182,12 @@ export default function Signup() {
                 'Get Started'
               )}
             </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              By signing up, you agree to our{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Terms of Service</a>{' '}and{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Privacy Policy</a>.
+            </p>
           </form>
         )}
 
