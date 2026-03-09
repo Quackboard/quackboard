@@ -151,6 +151,8 @@ export default function Signup() {
                 Don't have a code?{' '}
                 <a 
                   href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-primary font-medium hover:underline"
                 >
                   Request access
