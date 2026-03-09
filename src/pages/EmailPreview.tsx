@@ -315,7 +315,7 @@ const proposedGuestConfirmation = `
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${sampleData.eventDate} at ${sampleData.eventTime}</span></td></tr>
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${sampleData.venueName}, ${sampleData.venueAddress}</span></td></tr>
-                      <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span>${sampleData.sectionLabel} — Slot #${sampleData.slotPosition}</span></td></tr>
+                      <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${sampleData.sectionLabel}</strong> · Spot #${sampleData.slotPosition}</span></td></tr>
                     </table>
                   </td>
                 </tr>
@@ -372,7 +372,7 @@ const proposedGuestCancellation = `
           <tr>
             <td style="padding: 40px 30px;">
               <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Hi ${sampleData.guestName},</p>
-              <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Your booking for <strong>"${sampleData.eventTitle}"</strong>, slot #${sampleData.slotPosition}, has been successfully canceled.</p>
+              <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Your booking for <strong>"${sampleData.eventTitle}"</strong> (${sampleData.sectionLabel}) has been successfully canceled.</p>
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 30px 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
                 <tr>
                   <td style="background-color: #f9fafb; padding: 24px;">
@@ -380,7 +380,7 @@ const proposedGuestCancellation = `
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${sampleData.eventDate} at ${sampleData.eventTime}</span></td></tr>
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${sampleData.venueName}, ${sampleData.venueAddress}</span></td></tr>
-                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span>${sampleData.sectionLabel} — Slot #${sampleData.slotPosition}</span></td></tr>
+                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${sampleData.sectionLabel}</strong> · Spot #${sampleData.slotPosition}</span></td></tr>
                     </table>
                   </td>
                 </tr>
@@ -431,7 +431,7 @@ const proposedGuestManualAdd = `
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${sampleData.eventDate} at ${sampleData.eventTime}</span></td></tr>
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${sampleData.venueName}, ${sampleData.venueAddress}</span></td></tr>
-                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span>${sampleData.sectionLabel} — Slot #${sampleData.slotPosition}</span></td></tr>
+                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${sampleData.sectionLabel}</strong> · Spot #${sampleData.slotPosition}</span></td></tr>
                     </table>
                   </td>
                 </tr>
@@ -507,7 +507,7 @@ const proposedProducerBooking = `
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Name:</strong> ${sampleData.guestName}</td></tr>
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Email:</strong> ${sampleData.guestEmail}</td></tr>
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Section:</strong> ${sampleData.sectionLabel}</td></tr>
-                      <tr><td style="color: #4b5563; font-size: 14px;"><strong>Slot:</strong> #${sampleData.slotPosition}</td></tr>
+                      <tr><td style="color: #4b5563; font-size: 14px;"><strong>Spot:</strong> #${sampleData.slotPosition}</td></tr>
                     </table>
                   </td>
                 </tr>
