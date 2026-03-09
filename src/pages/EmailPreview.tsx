@@ -507,7 +507,7 @@ const proposedProducerBooking = `
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Name:</strong> ${sampleData.guestName}</td></tr>
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Email:</strong> ${sampleData.guestEmail}</td></tr>
                       <tr><td style="padding-bottom: 8px; color: #4b5563; font-size: 14px;"><strong>Section:</strong> ${sampleData.sectionLabel}</td></tr>
-                      <tr><td style="color: #4b5563; font-size: 14px;"><strong>Slot:</strong> #${sampleData.slotPosition}</td></tr>
+                      <tr><td style="color: #4b5563; font-size: 14px;"><strong>Spot:</strong> #${sampleData.slotPosition}</td></tr>
                     </table>
                   </td>
                 </tr>
