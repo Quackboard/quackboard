@@ -53,12 +53,83 @@ function getSignupStatus(event: Event): { label: string; isOpen: boolean } {
   return { label: '', isOpen: true };
 }
 
+function formatCountdown(totalSeconds: number): string {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `Opens in ${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function useAutoOpenTimer(event: Event) {
+  const [now, setNow] = useState(() => new Date());
+
+  const getTargetTime = useCallback((): Date | null => {
+    if (event.signup_opens_at) return parseISO(event.signup_opens_at);
+    if (event.publish_at) return parseISO(event.publish_at);
+    return null;
+  }, [event.signup_opens_at, event.publish_at]);
+
+  useEffect(() => {
+    const target = getTargetTime();
+    if (!target || !isAfter(target, new Date())) return;
+
+    const msUntilOpen = differenceInMilliseconds(target, new Date());
+
+    // Set timeout to force re-render at exact open time
+    const openTimer = setTimeout(() => setNow(new Date()), msUntilOpen + 50);
+
+    // If within 5 minutes, start countdown interval
+    let countdownInterval: ReturnType<typeof setInterval> | undefined;
+    if (msUntilOpen <= 5 * 60 * 1000) {
+      countdownInterval = setInterval(() => setNow(new Date()), 1000);
+    } else {
+      // Start countdown when we're 5 minutes away
+      const countdownStartTimer = setTimeout(() => {
+        setNow(new Date());
+        countdownInterval = setInterval(() => setNow(new Date()), 1000);
+      }, msUntilOpen - 5 * 60 * 1000);
+
+      // Clean up the start timer too
+      const origCleanup = openTimer;
+      return () => {
+        clearTimeout(origCleanup);
+        clearTimeout(countdownStartTimer);
+        if (countdownInterval) clearInterval(countdownInterval);
+      };
+    }
+
+    // Visibility change handler for backgrounded tabs
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setNow(new Date());
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearTimeout(openTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [getTargetTime]);
+
+  const target = getTargetTime();
+  const countdown = target && isAfter(target, now)
+    ? (() => {
+        const secsLeft = differenceInSeconds(target, now);
+        return secsLeft <= 300 ? formatCountdown(secsLeft) : null;
+      })()
+    : null;
+
+  return { now, countdown };
+}
+
 export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isMobile = useIsMobile();
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
   const eventTime = `${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
+  const { countdown } = useAutoOpenTimer(event);
   const signupStatus = getSignupStatus(event);
 
   const totalSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
