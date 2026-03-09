@@ -208,6 +208,19 @@ export default function ProducerPage() {
 
           </div>
         )}
+
+        <footer className="mt-12 pt-6 border-t border-border text-center space-y-1">
+          <a href="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <img src="/favicon.png" alt="Quackboard" className="h-4 w-4" />
+            <span>Powered by <span className="font-medium font-outfit">Quackboard</span></span>
+          </a>
+          <p className="text-xs text-muted-foreground">
+            Run an open mic?{' '}
+            <a href="/signup" className="text-primary font-medium hover:underline">
+              Get started for free&nbsp;→
+            </a>
+          </p>
+        </footer>
       </div>
     </main>
   );
