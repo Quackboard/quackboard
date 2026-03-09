@@ -123,7 +123,7 @@ export default function ProducerPage() {
   }, [events, selectedDate, currentEvents, eventDates]);
 
   // All events for selected date, sorted chronologically
-  const filteredEvents = visibleEvents
+  const filteredEvents = currentEvents
     .filter(e => e.date === selectedDate)
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
