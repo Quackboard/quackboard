@@ -142,7 +142,7 @@ serve(async (req) => {
     // Fetch producer details
     const { data: producer, error: producerError } = await supabase
       .from('producers')
-      .select('email, name, timezone')
+      .select('email, name, timezone, slug')
       .eq('id', body.event.producer_id)
       .single();
 
