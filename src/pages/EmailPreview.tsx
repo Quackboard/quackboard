@@ -431,7 +431,7 @@ const proposedGuestManualAdd = `
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${sampleData.eventDate} at ${sampleData.eventTime}</span></td></tr>
                       <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${sampleData.venueName}, ${sampleData.venueAddress}</span></td></tr>
-                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span>${sampleData.sectionLabel} — Slot #${sampleData.slotPosition}</span></td></tr>
+                      <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${sampleData.sectionLabel}</strong> · Spot #${sampleData.slotPosition}</span></td></tr>
                     </table>
                   </td>
                 </tr>
