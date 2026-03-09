@@ -26,15 +26,25 @@ export function FeedbackButton() {
               Found a bug or have a question? We'd love to hear from you.
             </p>
             <div className="flex flex-col gap-2">
-              <Button asChild size="sm" variant="default" className="w-full">
-                <a href="mailto:hello@quackboard.com?subject=Bug Report&body=Hi! I found an issue:%0A%0AWhat happened:%0A%0AWhat I expected:">
-                  🐛 Report a Bug
-                </a>
+              <Button
+                size="sm"
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = "mailto:hello@quackboard.com?subject=Bug Report&body=Hi! I found an issue:%0A%0AWhat happened:%0A%0AWhat I expected:";
+                }}
+              >
+                🐛 Report a Bug
               </Button>
-              <Button asChild size="sm" variant="outline" className="w-full">
-                <a href="mailto:hello@quackboard.com?subject=Question about Quackboard">
-                  💬 Ask a Question
-                </a>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = "mailto:hello@quackboard.com?subject=Question about Quackboard";
+                }}
+              >
+                💬 Ask a Question
               </Button>
             </div>
           </div>
