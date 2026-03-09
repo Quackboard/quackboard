@@ -39,7 +39,7 @@ serve(async (req) => {
 
     let query = supabaseClient
       .from('producers')
-      .select('id, name, venue_name, slug');
+      .select('id, name, venue_name, slug, timezone');
 
     if (isUuid) {
       query = query.or(`slug.eq.${slug},id.eq.${slug}`);
