@@ -1,121 +1,77 @@
 
 
-## Wildcard Section Feature -- Full Implementation
+## Launch Readiness Checklist
 
-This plan covers two parts: (1) the access control gate so only approved producers see the wildcard option, and (2) the wildcard section behavior itself across all relevant components.
+### CRITICAL: Race Condition on Slot Booking
 
----
+The bookings table has a unique index on `(event_id, slot_position, cancelled_at)`. In PostgreSQL, **NULL values are treated as distinct** in unique indexes. Since active bookings have `cancelled_at = NULL`, **two people can book the same slot simultaneously** and the database will accept both.
 
-### Part 1: Access Control (Manual Approval)
+The SignUpModal does a SELECT-then-INSERT (check if slot is taken, then insert). Under load with multiple people racing for the same spot, two requests can both pass the SELECT check and both INSERT successfully.
 
-**Database: Create `producer_features` table**
+**Fix required before launch**: Add a partial unique index that only covers active (non-cancelled) bookings:
 
-A new table with columns:
-- `id` (uuid, primary key)
-- `producer_id` (uuid, references producers.id, not null)
-- `feature` (text, not null) -- e.g. `'wildcard'`
-- `granted_at` (timestamptz, default now())
-- Unique constraint on `(producer_id, feature)`
+```sql
+CREATE UNIQUE INDEX bookings_unique_active_slot 
+ON bookings (event_id, slot_position) 
+WHERE cancelled_at IS NULL;
+```
 
-RLS: Enable RLS with a single SELECT policy -- producers can only read their own rows (`auth.uid() = producer_id`). No INSERT/UPDATE/DELETE policies (admin-only via SQL Editor).
-
-**New file: `src/hooks/useProducerFeatures.ts`**
-- Query `producer_features` for the current user
-- Export `hasFeature(name: string): boolean`
-- Cache for 5 minutes (same pattern as `useProducerSlug`)
+This guarantees at the database level that only one active booking can exist per slot, regardless of timing. The existing `23505` error handling in SignUpModal will then correctly catch the race.
 
 ---
 
-### Part 2: Data Model Changes
+### 3-Device Load Test Plan
 
-**`src/types/database.ts`** -- already updated with `type?` and `signup_opens_at?` on the `Section` interface. No further changes needed.
+With 3 devices (phone, tablet, laptop), here is a focused test script:
 
----
+**Setup**: Create a test event with signup_opens_at set ~2 minutes in the future, with 5-6 slots.
 
-### Part 3: Form Changes (CreateMic + EditMic)
+**Test 1 -- Simultaneous Slot Grab (Race Condition)**
+1. Open the producer page on all 3 devices
+2. Wait for signup to open (verify countdown works on all 3)
+3. All 3 devices tap "Grab Spot" on **the same slot** within 1-2 seconds
+4. Expected: Exactly 1 succeeds, 2 get "Spot already taken" error
+5. Verify the lineup shows only 1 name in that slot
 
-Both forms get the same section builder enhancement, gated behind `hasFeature('wildcard')`:
+**Test 2 -- Realtime Updates**
+1. Device A grabs Slot 1
+2. Devices B and C should see the name appear in Slot 1 within a few seconds (realtime subscription)
+3. Verify the "Grab Spot" button disappears on B and C for that slot
 
-**Schema updates:**
-- The `sectionSchema` becomes conditional: when `type` is `'wildcard'`, `slots` min is 0 and `signup_opens_at` is required. Otherwise, `slots` min stays 1.
-- Add `type` and `signup_opens_at` fields to the section schema.
+**Test 3 -- Confirmation Email**
+1. Use a real email for one booking
+2. Verify the confirmation email arrives with the new teal branding
+3. Verify the cancel link works
 
-**Section builder UI changes (gated by `hasFeature('wildcard')`):**
-- Add an "Add Wildcard Section" button below the existing "Add Section" button
-- When clicked, appends a section with `{ label: 'Wildcards', slots: 0, type: 'wildcard' }`
-- The wildcard section row shows:
-  - Label input (editable, defaults to "Wildcards")
-  - No "Spots" number input (spots are dynamic)
-  - A date/time picker for "Cutoff / signup opens at"
-  - A trash button to remove it
-- Validate: only one wildcard section per event
-- If the producer does not have the wildcard feature, none of this UI appears
+**Test 4 -- Signup Opens Timer**
+1. Set signup_opens_at to 2 minutes out
+2. Open all 3 devices -- verify countdown appears
+3. Wait for it to hit 0 -- verify slots become available on all devices without refresh
+4. One device should be backgrounded (screen off) then brought back -- verify it catches up
 
-**On submit:**
-- Regular sections serialize as `{ label, slots }`
-- Wildcard section serializes as `{ label, slots: 0, type: 'wildcard', signup_opens_at: isoString }`
-- The `signup_opens_at` on the wildcard section is converted to UTC using the producer's timezone (same pattern as publish_at)
-
----
-
-### Part 4: SpotList (Public-Facing Rendering)
-
-**`src/components/producer/SpotList.tsx`:**
-
-1. Detect if a wildcard section exists in `sectionsConfig` (any section with `type === 'wildcard'`)
-2. Determine if the cutoff has passed (`new Date() >= new Date(wildcardSection.signup_opens_at)`)
-3. **Regular sections:**
-   - Before cutoff (or no wildcard): render as today (booked = name, empty = "Grab Spot")
-   - After cutoff: booked slots show names, unfilled slots show a dash "--" (no "Grab Spot" button)
-4. **Wildcard section:**
-   - Before cutoff: render section label with "Opens [formatted time]" message, no slot rows
-   - After cutoff: compute `availableWildcardSlots = totalRegularSlots - bookedRegularCount - bookedWildcardCount`
-     - `totalRegularSlots` = sum of `slots` for all non-wildcard sections
-     - `bookedRegularCount` = bookings with slot positions within regular range (1 to totalRegularSlots)
-     - `bookedWildcardCount` = bookings with slot positions above totalRegularSlots
-   - Render booked wildcard slots with names, then remaining available slots with "Grab Spot" buttons
-   - Wildcard slot positions start at `totalRegularSlots + 1`
-   - If 0 available, show "No wildcard spots available"
+**Test 5 -- Duplicate Email Block**
+1. If allow_multiple_slots is OFF, have Device A book Slot 2 with email@test.com
+2. Device B tries to book Slot 3 with the same email
+3. Expected: "One spot per comic" error
 
 ---
 
-### Part 5: EventCard
+### General Launch Checklist
 
-**`src/components/producer/EventCard.tsx`:**
-- Update `totalSlots` calculation: only sum slots from sections where `type !== 'wildcard'` (regular sections)
-- `bookedCount` stays as `bookings.length` (includes all bookings)
-- Mobile collapsed summary: "5/12 filled" where 12 = regular slots only
+| Category | Item | Status |
+|----------|------|--------|
+| **Database** | Add partial unique index for race condition fix | Must do |
+| **Database** | Verify RLS policies allow anonymous inserts to bookings | Already done |
+| **Edge Functions** | Verify send-booking-email is deployed | Check dashboard |
+| **Edge Functions** | Verify Zeptomail secrets are set (ZEPTOMAIL_API_TOKEN, FROM_EMAIL, FROM_NAME, FRONTEND_URL) | Check dashboard |
+| **DNS/URL** | Confirm published URL works: quackboard1.lovable.app | Test |
+| **Producer Setup** | Producer has slug set, profile complete | Verify |
+| **Event Setup** | Event is published, signup_opens_at is correct timezone | Verify |
+| **Mobile** | Test the collapsible event card on phone | 3-device test |
+| **Cancellation** | Test cancel link from email works | Email test |
+| **Embed** | If using embed widget, test it loads on external site | If applicable |
 
----
+### Implementation Summary
 
-### Part 6: EventLineup (Producer View)
-
-**`src/pages/EventLineup.tsx`:**
-- For wildcard sections, compute and display the dynamic slot count in the section header: "Wildcards (X available)"
-- Show booked wildcard slots normally
-- Show available wildcard slots as "[Add someone]" links (same as regular empty slots)
-
----
-
-### Technical Details
-
-**Files created:**
-- `src/hooks/useProducerFeatures.ts`
-
-**Files modified:**
-- `src/types/database.ts` (already done -- just needs `type` and `signup_opens_at`)
-- `src/pages/CreateMic.tsx` (schema + section builder + submit logic)
-- `src/pages/EditMic.tsx` (schema + section builder + submit logic)
-- `src/components/producer/SpotList.tsx` (wildcard rendering logic)
-- `src/components/producer/EventCard.tsx` (totalSlots calculation)
-- `src/pages/EventLineup.tsx` (wildcard section display)
-
-**Database migration:**
-- Create `producer_features` table with RLS
-
-**No changes to:**
-- Booking flow / SignUpModal
-- Public producer page layout
-- Email/notification logic
-- Any edge functions
+One database migration is needed (the partial unique index). Everything else is verification/testing. The index is non-destructive -- it only prevents future duplicate active bookings, and won't fail if no duplicates currently exist.
 
