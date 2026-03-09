@@ -328,7 +328,7 @@ serve(async (req) => {
 
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #34a08c 0%, #298070 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Activity Report</h1>
               <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.95;">${periodLabel}</p>
             </td>
@@ -429,7 +429,7 @@ serve(async (req) => {
         emailContent += `
                         <tr style="background-color: ${rowBg};">
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #1f2937;">
-                            <span style="display: inline-block; background-color: #EEF2FF; color: #4F46E5; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${sectionLabel} - Slot ${booking.slot_position}</span>
+                            <span style="display: inline-block; background-color: #e6f5f2; color: #2a7d6b; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${sectionLabel} - Spot ${booking.slot_position}</span>
                           </td>
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #4b5563;">${booking.guest_name || 'N/A'}</td>
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #4b5563;">${booking.guest_email}</td>
@@ -444,7 +444,7 @@ serve(async (req) => {
                 </tr>
               </table>
               ${event.producer_message ? `
-                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 16px 0 24px 0; border-radius: 8px;">
+                <div style="background-color: #FFF8E1; border-left: 4px solid #F59E0B; padding: 16px; margin: 16px 0 24px 0; border-radius: 8px;">
                   <p style="margin: 0 0 4px 0; font-weight: 600; color: #000000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Active Message for Performers</p>
                   <div style="margin: 0; color: #000000; font-size: 14px; line-height: 1.5;">${formattedMessages[event.id]}</div>
                 </div>
@@ -462,7 +462,7 @@ serve(async (req) => {
             <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px 0; color: #111827; font-size: 14px; font-weight: 600;">QuackBoard</p>
               <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">&copy; ${new Date().getFullYear()} QuackBoard. All rights reserved.</p>
-              <p style="margin: 0;"><a href="#" style="color: #4F46E5; text-decoration: none; font-size: 13px; font-weight: 500;">Unsubscribe</a></p>
+              <p style="margin: 0;"><a href="#" style="color: #34a08c; text-decoration: none; font-size: 13px; font-weight: 500;">Unsubscribe</a></p>
             </td>
           </tr>
 
