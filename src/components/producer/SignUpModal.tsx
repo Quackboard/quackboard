@@ -144,9 +144,9 @@ export function SignUpModal({
         .eq('id', eventId)
         .maybeSingle();
 
-      // Send confirmation email (non-blocking)
+      // Send confirmation email (blocking with retry)
       if (eventData && bookingData && eventData.producer_id) {
-        sendBookingConfirmationEmail({
+        const emailResult = await sendBookingConfirmationEmail({
           bookingId: bookingData.id,
           cancelToken,
           guestEmail: data.email,
@@ -164,10 +164,11 @@ export function SignUpModal({
             producer_message: eventData.producer_message,
           },
           isManualAdd: false,
-        }).catch((err) => {
-          console.error('Failed to send confirmation email:', err);
-          // Don't show error to user - booking was successful
         });
+
+        if (!emailResult.success) {
+          console.error('Confirmation email failed after retries:', emailResult.error);
+        }
       }
 
       toast({

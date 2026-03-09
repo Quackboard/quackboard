@@ -108,9 +108,9 @@ export function AddToSlotModal({
         .eq('id', eventId)
         .maybeSingle();
 
-      // Send confirmation email (non-blocking)
+      // Send confirmation email (blocking with retry)
       if (eventData && bookingData && eventData.producer_id) {
-        sendBookingConfirmationEmail({
+        const emailResult = await sendBookingConfirmationEmail({
           bookingId: bookingData.id,
           cancelToken,
           guestEmail: data.email,
@@ -128,10 +128,16 @@ export function AddToSlotModal({
             producer_message: eventData.producer_message,
           },
           isManualAdd: true,
-        }).catch((err) => {
-          console.error('Failed to send confirmation email:', err);
-          // Don't show error to user - booking was successful
         });
+
+        if (!emailResult.success) {
+          console.error('Confirmation email failed after retries:', emailResult.error);
+          toast({
+            title: 'Email delivery issue',
+            description: 'Booking was saved but confirmation email may not have been sent.',
+            variant: 'destructive',
+          });
+        }
       }
 
       toast({

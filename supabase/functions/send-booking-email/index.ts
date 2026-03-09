@@ -300,10 +300,12 @@ serve(async (req) => {
         }),
       });
 
+      const responseText = await res.text();
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Zeptomail API error (Guest):", errorText);
+        console.error("Zeptomail API error (Guest):", res.status, responseText);
         guestEmailStatus = 'failed';
+      } else {
+        console.log(`✅ Guest email sent successfully to ${body.guestEmail} | Booking: ${body.bookingId} | Spot: ${body.slotPosition} | Response: ${responseText.substring(0, 200)}`);
       }
     } else {
       console.log("[EMAIL STUB] send-booking-email => GUEST EMAIL", {
@@ -465,10 +467,12 @@ serve(async (req) => {
           }),
         });
 
+        const responseText = await res.text();
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Zeptomail API error (Producer):", errorText);
+          console.error("Zeptomail API error (Producer):", res.status, responseText);
           producerEmailStatus = 'failed';
+        } else {
+          console.log(`✅ Producer email sent successfully to ${producer.email} | Booking: ${body.bookingId} | Response: ${responseText.substring(0, 200)}`);
         }
       }
       // Log producer notification
