@@ -174,7 +174,7 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
               <div className="text-sm text-muted-foreground space-y-0.5">
                 {sectionStats.map((s, i) => (
                   <div key={i}>
-                    {s.label} — {s.booked}/{s.total} spots
+                    {s.label} — {s.booked}/{s.total} spots filled
                   </div>
                 ))}
               </div>
