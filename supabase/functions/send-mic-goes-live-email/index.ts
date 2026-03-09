@@ -108,13 +108,21 @@ serve(async (req) => {
       );
     }
 
-    // Format event date
-    const eventDate = new Date(event.date).toLocaleDateString("en-US", {
+    // Format event date — use T00:00:00 to parse as local, avoiding UTC date shift
+    const eventDate = new Date(`${event.date}T00:00:00`).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+
+    // Convert military time to 12-hour format
+    function formatTime12h(time24: string): string {
+      const [h, m] = time24.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
 
     const subject = `Your mic "${event.title}" is now live!`;
 
