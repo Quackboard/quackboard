@@ -462,7 +462,7 @@ serve(async (req) => {
             <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px 0; color: #111827; font-size: 14px; font-weight: 600;">QuackBoard</p>
               <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">&copy; ${new Date().getFullYear()} QuackBoard. All rights reserved.</p>
-              <p style="margin: 0;"><a href="#" style="color: #4F46E5; text-decoration: none; font-size: 13px; font-weight: 500;">Unsubscribe</a></p>
+              <p style="margin: 0;"><a href="#" style="color: #34a08c; text-decoration: none; font-size: 13px; font-weight: 500;">Unsubscribe</a></p>
             </td>
           </tr>
 
