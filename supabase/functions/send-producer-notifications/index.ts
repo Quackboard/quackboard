@@ -444,7 +444,7 @@ serve(async (req) => {
                 </tr>
               </table>
               ${event.producer_message ? `
-                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 16px 0 24px 0; border-radius: 8px;">
+                <div style="background-color: #FFF8E1; border-left: 4px solid #F59E0B; padding: 16px; margin: 16px 0 24px 0; border-radius: 8px;">
                   <p style="margin: 0 0 4px 0; font-weight: 600; color: #000000; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Active Message for Performers</p>
                   <div style="margin: 0; color: #000000; font-size: 14px; line-height: 1.5;">${formattedMessages[event.id]}</div>
                 </div>
