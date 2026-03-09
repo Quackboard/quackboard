@@ -101,15 +101,10 @@ export default function ProducerPage() {
     queryClient.invalidateQueries({ queryKey: ['event-bookings', eventIds] });
   };
 
-  // Split events into current and past
-  const allEvents = events || [];
-  const currentEvents = allEvents.filter(e => !isEventPast(e));
-  const pastEvents = allEvents.filter(e => isEventPast(e));
-
-  // Get unique dates (exclude past-only dates when past events hidden)
-  const visibleEvents = showPastEvents ? allEvents : currentEvents;
-  const eventDates = visibleEvents.length > 0
-    ? [...new Set(visibleEvents.map(e => e.date))].sort()
+  // Only show current/future events on public page
+  const currentEvents = (events || []).filter(e => !isEventPast(e));
+  const eventDates = currentEvents.length > 0
+    ? [...new Set(currentEvents.map(e => e.date))].sort()
     : [];
 
   // Auto-select first current date, otherwise first past date
