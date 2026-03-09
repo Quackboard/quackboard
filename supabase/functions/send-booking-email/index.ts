@@ -142,7 +142,7 @@ serve(async (req) => {
     // Fetch producer details
     const { data: producer, error: producerError } = await supabase
       .from('producers')
-      .select('email, name, timezone')
+      .select('email, name, timezone, slug')
       .eq('id', body.event.producer_id)
       .single();
 
@@ -237,7 +237,13 @@ serve(async (req) => {
             <p style="margin-top: 30px;">We look forward to seeing you there!</p>
 
             <div style="margin: 20px 0;">
-              <a href="${cancelUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
+              <a href="${FRONTEND_URL}/producer/${producer?.slug || body.event.producer_id}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
+                Go to Event Page
+              </a>
+            </div>
+
+            <div style="margin: 20px 0;">
+              <a href="${cancelUrl}" style="display: inline-block; background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
                 Cancel Your Booking
               </a>
             </div>
