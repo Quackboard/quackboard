@@ -190,14 +190,19 @@ serve(async (req) => {
         ? `You've been added to ${producerName} - ${body.event.title} on ${eventDate} at ${formatTime12h(body.event.start_time)}`
         : `Booking Confirmed: ${producerName} - ${body.event.title} on ${eventDate} at ${formatTime12h(body.event.start_time)}`);
 
+    const guestHeading = body.isCancellation ? "Booking Canceled" : (body.isManualAdd ? "🎤 You've Been Added!" : "✅ Booking Confirmed!");
+    const guestIntro = body.isCancellation
+      ? `Your booking for <strong>"${body.event.title}"</strong> (${body.sectionLabel}) has been successfully canceled.`
+      : (body.isManualAdd
+        ? `You've been added to <strong>"${body.event.title}"</strong> by the producer.`
+        : `Your booking for <strong>"${body.event.title}"</strong> has been confirmed!`);
+
     const guestHtmlBody = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <style>
             ul, ol { padding-left: 25px; margin: 10px 0; }
             li { margin-bottom: 5px; }
@@ -205,53 +210,73 @@ serve(async (req) => {
             ol { list-style-type: decimal; }
             u { text-decoration: underline; }
           </style>
-          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px;">
-            <h1 style="color: #1a1a1a; margin-top: 0;">${body.isCancellation ? "Booking Canceled" : (body.isManualAdd ? "You've been added to a slot!" : "Booking Confirmed!")}</h1>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background-color: #f5f5f5;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #34a08c 0%, #298070 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">${guestHeading}</h1>
+                    </td>
+                  </tr>
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Hi ${body.guestName},</p>
+                      <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">${guestIntro}</p>
+                      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 30px 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+                        <tr>
+                          <td style="background-color: #f9fafb; padding: 24px;">
+                            <h2 style="margin: 0 0 14px 0; color: #111827; font-size: 20px; font-weight: 600; line-height: 1.3;">${body.event.title}</h2>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                              <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${eventDate} at ${eventTime}</span></td></tr>
+                              <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${venueInfo}</span></td></tr>
+                              <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${body.sectionLabel}</strong> · Spot #${body.slotPosition}</span></td></tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
 
-            <p>Hi ${body.guestName},</p>
+                      ${body.event.producer_message ? `
+                        <div style="background-color: #FFF8E1; border-left: 4px solid #F59E0B; padding: 16px; margin: 24px 0; border-radius: 8px;">
+                          <p style="margin: 0 0 6px 0; font-weight: 600; color: #000000; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Instruction from the Producer</p>
+                          <div style="margin: 0; color: #000000; font-size: 15px; line-height: 1.5;">${formattedProducerMessage}</div>
+                        </div>
+                      ` : ''}
 
-            ${body.isCancellation
-        ? `<p>Your booking for <strong>${body.event.title}</strong>, slot #${body.slotPosition}, has been successfully canceled.</p>`
-        : (body.isManualAdd
-          ? `<p>You've been added to <strong>${body.event.title}</strong> by the producer.</p>`
-          : `<p>Your booking for <strong>${body.event.title}</strong> has been confirmed!</p>`)
-      }
-
-            <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #007bff;">
-              <h2 style="margin-top: 0; color: #1a1a1a;">Event Details</h2>
-              <p style="margin: 8px 0;"><strong>Event:</strong> ${body.event.title}</p>
-              <p style="margin: 8px 0;"><strong>Date:</strong> ${eventDate}</p>
-              <p style="margin: 8px 0;"><strong>Time:</strong> ${eventTime}</p>
-              <p style="margin: 8px 0;"><strong>Venue:</strong> ${venueInfo}</p>
-              <p style="margin: 8px 0;"><strong>Section:</strong> ${body.sectionLabel}</p>
-              <p style="margin: 8px 0;"><strong>Your Slot:</strong> #${body.slotPosition}</p>
-            </div>
-
-            ${body.event.producer_message ? `
-              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 8px;">
-                <p style="margin: 0 0 6px 0; font-weight: 600; color: #000000; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Instruction from the Producer</p>
-                <div style="margin: 0; color: #000000; font-size: 15px; line-height: 1.5;">${formattedProducerMessage}</div>
-              </div>
-            ` : ''}
-
-            <p style="margin-top: 30px;">We look forward to seeing you there!</p>
-
-            <div style="margin: 20px 0;">
-              <a href="${FRONTEND_URL}/producer/${producer?.slug || body.event.producer_id}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
-                Go to Event Page
-              </a>
-            </div>
-
-            <div style="margin: 20px 0;">
-              <a href="${cancelUrl}" style="display: inline-block; background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
-                Cancel Your Booking
-              </a>
-            </div>
-
-            <p style="color: #666; font-size: 14px; margin-top: 30px;">
-              If you have any questions or need to make changes, please contact the event producer.
-            </p>
-          </div>
+                      ${body.isCancellation ? `
+                        <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 15px; line-height: 1.6;">If you have any questions, please contact the event producer.</p>
+                      ` : `
+                        <p style="margin: 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">We look forward to seeing you there!</p>
+                        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td align="center" style="padding: 10px 0;">
+                              <a href="${FRONTEND_URL}/producer/${producer?.slug || body.event.producer_id}" style="display: inline-block; background-color: #34a08c; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Go to Event Page</a>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center" style="padding: 10px 0;">
+                              <a href="${cancelUrl}" style="display: inline-block; border: 2px solid #e5e7eb; color: #6b7280; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">Cancel Your Booking</a>
+                            </td>
+                          </tr>
+                        </table>
+                      `}
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 8px 0; color: #111827; font-size: 14px; font-weight: 600;">QuackBoard</p>
+                      <p style="margin: 0; color: #9ca3af; font-size: 13px;">&copy; ${new Date().getFullYear()} QuackBoard. All rights reserved.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
       </html>
     `;
