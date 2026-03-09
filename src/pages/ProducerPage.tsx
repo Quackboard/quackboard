@@ -183,15 +183,6 @@ export default function ProducerPage() {
               ))}
             </div>
 
-            {pastEvents.length > 0 && (
-              <button
-                onClick={() => setShowPastEvents(!showPastEvents)}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                {showPastEvents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                {showPastEvents ? 'Hide' : 'Show'} past events ({pastEvents.length})
-              </button>
-            )}
           </div>
         )}
       </div>
