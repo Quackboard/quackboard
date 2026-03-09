@@ -372,7 +372,7 @@ const proposedGuestCancellation = `
           <tr>
             <td style="padding: 40px 30px;">
               <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Hi ${sampleData.guestName},</p>
-              <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Your booking for <strong>"${sampleData.eventTitle}"</strong>, slot #${sampleData.slotPosition}, has been successfully canceled.</p>
+              <p style="margin: 0 0 20px 0; color: #111827; font-size: 16px; line-height: 1.6;">Your booking for <strong>"${sampleData.eventTitle}"</strong> (${sampleData.sectionLabel}) has been successfully canceled.</p>
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 30px 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
                 <tr>
                   <td style="background-color: #f9fafb; padding: 24px;">
