@@ -183,12 +183,12 @@ serve(async (req) => {
       formattedProducerMessage = await marked.parse(body.event.producer_message);
     }
 
-    // --- Guest Email Content ---
+    const producerName = producer?.name || 'Producer';
     const guestSubject = body.isCancellation
-      ? `Booking Canceled: ${body.event.title} - Slot ${body.slotPosition}`
+      ? `Booking Canceled: ${producerName} - ${body.event.title} on ${eventDate} at ${formatTime12h(body.event.start_time)}`
       : (body.isManualAdd
-        ? `You've been added to ${body.event.title} - Slot ${body.slotPosition}`
-        : `Booking Confirmed: ${body.event.title} - Slot ${body.slotPosition}`);
+        ? `You've been added to ${producerName} - ${body.event.title} on ${eventDate} at ${formatTime12h(body.event.start_time)}`
+        : `Booking Confirmed: ${producerName} - ${body.event.title} on ${eventDate} at ${formatTime12h(body.event.start_time)}`);
 
     const guestHtmlBody = `
       <!DOCTYPE html>
