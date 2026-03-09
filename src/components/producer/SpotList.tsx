@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { SignUpModal } from './SignUpModal';
-import { format, parseISO, isAfter } from 'date-fns';
+import { format, parseISO, isAfter, differenceInMilliseconds, differenceInSeconds } from 'date-fns';
 
 interface Section {
   label: string;
@@ -71,10 +71,60 @@ export function SpotList({
   const regularSections = sectionsConfig.filter(s => s.type !== 'wildcard');
   const totalRegularSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
 
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
+
+  // Auto-open timer for wildcard section
+  useEffect(() => {
+    if (!wildcardSection?.signup_opens_at) return;
+    const target = parseISO(wildcardSection.signup_opens_at);
+    if (!isAfter(target, new Date())) return;
+
+    const msUntilOpen = differenceInMilliseconds(target, new Date());
+    const openTimer = setTimeout(() => setNow(new Date()), msUntilOpen + 50);
+
+    let countdownInterval: ReturnType<typeof setInterval> | undefined;
+    if (msUntilOpen <= 5 * 60 * 1000) {
+      countdownInterval = setInterval(() => setNow(new Date()), 1000);
+    } else {
+      const startTimer = setTimeout(() => {
+        setNow(new Date());
+        countdownInterval = setInterval(() => setNow(new Date()), 1000);
+      }, msUntilOpen - 5 * 60 * 1000);
+      return () => {
+        clearTimeout(openTimer);
+        clearTimeout(startTimer);
+        if (countdownInterval) clearInterval(countdownInterval);
+      };
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') setNow(new Date());
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearTimeout(openTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [wildcardSection?.signup_opens_at]);
+
   const wildcardCutoffPassed = wildcardSection?.signup_opens_at
     ? !isAfter(parseISO(wildcardSection.signup_opens_at), now)
     : false;
+
+  // Compute wildcard countdown
+  const wildcardCountdown = (() => {
+    if (!wildcardSection?.signup_opens_at || wildcardCutoffPassed) return null;
+    const target = parseISO(wildcardSection.signup_opens_at);
+    const secsLeft = differenceInSeconds(target, now);
+    if (secsLeft <= 300) {
+      const mins = Math.floor(secsLeft / 60);
+      const secs = secsLeft % 60;
+      return `Opens in ${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    return null;
+  })();
 
   // Count booked regular and wildcard slots
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
@@ -103,9 +153,9 @@ export function SpotList({
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground px-2 py-2">
-                    Opens {section.signup_opens_at
-                      ? format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")
-                      : 'later'}
+                    {wildcardCountdown || (section.signup_opens_at
+                      ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}`
+                      : 'Opens later')}
                   </p>
                 </div>
               );
