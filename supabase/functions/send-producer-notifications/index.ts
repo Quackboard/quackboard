@@ -429,7 +429,7 @@ serve(async (req) => {
         emailContent += `
                         <tr style="background-color: ${rowBg};">
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #1f2937;">
-                            <span style="display: inline-block; background-color: #EEF2FF; color: #4F46E5; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${sectionLabel} - Slot ${booking.slot_position}</span>
+                            <span style="display: inline-block; background-color: #e6f5f2; color: #2a7d6b; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${sectionLabel} - Spot ${booking.slot_position}</span>
                           </td>
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #4b5563;">${booking.guest_name || 'N/A'}</td>
                           <td style="padding: 18px 20px; ${bookingIdx < bookings.length - 1 ? 'border-bottom: 1px solid #f3f4f6;' : ''} font-size: 14px; color: #4b5563;">${booking.guest_email}</td>
