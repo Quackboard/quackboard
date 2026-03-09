@@ -328,7 +328,7 @@ serve(async (req) => {
 
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #34a08c 0%, #298070 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Activity Report</h1>
               <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.95;">${periodLabel}</p>
             </td>
