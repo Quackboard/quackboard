@@ -236,13 +236,9 @@ serve(async (req) => {
 
             <p style="margin-top: 30px;">We look forward to seeing you there!</p>
 
-            <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 15px; margin: 20px 0;">
-              <p style="margin: 0 0 10px 0; font-weight: 600; color: #856404;">Manage Your Booking</p>
-              <p style="margin: 0 0 15px 0; color: #856404; font-size: 14px;">
-                Need to cancel or change your alert preferences? Use the link below:
-              </p>
+            <div style="margin: 20px 0;">
               <a href="${cancelUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
-                ${body.isCancellation ? "View Event Details" : "Manage Booking & Alerts"}
+                Cancel Your Booking
               </a>
             </div>
 
