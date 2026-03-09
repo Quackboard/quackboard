@@ -26,26 +26,24 @@ export function FeedbackButton() {
               Found a bug or have a question? We'd love to hear from you.
             </p>
             <div className="flex flex-col gap-2">
-              <Button
-                size="sm"
-                variant="default"
-                className="w-full"
-                onClick={() => {
-                  window.location.href = "mailto:hello@quackboard.com?subject=Bug Report&body=Hi! I found an issue:%0A%0AWhat happened:%0A%0AWhat I expected:";
-                }}
+              <a
+                href="mailto:hello@quackboard.com?subject=Bug Report&body=Hi! I found an issue:%0A%0AWhat happened:%0A%0AWhat I expected:"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                🐛 Report a Bug
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  window.location.href = "mailto:hello@quackboard.com?subject=Question about Quackboard";
-                }}
+                <Button size="sm" variant="default" className="w-full">
+                  🐛 Report a Bug
+                </Button>
+              </a>
+              <a
+                href="mailto:hello@quackboard.com?subject=Question about Quackboard"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                💬 Ask a Question
-              </Button>
+                <Button size="sm" variant="outline" className="w-full">
+                  💬 Ask a Question
+                </Button>
+              </a>
             </div>
           </div>
         </PopoverContent>
