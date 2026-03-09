@@ -18,9 +18,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { sendBookingConfirmationEmail } from '@/lib/email';
+import { createBooking } from '@/lib/email';
 
 const formSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -66,123 +65,53 @@ export function SignUpModal({
     setIsSubmitting(true);
 
     try {
-      // Check if spot is already taken
-      const { data: existing } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('event_id', eventId)
-        .eq('slot_position', spotNumber)
-        .is('cancelled_at', null)
-        .maybeSingle();
+      const result = await createBooking({
+        eventId,
+        slotPosition: spotNumber,
+        guestName: data.name,
+        guestEmail: data.email,
+        guestInstagram: data.instagram,
+        allowMultipleSpots,
+        isManualAdd: false,
+      });
 
-      if (existing) {
+      if (result.success) {
         toast({
-          title: 'Spot already taken',
-          description: 'Try another spot',
-          variant: 'destructive',
+          title: "You're in!",
+          description: `You've grabbed spot #${spotNumber}`,
         });
-        setIsSubmitting(false);
+        form.reset();
+        onOpenChange(false);
+        onSuccess();
         return;
       }
 
-      // Check if user already has a booking for this event (when multiple spots not allowed)
-      if (!allowMultipleSpots) {
-        const { data: existingBooking } = await supabase
-          .from('bookings')
-          .select('id')
-          .eq('event_id', eventId)
-          .eq('guest_email', data.email.toLowerCase())
-          .is('cancelled_at', null)
-          .maybeSingle();
-
-        if (existingBooking) {
-          toast({
-            title: 'One spot per comic',
-            description: 'Grab a different time.',
-            variant: 'destructive',
-          });
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      // Generate cancel token
-      const cancelToken = crypto.randomUUID();
-
-      // Insert booking
-      const { data: bookingData, error } = await supabase
-        .from('bookings')
-        .insert({
-          event_id: eventId,
-          slot_position: spotNumber,
-          guest_name: data.name,
-          guest_email: data.email,
-          guest_instagram: data.instagram || null,
-          cancel_token: cancelToken,
-        })
-        .select('id')
-        .single();
-
-      if (error) {
-        if (error.code === '23505') {
+      // Handle specific error codes
+      switch (result.code) {
+        case 'slot_taken':
           toast({
             title: 'Spot already taken',
             description: 'Try another spot',
             variant: 'destructive',
           });
-        } else {
-          throw error;
-        }
-        setIsSubmitting(false);
-        return;
+          break;
+        case 'duplicate_email':
+          toast({
+            title: 'One spot per comic',
+            description: 'Grab a different time.',
+            variant: 'destructive',
+          });
+          break;
+        default:
+          toast({
+            title: "Oops, that one's on us. Try again!",
+            variant: 'destructive',
+          });
+          break;
       }
-
-      // Fetch event details for email
-      const { data: eventData } = await supabase
-        .from('events')
-        .select('title, date, start_time, end_time, venue_name, venue_address, producer_id, producer_message')
-        .eq('id', eventId)
-        .maybeSingle();
-
-      // Send confirmation email (blocking with retry)
-      if (eventData && bookingData && eventData.producer_id) {
-        const emailResult = await sendBookingConfirmationEmail({
-          bookingId: bookingData.id,
-          cancelToken,
-          guestEmail: data.email,
-          guestName: data.name,
-          slotPosition: spotNumber,
-          sectionLabel,
-          event: {
-            title: eventData.title || 'Open Mic',
-            date: eventData.date,
-            start_time: eventData.start_time || '',
-            end_time: eventData.end_time || '',
-            venue_name: eventData.venue_name || '',
-            venue_address: eventData.venue_address,
-            producer_id: eventData.producer_id,
-            producer_message: eventData.producer_message,
-          },
-          isManualAdd: false,
-        });
-
-        if (!emailResult.success) {
-          console.error('Confirmation email failed after retries:', emailResult.error);
-        }
-      }
-
+    } catch {
       toast({
-        title: "You're in!",
-        description: `You've grabbed spot #${spotNumber}`,
-      });
-
-      form.reset();
-      onOpenChange(false);
-      onSuccess();
-    } catch (error) {
-      toast({
-        title: 'Something went wrong',
-        description: 'Please try again',
+        title: "Oops, that one's on us. Try again!",
         variant: 'destructive',
       });
     } finally {
