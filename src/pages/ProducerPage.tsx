@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
 import { ProducerHeader } from '@/components/producer/ProducerHeader';
