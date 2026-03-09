@@ -1,121 +1,40 @@
 
 
-## Wildcard Section Feature -- Full Implementation
+## Plan: Email Preview Page
 
-This plan covers two parts: (1) the access control gate so only approved producers see the wildcard option, and (2) the wildcard section behavior itself across all relevant components.
+Create a temporary route `/email-preview` that renders static HTML iframes showing all 6 email templates — current vs. proposed — so you can visually compare before any edge function code is touched.
 
----
+### What gets created
 
-### Part 1: Access Control (Manual Approval)
+**1 new file: `src/pages/EmailPreview.tsx`**
 
-**Database: Create `producer_features` table**
+A page with tabs for each email type:
+- **Guest Booking Confirmation** (current vs. proposed)
+- **Guest Cancellation** (current vs. proposed — note: proposed removes the cancel button)
+- **Guest Manual Add** (current vs. proposed)
+- **Producer Booking Notification** (current vs. proposed)
+- **Mic Goes Live** (current vs. proposed — color swap only)
+- **Producer Activity Report** (current vs. proposed — color swap only)
 
-A new table with columns:
-- `id` (uuid, primary key)
-- `producer_id` (uuid, references producers.id, not null)
-- `feature` (text, not null) -- e.g. `'wildcard'`
-- `granted_at` (timestamptz, default now())
-- Unique constraint on `(producer_id, feature)`
+Each tab shows two iframes side-by-side: "Current" and "Proposed". The HTML is hardcoded with sample data (event name, date, venue, guest info) so you see realistic previews.
 
-RLS: Enable RLS with a single SELECT policy -- producers can only read their own rows (`auth.uid() = producer_id`). No INSERT/UPDATE/DELETE policies (admin-only via SQL Editor).
+**1 line added to `src/App.tsx`**: Route for `/email-preview`
 
-**New file: `src/hooks/useProducerFeatures.ts`**
-- Query `producer_features` for the current user
-- Export `hasFeature(name: string): boolean`
-- Cache for 5 minutes (same pattern as `useProducerSlug`)
+### Proposed visual changes shown in preview
 
----
+| Template | Current | Proposed |
+|----------|---------|----------|
+| Guest booking emails | div layout, `#f8f9fa` bg, blue `#007bff` buttons, no header/footer | Table layout, `#f5f5f5` outer bg, teal gradient header `#34a08c→#298070`, event card with emoji icons, teal buttons, QuackBoard footer |
+| Guest cancellation | Same as above + red cancel button shown | Same modern layout, cancel button **removed** |
+| Producer booking email | div layout, green `#28a745` accents, blue button | Table layout, teal gradient header, teal accents, QuackBoard footer |
+| Mic Goes Live | Purple gradient `#4F46E5→#7C3AED` | Teal gradient `#34a08c→#298070` |
+| Producer Notifications | Purple gradient, purple badges `#EEF2FF/#4F46E5`, purple footer link | Teal gradient, teal badges `#e6f5f2/#2a7d6b`, teal footer link |
 
-### Part 2: Data Model Changes
+### Risk: Zero
+- This is a new preview page only — no edge function code is modified
+- The route can be removed after review
+- No database, API, or email logic is touched
 
-**`src/types/database.ts`** -- already updated with `type?` and `signup_opens_at?` on the `Section` interface. No further changes needed.
-
----
-
-### Part 3: Form Changes (CreateMic + EditMic)
-
-Both forms get the same section builder enhancement, gated behind `hasFeature('wildcard')`:
-
-**Schema updates:**
-- The `sectionSchema` becomes conditional: when `type` is `'wildcard'`, `slots` min is 0 and `signup_opens_at` is required. Otherwise, `slots` min stays 1.
-- Add `type` and `signup_opens_at` fields to the section schema.
-
-**Section builder UI changes (gated by `hasFeature('wildcard')`):**
-- Add an "Add Wildcard Section" button below the existing "Add Section" button
-- When clicked, appends a section with `{ label: 'Wildcards', slots: 0, type: 'wildcard' }`
-- The wildcard section row shows:
-  - Label input (editable, defaults to "Wildcards")
-  - No "Spots" number input (spots are dynamic)
-  - A date/time picker for "Cutoff / signup opens at"
-  - A trash button to remove it
-- Validate: only one wildcard section per event
-- If the producer does not have the wildcard feature, none of this UI appears
-
-**On submit:**
-- Regular sections serialize as `{ label, slots }`
-- Wildcard section serializes as `{ label, slots: 0, type: 'wildcard', signup_opens_at: isoString }`
-- The `signup_opens_at` on the wildcard section is converted to UTC using the producer's timezone (same pattern as publish_at)
-
----
-
-### Part 4: SpotList (Public-Facing Rendering)
-
-**`src/components/producer/SpotList.tsx`:**
-
-1. Detect if a wildcard section exists in `sectionsConfig` (any section with `type === 'wildcard'`)
-2. Determine if the cutoff has passed (`new Date() >= new Date(wildcardSection.signup_opens_at)`)
-3. **Regular sections:**
-   - Before cutoff (or no wildcard): render as today (booked = name, empty = "Grab Spot")
-   - After cutoff: booked slots show names, unfilled slots show a dash "--" (no "Grab Spot" button)
-4. **Wildcard section:**
-   - Before cutoff: render section label with "Opens [formatted time]" message, no slot rows
-   - After cutoff: compute `availableWildcardSlots = totalRegularSlots - bookedRegularCount - bookedWildcardCount`
-     - `totalRegularSlots` = sum of `slots` for all non-wildcard sections
-     - `bookedRegularCount` = bookings with slot positions within regular range (1 to totalRegularSlots)
-     - `bookedWildcardCount` = bookings with slot positions above totalRegularSlots
-   - Render booked wildcard slots with names, then remaining available slots with "Grab Spot" buttons
-   - Wildcard slot positions start at `totalRegularSlots + 1`
-   - If 0 available, show "No wildcard spots available"
-
----
-
-### Part 5: EventCard
-
-**`src/components/producer/EventCard.tsx`:**
-- Update `totalSlots` calculation: only sum slots from sections where `type !== 'wildcard'` (regular sections)
-- `bookedCount` stays as `bookings.length` (includes all bookings)
-- Mobile collapsed summary: "5/12 filled" where 12 = regular slots only
-
----
-
-### Part 6: EventLineup (Producer View)
-
-**`src/pages/EventLineup.tsx`:**
-- For wildcard sections, compute and display the dynamic slot count in the section header: "Wildcards (X available)"
-- Show booked wildcard slots normally
-- Show available wildcard slots as "[Add someone]" links (same as regular empty slots)
-
----
-
-### Technical Details
-
-**Files created:**
-- `src/hooks/useProducerFeatures.ts`
-
-**Files modified:**
-- `src/types/database.ts` (already done -- just needs `type` and `signup_opens_at`)
-- `src/pages/CreateMic.tsx` (schema + section builder + submit logic)
-- `src/pages/EditMic.tsx` (schema + section builder + submit logic)
-- `src/components/producer/SpotList.tsx` (wildcard rendering logic)
-- `src/components/producer/EventCard.tsx` (totalSlots calculation)
-- `src/pages/EventLineup.tsx` (wildcard section display)
-
-**Database migration:**
-- Create `producer_features` table with RLS
-
-**No changes to:**
-- Booking flow / SignUpModal
-- Public producer page layout
-- Email/notification logic
-- Any edge functions
+### After your review
+Once you approve the proposed designs in the preview, I'll apply the exact HTML from the "proposed" column to the edge functions — template-for-template, with no logic changes.
 
