@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { SignUpModal } from './SignUpModal';
-import { format, parseISO, isAfter } from 'date-fns';
+import { format, parseISO, isAfter, differenceInMilliseconds, differenceInSeconds } from 'date-fns';
 
 interface Section {
   label: string;
