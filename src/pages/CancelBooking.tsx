@@ -63,7 +63,7 @@ function getSectionLabel(slotPosition: number, sectionsConfig: Array<{ label: st
 export default function CancelBooking() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [isCancelling, setIsCancelling] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [alertFrequency, setAlertFrequency] = useState<AlertFrequency>('daily');
 
