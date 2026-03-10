@@ -149,8 +149,8 @@ export default function CancelBooking() {
       if (!data?.success) {
         if (data?.code === 'already_cancelled') {
           toast({
-            title: 'Already cancelled',
-            description: 'This booking was already cancelled.',
+            title: 'Already canceled',
+            description: 'This booking was already canceled.',
           });
           setTimeout(() => window.location.reload(), 1000);
           return;
