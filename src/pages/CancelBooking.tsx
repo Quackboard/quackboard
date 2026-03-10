@@ -183,7 +183,7 @@ export default function CancelBooking() {
         variant: 'destructive',
       });
     } finally {
-      setIsCancelling(false);
+      setIsCanceling(false);
     }
   };
 
