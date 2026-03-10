@@ -33,6 +33,15 @@ interface BookingDetails {
   };
 }
 
+// Format 24h time string (HH:MM or HH:MM:SS) to 12-hour format
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+}
+
 // Helper function to get section label from slot position
 function getSectionLabel(slotPosition: number, sectionsConfig: Array<{ label: string; slots: number }> | null): string {
   if (!sectionsConfig || sectionsConfig.length === 0) {
@@ -242,7 +251,9 @@ export default function CancelBooking() {
   }
 
   const isCancelled = !!booking.cancelled_at;
-  const eventDate = new Date(booking.event.date).toLocaleDateString('en-US', {
+  // Parse as local date to prevent timezone shift (date is stored as YYYY-MM-DD without timezone)
+  const [year, month, day] = booking.event.date.split('-').map(Number);
+  const eventDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -285,7 +296,7 @@ export default function CancelBooking() {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {booking.event.start_time} - {booking.event.end_time}
+                    {formatTime(booking.event.start_time)} - {formatTime(booking.event.end_time)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
