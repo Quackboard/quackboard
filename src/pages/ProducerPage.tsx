@@ -187,26 +187,31 @@ export default function ProducerPage() {
             <p className="text-muted-foreground">No events scheduled.</p>
           </div>
         ) : (
-          <div className="mt-8 space-y-4">
-            <DaySelector
-              dates={eventDates}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-            />
+          <>
+            <div className="mt-8 space-y-4">
+              <DaySelector
+                dates={eventDates}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
 
-            <div className="space-y-2">
-              {filteredEvents.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                  producerVenueName={producer.venue_name}
-                  onBookingSuccess={refetchBookings}
-                />
-              ))}
+              <div className="space-y-2">
+                {filteredEvents.map(event => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                    producerVenueName={producer.venue_name}
+                    onBookingSuccess={refetchBookings}
+                  />
+                ))}
+              </div>
             </div>
 
-          </div>
+            <p className="mt-6 text-xs text-muted-foreground text-center">
+              Need to cancel? Look for the cancellation link in your confirmation email (subject: &quot;Booking Confirmed&quot;).
+            </p>
+          </>
         )}
 
         <footer className="mt-12 pt-6 border-t border-border text-center space-y-1">
