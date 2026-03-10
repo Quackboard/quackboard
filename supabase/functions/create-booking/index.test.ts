@@ -42,8 +42,8 @@ Deno.test("create-booking: returns invalid_request for missing fields", async ()
 
 // ─── Test 2: Happy path ──────────────────────────────────────────────────
 Deno.test("create-booking: happy path creates booking and returns success", async () => {
-  // Use a high slot position unlikely to conflict
-  const slotPosition = 999;
+  // Use a random high slot position to avoid collisions with stale data
+  const slotPosition = 10000 + Math.floor(Math.random() * 89999);
   const uniqueEmail = `test-${Date.now()}@example.com`;
 
   const { status, data } = await callCreateBooking({
