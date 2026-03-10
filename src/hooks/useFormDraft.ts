@@ -16,7 +16,7 @@ export function useFormDraft<T extends FieldValues>({
   serialize,
   deserialize,
 }: UseFormDraftOptions<T>) {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadRef = useRef(false);
 
   // Default serializers handle Date objects
