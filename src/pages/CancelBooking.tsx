@@ -138,7 +138,7 @@ export default function CancelBooking() {
 
     if (!confirmed) return;
 
-    setIsCancelling(true);
+    setIsCanceling(true);
     try {
       const { data, error } = await supabase.functions.invoke('cancel-booking', {
         body: { cancelToken: token },
