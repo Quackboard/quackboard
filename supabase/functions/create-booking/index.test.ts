@@ -118,7 +118,7 @@ Deno.test("create-booking: returns duplicate_email when same email books twice",
   // First booking
   const first = await callCreateBooking({
     eventId,
-    slotPosition: 997,
+    slotPosition: 10000 + Math.floor(Math.random() * 89999),
     guestName: "Dup Comic",
     guestEmail: sharedEmail,
     allowMultipleSpots: false,
