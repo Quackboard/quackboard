@@ -207,6 +207,10 @@ export default function ProducerPage() {
             </div>
 
           </div>
+
+            <p className="mt-6 text-xs text-muted-foreground text-center">
+              Need to cancel? Look for the cancellation link in your confirmation email (subject: "Booking Confirmed").
+            </p>
         )}
 
         <footer className="mt-12 pt-6 border-t border-border text-center space-y-1">
