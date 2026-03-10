@@ -280,7 +280,7 @@ export default function CancelBooking() {
             </CardTitle>
             <CardDescription>
               {isCancelled
-                ? 'This booking has been cancelled.'
+                ? 'This booking has been canceled.'
                 : `Hello ${booking.guest_name}, manage your booking and alert preferences below.`}
             </CardDescription>
           </CardHeader>
