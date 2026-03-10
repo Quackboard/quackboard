@@ -42,8 +42,8 @@ Deno.test("create-booking: returns invalid_request for missing fields", async ()
 
 // ─── Test 2: Happy path ──────────────────────────────────────────────────
 Deno.test("create-booking: happy path creates booking and returns success", async () => {
-  // Use a high slot position unlikely to conflict
-  const slotPosition = 999;
+  // Use a random high slot position to avoid collisions with stale data
+  const slotPosition = 10000 + Math.floor(Math.random() * 89999);
   const uniqueEmail = `test-${Date.now()}@example.com`;
 
   const { status, data } = await callCreateBooking({
@@ -75,7 +75,7 @@ Deno.test("create-booking: happy path creates booking and returns success", asyn
 
 // ─── Test 3: Slot taken (duplicate slot_position) ────────────────────────
 Deno.test("create-booking: returns slot_taken for duplicate slot position", async () => {
-  const slotPosition = 998;
+  const slotPosition = 10000 + Math.floor(Math.random() * 89999);
   const eventId = "40604a22-e8fc-4797-b498-fb2cda6cd6e8";
 
   // First booking
@@ -118,7 +118,7 @@ Deno.test("create-booking: returns duplicate_email when same email books twice",
   // First booking
   const first = await callCreateBooking({
     eventId,
-    slotPosition: 997,
+    slotPosition: 10000 + Math.floor(Math.random() * 89999),
     guestName: "Dup Comic",
     guestEmail: sharedEmail,
     allowMultipleSpots: false,
@@ -134,7 +134,7 @@ Deno.test("create-booking: returns duplicate_email when same email books twice",
   // Second booking — different slot, same email
   const second = await callCreateBooking({
     eventId,
-    slotPosition: 996,
+    slotPosition: 10000 + Math.floor(Math.random() * 89999),
     guestName: "Dup Comic Again",
     guestEmail: sharedEmail,
     allowMultipleSpots: false,
