@@ -63,7 +63,7 @@ function getSectionLabel(slotPosition: number, sectionsConfig: Array<{ label: st
 export default function CancelBooking() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [isCancelling, setIsCancelling] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [alertFrequency, setAlertFrequency] = useState<AlertFrequency>('daily');
 
@@ -138,7 +138,7 @@ export default function CancelBooking() {
 
     if (!confirmed) return;
 
-    setIsCancelling(true);
+    setIsCanceling(true);
     try {
       const { data, error } = await supabase.functions.invoke('cancel-booking', {
         body: { cancelToken: token },
@@ -149,8 +149,8 @@ export default function CancelBooking() {
       if (!data?.success) {
         if (data?.code === 'already_cancelled') {
           toast({
-            title: 'Already cancelled',
-            description: 'This booking was already cancelled.',
+            title: 'Already canceled',
+            description: 'This booking was already canceled.',
           });
           setTimeout(() => window.location.reload(), 1000);
           return;
@@ -167,8 +167,8 @@ export default function CancelBooking() {
       }
 
       toast({
-        title: 'Booking cancelled',
-        description: 'Your booking has been successfully cancelled.',
+        title: 'Booking canceled',
+        description: 'Your booking has been successfully canceled.',
       });
 
       // Refresh the booking data
@@ -176,14 +176,14 @@ export default function CancelBooking() {
         window.location.reload();
       }, 1000);
     } catch (error) {
-      console.error('Error cancelling booking:', error);
+      console.error('Error canceling booking:', error);
       toast({
         title: 'Failed to cancel booking',
         description: 'Please try again or contact support.',
         variant: 'destructive',
       });
     } finally {
-      setIsCancelling(false);
+      setIsCanceling(false);
     }
   };
 
@@ -269,7 +269,7 @@ export default function CancelBooking() {
               {isCancelled ? (
                 <>
                   <XCircle className="h-6 w-6 text-destructive" />
-                  Booking Cancelled
+                  Booking Canceled
                 </>
               ) : (
                 <>
@@ -280,7 +280,7 @@ export default function CancelBooking() {
             </CardTitle>
             <CardDescription>
               {isCancelled
-                ? 'This booking has been cancelled.'
+                ? 'This booking has been canceled.'
                 : `Hello ${booking.guest_name}, manage your booking and alert preferences below.`}
             </CardDescription>
           </CardHeader>
@@ -325,13 +325,13 @@ export default function CancelBooking() {
                   <Button
                     variant="destructive"
                     onClick={handleCancel}
-                    disabled={isCancelling}
+                    disabled={isCanceling}
                     className="w-full sm:w-auto"
                   >
-                    {isCancelling ? (
+                    {isCanceling ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Cancelling...
+                        Canceling...
                       </>
                     ) : (
                       'Cancel Booking'
