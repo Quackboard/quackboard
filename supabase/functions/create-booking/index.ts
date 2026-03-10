@@ -35,11 +35,20 @@ function formatTime12h(time24: string): string {
 
 function getSectionLabel(
   slotPosition: number,
-  sectionsConfig: Array<{ label: string; slots: number }> | null,
+  sectionsConfig: Array<{ label: string; slots: number; type?: string }> | null,
 ): string {
   if (!sectionsConfig || sectionsConfig.length === 0) return "General";
   let currentSlot = 1;
-  for (const section of sectionsConfig) {
+  const regularSections = sectionsConfig.filter(s => s.type !== "wildcard");
+  const totalRegularSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
+
+  // If slot is beyond regular range, it's a wildcard slot
+  if (slotPosition > totalRegularSlots) {
+    const wildcardSection = sectionsConfig.find(s => s.type === "wildcard");
+    return wildcardSection?.label || "Wildcards";
+  }
+
+  for (const section of regularSections) {
     const sectionEnd = currentSlot + section.slots - 1;
     if (slotPosition >= currentSlot && slotPosition <= sectionEnd) {
       return section.label;
