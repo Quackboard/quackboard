@@ -176,7 +176,7 @@ export default function CancelBooking() {
         window.location.reload();
       }, 1000);
     } catch (error) {
-      console.error('Error cancelling booking:', error);
+      console.error('Error canceling booking:', error);
       toast({
         title: 'Failed to cancel booking',
         description: 'Please try again or contact support.',
