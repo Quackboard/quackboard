@@ -269,7 +269,7 @@ export default function CancelBooking() {
               {isCancelled ? (
                 <>
                   <XCircle className="h-6 w-6 text-destructive" />
-                  Booking Cancelled
+                  Booking Canceled
                 </>
               ) : (
                 <>
