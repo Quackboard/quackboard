@@ -167,8 +167,8 @@ export default function CancelBooking() {
       }
 
       toast({
-        title: 'Booking cancelled',
-        description: 'Your booking has been successfully cancelled.',
+        title: 'Booking canceled',
+        description: 'Your booking has been successfully canceled.',
       });
 
       // Refresh the booking data
