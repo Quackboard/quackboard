@@ -75,7 +75,7 @@ Deno.test("create-booking: happy path creates booking and returns success", asyn
 
 // ─── Test 3: Slot taken (duplicate slot_position) ────────────────────────
 Deno.test("create-booking: returns slot_taken for duplicate slot position", async () => {
-  const slotPosition = 998;
+  const slotPosition = 10000 + Math.floor(Math.random() * 89999);
   const eventId = "40604a22-e8fc-4797-b498-fb2cda6cd6e8";
 
   // First booking
