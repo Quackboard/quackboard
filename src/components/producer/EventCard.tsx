@@ -162,14 +162,19 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           )}
           
           {signupStatus.isOpen && sections.length > 0 && (
-            <SpotList 
-              sectionsConfig={sections} 
-              bookings={bookings} 
-              eventId={event.id}
-              eventTime={eventTime}
-              allowMultipleSpots={event.allow_multiple_slots ?? false}
-              onBookingSuccess={onBookingSuccess}
-            />
+            <>
+              <SpotList 
+                sectionsConfig={sections} 
+                bookings={bookings} 
+                eventId={event.id}
+                eventTime={eventTime}
+                allowMultipleSpots={event.allow_multiple_slots ?? false}
+                onBookingSuccess={onBookingSuccess}
+              />
+              <p className="text-xs text-muted-foreground pt-1">
+                Spots fill up fast — check back periodically as people sometimes cancel.
+              </p>
+            </>
           )}
         </CardContent>
       </div>
