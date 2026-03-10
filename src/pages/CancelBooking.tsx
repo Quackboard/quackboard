@@ -296,7 +296,7 @@ export default function CancelBooking() {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {booking.event.start_time} - {booking.event.end_time}
+                    {formatTime(booking.event.start_time)} - {formatTime(booking.event.end_time)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
