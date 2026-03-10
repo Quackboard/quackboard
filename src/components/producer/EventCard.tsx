@@ -172,7 +172,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 onBookingSuccess={onBookingSuccess}
               />
               <p className="text-xs text-muted-foreground pt-1">
-                Spots fill up fast — check back periodically as people sometimes cancel.
+                Full for now, but keep checking this page as people sometimes cancel.
               </p>
             </>
           )}
