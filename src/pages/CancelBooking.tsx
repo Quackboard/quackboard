@@ -325,13 +325,13 @@ export default function CancelBooking() {
                   <Button
                     variant="destructive"
                     onClick={handleCancel}
-                    disabled={isCancelling}
+                    disabled={isCanceling}
                     className="w-full sm:w-auto"
                   >
-                    {isCancelling ? (
+                    {isCanceling ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Cancelling...
+                        Canceling...
                       </>
                     ) : (
                       'Cancel Booking'

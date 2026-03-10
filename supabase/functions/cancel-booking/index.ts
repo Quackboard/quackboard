@@ -73,7 +73,7 @@ serve(async (req) => {
       return json({ success: false, code: "server_error" }, 500);
     }
 
-    console.log(`✅ Booking ${booking.id} cancelled via token`);
+    console.log(`✅ Booking ${booking.id} canceled via token`);
 
     // ── Step 3: Fetch event + producer data for cancellation email ──────
     if (booking.event_id) {
