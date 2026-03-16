@@ -53,6 +53,14 @@ function parseSections(config: unknown): Section[] {
   return [];
 }
 
+function formatTime12h(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
 export default function EventLineup() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -73,7 +81,7 @@ export default function EventLineup() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, date, producer_id, sections_config')
+        .select('id, title, date, start_time, end_time, producer_id, sections_config')
         .eq('id', id!)
         .maybeSingle();
 
@@ -267,7 +275,19 @@ export default function EventLineup() {
             Back to Dashboard
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Lineup</h1>
+              {event && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {(() => {
+                    const [y, m, d] = event.date.split('-').map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                  })()}
+                  {' · '}
+                  {formatTime12h(event.start_time)} – {formatTime12h(event.end_time)}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
