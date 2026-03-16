@@ -257,7 +257,7 @@ export default function CreateMic() {
         if (s.type === 'wildcard' && s.signup_opens_at_date && s.signup_opens_at_time) {
           const localCutoff = combineDateAndTime(s.signup_opens_at_date, s.signup_opens_at_time);
           const utcCutoff = fromZonedTime(localCutoff, timezone).toISOString();
-          return { label: s.label, slots: 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
+          return { label: s.label, slots: s.slots || 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
         }
         return { label: s.label, slots: s.slots };
       });
@@ -660,9 +660,18 @@ export default function CreateMic() {
                             </p>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Unfilled regular spots become available as wildcards after this time.
-                        </p>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Guaranteed spots</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            {...register(`sections.${index}.slots`, { valueAsNumber: true })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            At minimum this many spots will be available, even if all regular spots are filled. Unfilled regular spots may increase this number.
+                          </p>
+                        </div>
                       </div>
                     );
                   }
