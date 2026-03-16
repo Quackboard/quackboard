@@ -135,6 +135,7 @@ export function SpotList({
   const availableWildcardSlots = Math.max(0, totalWildcardSlots - bookedWildcardCount);
 
   let globalSlotNumber = 0;
+  let displayCounter = 0;
 
   return (
     <>
