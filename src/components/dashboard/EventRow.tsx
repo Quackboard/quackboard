@@ -179,6 +179,9 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   };
   const sectionStats = getSectionStats();
 
+  const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
+  const totalShowSpots = totalRegularSlots + (wildcardSection?.slots || 0);
+
   return (
     <Card className={cn(
       "border-border",
@@ -207,6 +210,12 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
                   </div>
                 ))}
               </div>
+            )}
+
+            {wildcardSection && !wildcardCutoffPassed && wildcardSection.signup_opens_at && (
+              <p className="text-xs text-muted-foreground italic">
+                🎲 At least {wildcardSection.slots} wildcard spot{wildcardSection.slots !== 1 ? 's' : ''} opening {formatDateTime(wildcardSection.signup_opens_at)} — {totalShowSpots} total spots on this show
+              </p>
             )}
 
             <div className="flex items-center gap-3 text-xs">
