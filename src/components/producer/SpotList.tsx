@@ -279,13 +279,15 @@ export function SpotList({
                 {slots.map(slot => {
                   // After wildcard cutoff, hide unbooked regular slots
                   if (wildcardCutoffPassed && !slot.booking) return null;
+                  if (wildcardCutoffPassed && slot.booking) displayCounter++;
+                  const displayNum = wildcardCutoffPassed ? displayCounter : slot.number;
                   return (
                     <div
                       key={slot.number}
                       className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                     >
                       <span className="w-6 text-sm font-mono text-muted-foreground">
-                        {slot.number}.
+                        {displayNum}.
                       </span>
                       {slot.booking ? (
                         <span className="text-sm text-foreground font-medium">
