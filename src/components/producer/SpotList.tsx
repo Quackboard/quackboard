@@ -170,19 +170,22 @@ export function SpotList({
                 ) : (
                   <div className="space-y-1 mt-2">
                     {/* Show booked wildcard slots */}
-                    {wildcardBookings.map(booking => (
-                      <div
-                        key={booking.id}
-                        className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                      >
-                        <span className="w-6 text-sm font-mono text-muted-foreground">
-                          {booking.slot_position}.
-                        </span>
-                        <span className="text-sm text-foreground font-medium">
-                          {booking.guest_name}
-                        </span>
-                      </div>
-                    ))}
+                    {wildcardBookings.map(booking => {
+                      displayCounter++;
+                      return (
+                        <div
+                          key={booking.id}
+                          className="flex items-center gap-3 py-1.5 px-2 rounded-md"
+                        >
+                          <span className="w-6 text-sm font-mono text-muted-foreground">
+                            {displayCounter}.
+                          </span>
+                          <span className="text-sm text-foreground font-medium">
+                            {booking.guest_name}
+                          </span>
+                        </div>
+                      );
+                    })}
 
                     {/* Show available wildcard slots */}
                     {Array.from({ length: availableWildcardSlots }, (_, i) => {
