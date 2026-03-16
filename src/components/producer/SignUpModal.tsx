@@ -78,7 +78,7 @@ export function SignUpModal({
       if (result.success) {
         toast({
           title: "You're in!",
-          description: `You've grabbed spot #${spotNumber}`,
+          description: sectionLabel ? `You've grabbed a spot in ${sectionLabel}` : "You've grabbed a spot",
         });
         form.reset();
         onOpenChange(false);
@@ -128,8 +128,7 @@ export function SignUpModal({
 
         <div className="text-sm text-muted-foreground mb-4">
           <p>{eventTime}</p>
-          {sectionLabel && <p className="text-xs">{sectionLabel} · Spot #{spotNumber}</p>}
-          {!sectionLabel && <p className="text-xs">Spot #{spotNumber}</p>}
+          {sectionLabel && <p className="text-xs">{sectionLabel}</p>}
         </div>
 
         <Form {...form}>
