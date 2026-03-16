@@ -360,9 +360,10 @@ export default function EventLineup() {
 
             {/* Mobile List */}
             <div className="md:hidden space-y-1">
-              {section.slots.map((slotPosition) => {
+              {section.slots.map((slotPosition, idx) => {
                 const booking = getBookingForSlot(slotPosition);
                 const isExpanded = expandedSlot === slotPosition;
+                const displayNum = idx + 1;
                 
                 return (
                   <div key={slotPosition}>
@@ -370,7 +371,7 @@ export default function EventLineup() {
                       onClick={() => handleMobileSlotClick(slotPosition, section.label, booking)}
                       className="w-full text-left py-2 px-1 hover:bg-muted/50 rounded-md transition-colors"
                     >
-                      <span className="text-muted-foreground mr-2">{slotPosition}.</span>
+                      <span className="text-muted-foreground mr-2">{displayNum}.</span>
                       {booking ? (
                         <span className="font-medium">{booking.guest_name}</span>
                       ) : (
