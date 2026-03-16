@@ -78,7 +78,7 @@ export function SignUpModal({
       if (result.success) {
         toast({
           title: "You're in!",
-          description: `You've grabbed spot #${spotNumber}`,
+          description: sectionLabel ? `You've grabbed a spot in ${sectionLabel}` : "You've grabbed a spot",
         });
         form.reset();
         onOpenChange(false);
