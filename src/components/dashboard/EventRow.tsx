@@ -45,7 +45,11 @@ function parseSections(config: unknown): Section[] {
         item !== null &&
         typeof item.label === 'string' &&
         typeof item.slots === 'number'
-    );
+    ).map(item => ({
+      ...item,
+      type: (item as any).type || undefined,
+      signup_opens_at: (item as any).signup_opens_at || undefined,
+    }));
   }
   return [];
 }
