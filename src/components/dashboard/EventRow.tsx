@@ -137,6 +137,12 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const signupStatus = getSignupStatus();
 
   // Calculate slot ranges and booking counts per section
+  // Determine if wildcard cutoff has passed
+  const wildcardSection = sections.find(s => s.type === 'wildcard');
+  const wildcardCutoffPassed = wildcardSection?.signup_opens_at
+    ? !isAfter(parseISO(wildcardSection.signup_opens_at), now)
+    : false;
+
   const getSectionStats = () => {
     const regularSections = sections.filter(s => s.type !== 'wildcard');
     const totalRegularSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
@@ -146,18 +152,25 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
     let startSlot = 1;
     return sections.map(section => {
       if (section.type === 'wildcard') {
-        const guaranteedSlots = section.slots || 0;
-        const dynamicTotal = Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots);
+        // Before cutoff: hide wildcard from stats
+        if (!wildcardCutoffPassed) return null;
+        const reserved = section.slots || 0;
+        const unfilledRegular = totalRegularSlots - bookedRegularCount;
+        const dynamicTotal = unfilledRegular + reserved;
         return { label: section.label, booked: bookedWildcardCount, total: dynamicTotal };
       }
       const endSlot = startSlot + section.slots - 1;
       const bookedCount = activeBookings.filter(
         b => b.slot_position >= startSlot && b.slot_position <= endSlot
       ).length;
-      const stats = { label: section.label, booked: bookedCount, total: section.slots };
+      // After cutoff: regular section total = booked count (unfilled slots disappeared)
+      const total = wildcardCutoffPassed ? bookedCount : section.slots;
+      const stats = { label: section.label, booked: bookedCount, total };
       startSlot = endSlot + 1;
+      // After cutoff: hide empty regular sections
+      if (wildcardCutoffPassed && bookedCount === 0) return null;
       return stats;
-    });
+    }).filter(Boolean) as { label: string; booked: number; total: number }[];
   };
   const sectionStats = getSectionStats();
 

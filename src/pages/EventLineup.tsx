@@ -139,6 +139,10 @@ export default function EventLineup() {
     let startSlot = 1;
     return sections.map(section => {
       if (section.type === 'wildcard') {
+        // Before cutoff: hide wildcard section
+        if (!wildcardCutoffPassed) {
+          return null;
+        }
         // Wildcard slots: show booked ones + available ones
         const wildcardBookedSlots = bookings
           .filter(b => b.slot_position > totalRegularSlots)
@@ -154,10 +158,17 @@ export default function EventLineup() {
       for (let i = 0; i < section.slots; i++) {
         slots.push(startSlot + i);
       }
+      // After cutoff: only show booked regular slots
+      if (wildcardCutoffPassed) {
+        const bookedSlots = slots.filter(pos => bookings.some(b => b.slot_position === pos));
+        const result = { label: section.label, slots: bookedSlots, startSlot };
+        startSlot += section.slots;
+        return bookedSlots.length > 0 ? result : null;
+      }
       const result = { label: section.label, slots, startSlot };
       startSlot += section.slots;
       return result;
-    });
+    }).filter(Boolean) as { label: string; slots: number[]; startSlot: number }[];
   };
 
   const sectionSlots = getSectionSlots();

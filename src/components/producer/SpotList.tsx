@@ -266,32 +266,34 @@ export function SpotList({
               )}
               
               <div className="space-y-1 mt-2">
-                {slots.map(slot => (
-                  <div
-                    key={slot.number}
-                    className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                  >
-                    <span className="w-6 text-sm font-mono text-muted-foreground">
-                      {slot.number}.
-                    </span>
-                    {slot.booking ? (
-                      <span className="text-sm text-foreground font-medium">
-                        {slot.booking.guest_name}
+                {slots.map(slot => {
+                  // After wildcard cutoff, hide unbooked regular slots
+                  if (wildcardCutoffPassed && !slot.booking) return null;
+                  return (
+                    <div
+                      key={slot.number}
+                      className="flex items-center gap-3 py-1.5 px-2 rounded-md"
+                    >
+                      <span className="w-6 text-sm font-mono text-muted-foreground">
+                        {slot.number}.
                       </span>
-                    ) : wildcardCutoffPassed ? (
-                      <span className="text-sm text-muted-foreground">—</span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openModal(slot.number, section.label)}
-                        className="h-7 text-xs px-3"
-                      >
-                        Grab Spot
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                      {slot.booking ? (
+                        <span className="text-sm text-foreground font-medium">
+                          {slot.booking.guest_name}
+                        </span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openModal(slot.number, section.label)}
+                          className="h-7 text-xs px-3"
+                        >
+                          Grab Spot
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {shouldCollapse && isExpanded && (
