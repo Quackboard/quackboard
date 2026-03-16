@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Copy, Download } from 'lucide-react';
+import { isAfter, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
@@ -123,13 +124,25 @@ export default function EventLineup() {
   const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
   const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
-  const guaranteedSlots = sections.find(s => s.type === 'wildcard')?.slots || 0;
-  const availableWildcardSlots = Math.max(0, Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots) - bookedWildcardCount);
+  const reservedWildcardSlots = sections.find(s => s.type === 'wildcard')?.slots || 0;
+  const unfilledRegularSlots = totalRegularSlots - bookedRegularCount;
+  const totalWildcardSlots = unfilledRegularSlots + reservedWildcardSlots;
+  const availableWildcardSlots = Math.max(0, totalWildcardSlots - bookedWildcardCount);
+
+  // Determine if wildcard cutoff has passed
+  const wildcardSection = sections.find(s => s.type === 'wildcard');
+  const wildcardCutoffPassed = wildcardSection?.signup_opens_at
+    ? !isAfter(parseISO(wildcardSection.signup_opens_at), new Date())
+    : false;
 
   const getSectionSlots = () => {
     let startSlot = 1;
     return sections.map(section => {
       if (section.type === 'wildcard') {
+        // Before cutoff: hide wildcard section
+        if (!wildcardCutoffPassed) {
+          return null;
+        }
         // Wildcard slots: show booked ones + available ones
         const wildcardBookedSlots = bookings
           .filter(b => b.slot_position > totalRegularSlots)
@@ -145,10 +158,17 @@ export default function EventLineup() {
       for (let i = 0; i < section.slots; i++) {
         slots.push(startSlot + i);
       }
+      // After cutoff: only show booked regular slots
+      if (wildcardCutoffPassed) {
+        const bookedSlots = slots.filter(pos => bookings.some(b => b.slot_position === pos));
+        const result = { label: section.label, slots: bookedSlots, startSlot };
+        startSlot += section.slots;
+        return bookedSlots.length > 0 ? result : null;
+      }
       const result = { label: section.label, slots, startSlot };
       startSlot += section.slots;
       return result;
-    });
+    }).filter(Boolean) as { label: string; slots: number[]; startSlot: number }[];
   };
 
   const sectionSlots = getSectionSlots();

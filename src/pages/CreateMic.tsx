@@ -661,16 +661,25 @@ export default function CreateMic() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm">Guaranteed spots</Label>
+                          <Label className="text-sm">Reserved wildcard spots</Label>
                           <Input
                             type="number"
                             min={0}
                             placeholder="0"
                             {...register(`sections.${index}.slots`, { valueAsNumber: true })}
                           />
-                          <p className="text-xs text-muted-foreground">
-                            At minimum this many spots will be available, even if all regular spots are filled. Unfilled regular spots may increase this number.
-                          </p>
+                          {(() => {
+                            const allSections = watch('sections') || [];
+                            const totalRegular = allSections
+                              .filter((_: any, i: number) => i !== index && allSections[i]?.type !== 'wildcard')
+                              .reduce((sum: number, s: any) => sum + (Number(s?.slots) || 0), 0);
+                            const reserved = Number(watch(`sections.${index}.slots`)) || 0;
+                            return (
+                              <p className="text-xs text-muted-foreground">
+                                This show will have {totalRegular + reserved} total spots: {totalRegular} regular + {reserved} guaranteed wildcard
+                              </p>
+                            );
+                          })()}
                         </div>
                       </div>
                     );

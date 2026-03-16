@@ -129,8 +129,10 @@ export function SpotList({
   // Count booked regular and wildcard slots
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
   const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
-  const guaranteedSlots = wildcardSection?.slots || 0;
-  const availableWildcardSlots = Math.max(0, Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots) - bookedWildcardCount);
+  const reservedWildcardSlots = wildcardSection?.slots || 0;
+  const unfilledRegularSlots = totalRegularSlots - bookedRegularCount;
+  const totalWildcardSlots = unfilledRegularSlots + reservedWildcardSlots;
+  const availableWildcardSlots = Math.max(0, totalWildcardSlots - bookedWildcardCount);
 
   let globalSlotNumber = 0;
 
@@ -141,27 +143,8 @@ export function SpotList({
           // Wildcard section rendering
           if (section.type === 'wildcard') {
             if (!wildcardCutoffPassed) {
-              // Before cutoff: show "opens at" message
-              return (
-                <div key={sectionIndex}>
-                  {section.label && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground/70 py-1">
-                      <span className="flex-1 h-px bg-border/50" />
-                      <span className="uppercase tracking-wider text-[10px]">
-                        {section.label}
-                      </span>
-                      <span className="flex-1 h-px bg-border/50" />
-                    </div>
-                  )}
-                  <p className="text-sm text-muted-foreground px-2 py-2">
-                    {wildcardCountdown
-                      ? (guaranteedSlots > 0 ? `${guaranteedSlots}+ spots — ${wildcardCountdown}` : wildcardCountdown)
-                      : (guaranteedSlots > 0
-                        ? `${guaranteedSlots}+ wildcard spots will open ${section.signup_opens_at ? format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a") : 'later'}`
-                        : (section.signup_opens_at ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}` : 'Opens later'))}
-                  </p>
-                </div>
-              );
+              // Before cutoff: hide wildcard section entirely
+              return null;
             }
 
             // After cutoff: show dynamic wildcard slots
@@ -238,7 +221,12 @@ export function SpotList({
             slots.push({ number: globalSlotNumber, booking });
           }
 
+          const bookedCount = slots.filter(s => s.booking).length;
           const availableCount = slots.filter(s => !s.booking).length;
+
+          // After cutoff, hide entire section if no bookings
+          if (wildcardCutoffPassed && bookedCount === 0) return null;
+
           const shouldCollapse = section.slots > 6;
           const isExpanded = expandedSections.has(sectionIndex);
 
@@ -283,32 +271,34 @@ export function SpotList({
               )}
               
               <div className="space-y-1 mt-2">
-                {slots.map(slot => (
-                  <div
-                    key={slot.number}
-                    className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                  >
-                    <span className="w-6 text-sm font-mono text-muted-foreground">
-                      {slot.number}.
-                    </span>
-                    {slot.booking ? (
-                      <span className="text-sm text-foreground font-medium">
-                        {slot.booking.guest_name}
+                {slots.map(slot => {
+                  // After wildcard cutoff, hide unbooked regular slots
+                  if (wildcardCutoffPassed && !slot.booking) return null;
+                  return (
+                    <div
+                      key={slot.number}
+                      className="flex items-center gap-3 py-1.5 px-2 rounded-md"
+                    >
+                      <span className="w-6 text-sm font-mono text-muted-foreground">
+                        {slot.number}.
                       </span>
-                    ) : wildcardCutoffPassed ? (
-                      <span className="text-sm text-muted-foreground">—</span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openModal(slot.number, section.label)}
-                        className="h-7 text-xs px-3"
-                      >
-                        Grab Spot
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                      {slot.booking ? (
+                        <span className="text-sm text-foreground font-medium">
+                          {slot.booking.guest_name}
+                        </span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openModal(slot.number, section.label)}
+                          className="h-7 text-xs px-3"
+                        >
+                          Grab Spot
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {shouldCollapse && isExpanded && (
