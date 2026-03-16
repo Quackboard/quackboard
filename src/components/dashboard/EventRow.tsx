@@ -137,8 +137,18 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
 
   // Calculate slot ranges and booking counts per section
   const getSectionStats = () => {
+    const regularSections = sections.filter(s => s.type !== 'wildcard');
+    const totalRegularSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
+    const bookedRegularCount = activeBookings.filter(b => b.slot_position <= totalRegularSlots).length;
+    const bookedWildcardCount = activeBookings.filter(b => b.slot_position > totalRegularSlots).length;
+
     let startSlot = 1;
     return sections.map(section => {
+      if (section.type === 'wildcard') {
+        const guaranteedSlots = section.slots || 0;
+        const dynamicTotal = Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots);
+        return { label: section.label, booked: bookedWildcardCount, total: dynamicTotal };
+      }
       const endSlot = startSlot + section.slots - 1;
       const bookedCount = activeBookings.filter(
         b => b.slot_position >= startSlot && b.slot_position <= endSlot
