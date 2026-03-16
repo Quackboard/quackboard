@@ -311,11 +311,12 @@ export default function EventLineup() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {section.slots.map((slotPosition) => {
+                  {section.slots.map((slotPosition, idx) => {
                     const booking = getBookingForSlot(slotPosition);
+                    const displayNum = idx + 1;
                     return (
                       <TableRow key={slotPosition}>
-                        <TableCell className="font-medium">{slotPosition}</TableCell>
+                        <TableCell className="font-medium">{displayNum}</TableCell>
                         <TableCell>
                           {booking ? (
                             booking.guest_name
