@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface Section {
   label: string;
   slots: number;
+  type?: 'regular' | 'wildcard';
 }
 
 interface EventRowProps {
