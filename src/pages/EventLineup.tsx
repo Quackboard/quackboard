@@ -123,8 +123,16 @@ export default function EventLineup() {
   const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
   const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
-  const guaranteedSlots = sections.find(s => s.type === 'wildcard')?.slots || 0;
-  const availableWildcardSlots = Math.max(0, Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots) - bookedWildcardCount);
+  const reservedWildcardSlots = sections.find(s => s.type === 'wildcard')?.slots || 0;
+  const unfilledRegularSlots = totalRegularSlots - bookedRegularCount;
+  const totalWildcardSlots = unfilledRegularSlots + reservedWildcardSlots;
+  const availableWildcardSlots = Math.max(0, totalWildcardSlots - bookedWildcardCount);
+
+  // Determine if wildcard cutoff has passed
+  const wildcardSection = sections.find(s => s.type === 'wildcard');
+  const wildcardCutoffPassed = wildcardSection?.signup_opens_at
+    ? !isAfter(parseISO(wildcardSection.signup_opens_at), new Date())
+    : false;
 
   const getSectionSlots = () => {
     let startSlot = 1;
