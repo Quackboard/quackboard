@@ -135,6 +135,7 @@ export function SpotList({
   const availableWildcardSlots = Math.max(0, totalWildcardSlots - bookedWildcardCount);
 
   let globalSlotNumber = 0;
+  let displayCounter = 0;
 
   return (
     <>
@@ -169,30 +170,34 @@ export function SpotList({
                 ) : (
                   <div className="space-y-1 mt-2">
                     {/* Show booked wildcard slots */}
-                    {wildcardBookings.map(booking => (
-                      <div
-                        key={booking.id}
-                        className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                      >
-                        <span className="w-6 text-sm font-mono text-muted-foreground">
-                          {booking.slot_position}.
-                        </span>
-                        <span className="text-sm text-foreground font-medium">
-                          {booking.guest_name}
-                        </span>
-                      </div>
-                    ))}
+                    {wildcardBookings.map(booking => {
+                      displayCounter++;
+                      return (
+                        <div
+                          key={booking.id}
+                          className="flex items-center gap-3 py-1.5 px-2 rounded-md"
+                        >
+                          <span className="w-6 text-sm font-mono text-muted-foreground">
+                            {displayCounter}.
+                          </span>
+                          <span className="text-sm text-foreground font-medium">
+                            {booking.guest_name}
+                          </span>
+                        </div>
+                      );
+                    })}
 
                     {/* Show available wildcard slots */}
                     {Array.from({ length: availableWildcardSlots }, (_, i) => {
                       const slotPos = totalRegularSlots + bookedWildcardCount + i + 1;
+                      displayCounter++;
                       return (
                         <div
                           key={`wc-${slotPos}`}
                           className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                         >
                           <span className="w-6 text-sm font-mono text-muted-foreground">
-                            {slotPos}.
+                            {displayCounter}.
                           </span>
                           <Button
                             variant="outline"
@@ -274,13 +279,15 @@ export function SpotList({
                 {slots.map(slot => {
                   // After wildcard cutoff, hide unbooked regular slots
                   if (wildcardCutoffPassed && !slot.booking) return null;
+                  if (wildcardCutoffPassed && slot.booking) displayCounter++;
+                  const displayNum = wildcardCutoffPassed ? displayCounter : slot.number;
                   return (
                     <div
                       key={slot.number}
                       className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                     >
                       <span className="w-6 text-sm font-mono text-muted-foreground">
-                        {slot.number}.
+                        {displayNum}.
                       </span>
                       {slot.booking ? (
                         <span className="text-sm text-foreground font-medium">
