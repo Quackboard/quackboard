@@ -128,8 +128,7 @@ export function SignUpModal({
 
         <div className="text-sm text-muted-foreground mb-4">
           <p>{eventTime}</p>
-          {sectionLabel && <p className="text-xs">{sectionLabel} · Spot #{spotNumber}</p>}
-          {!sectionLabel && <p className="text-xs">Spot #{spotNumber}</p>}
+          {sectionLabel && <p className="text-xs">{sectionLabel}</p>}
         </div>
 
         <Form {...form}>
