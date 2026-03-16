@@ -190,13 +190,14 @@ export function SpotList({
                     {/* Show available wildcard slots */}
                     {Array.from({ length: availableWildcardSlots }, (_, i) => {
                       const slotPos = totalRegularSlots + bookedWildcardCount + i + 1;
+                      displayCounter++;
                       return (
                         <div
                           key={`wc-${slotPos}`}
                           className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                         >
                           <span className="w-6 text-sm font-mono text-muted-foreground">
-                            {slotPos}.
+                            {displayCounter}.
                           </span>
                           <Button
                             variant="outline"
