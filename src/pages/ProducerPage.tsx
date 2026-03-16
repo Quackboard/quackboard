@@ -95,6 +95,7 @@ export default function ProducerPage() {
       return data as Booking[];
     },
     enabled: eventIds.length > 0,
+    placeholderData: (prev) => prev,
   });
 
   const refetchBookings = useCallback(() => {
