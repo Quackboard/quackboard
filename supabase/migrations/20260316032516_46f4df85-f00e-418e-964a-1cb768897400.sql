@@ -1,0 +1,1 @@
+INSERT INTO public.producer_features (producer_id, feature) VALUES ('1a0ffb85-e5e2-4c33-8eaa-15ae64f38066', 'wildcard') ON CONFLICT (producer_id, feature) DO NOTHING;
