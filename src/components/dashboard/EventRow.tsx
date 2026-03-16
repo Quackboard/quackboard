@@ -179,6 +179,9 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   };
   const sectionStats = getSectionStats();
 
+  const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
+  const totalShowSpots = totalRegularSlots + (wildcardSection?.slots || 0);
+
   return (
     <Card className={cn(
       "border-border",
