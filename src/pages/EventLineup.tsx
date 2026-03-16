@@ -73,7 +73,7 @@ export default function EventLineup() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, date, producer_id, sections_config')
+        .select('id, title, date, start_time, end_time, producer_id, sections_config')
         .eq('id', id!)
         .maybeSingle();
 
