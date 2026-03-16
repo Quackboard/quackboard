@@ -129,7 +129,8 @@ export function SpotList({
   // Count booked regular and wildcard slots
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
   const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
-  const availableWildcardSlots = Math.max(0, totalRegularSlots - bookedRegularCount - bookedWildcardCount);
+  const guaranteedSlots = wildcardSection?.slots || 0;
+  const availableWildcardSlots = Math.max(0, Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots) - bookedWildcardCount);
 
   let globalSlotNumber = 0;
 
