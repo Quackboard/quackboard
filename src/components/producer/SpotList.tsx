@@ -154,9 +154,11 @@ export function SpotList({
                     </div>
                   )}
                   <p className="text-sm text-muted-foreground px-2 py-2">
-                    {wildcardCountdown || (section.signup_opens_at
-                      ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}`
-                      : 'Opens later')}
+                    {wildcardCountdown
+                      ? (guaranteedSlots > 0 ? `${guaranteedSlots}+ spots — ${wildcardCountdown}` : wildcardCountdown)
+                      : (guaranteedSlots > 0
+                        ? `${guaranteedSlots}+ wildcard spots will open ${section.signup_opens_at ? format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a") : 'later'}`
+                        : (section.signup_opens_at ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}` : 'Opens later'))}
                   </p>
                 </div>
               );

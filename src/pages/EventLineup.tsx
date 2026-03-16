@@ -123,7 +123,8 @@ export default function EventLineup() {
   const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
   const bookedRegularCount = bookings.filter(b => b.slot_position <= totalRegularSlots).length;
   const bookedWildcardCount = bookings.filter(b => b.slot_position > totalRegularSlots).length;
-  const availableWildcardSlots = Math.max(0, totalRegularSlots - bookedRegularCount - bookedWildcardCount);
+  const guaranteedSlots = sections.find(s => s.type === 'wildcard')?.slots || 0;
+  const availableWildcardSlots = Math.max(0, Math.max(totalRegularSlots - bookedRegularCount, guaranteedSlots) - bookedWildcardCount);
 
   const getSectionSlots = () => {
     let startSlot = 1;
