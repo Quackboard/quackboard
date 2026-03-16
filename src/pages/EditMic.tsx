@@ -430,7 +430,7 @@ export default function EditMic() {
         if (s.type === 'wildcard' && s.signup_opens_at_date && s.signup_opens_at_time) {
           const localCutoff = combineDateAndTime(s.signup_opens_at_date, s.signup_opens_at_time);
           const utcCutoff = fromZonedTime(localCutoff, timezone).toISOString();
-          return { label: s.label, slots: 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
+          return { label: s.label, slots: s.slots || 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
         }
         return { label: s.label, slots: s.slots };
       });
