@@ -143,27 +143,8 @@ export function SpotList({
           // Wildcard section rendering
           if (section.type === 'wildcard') {
             if (!wildcardCutoffPassed) {
-              // Before cutoff: show "opens at" message
-              return (
-                <div key={sectionIndex}>
-                  {section.label && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground/70 py-1">
-                      <span className="flex-1 h-px bg-border/50" />
-                      <span className="uppercase tracking-wider text-[10px]">
-                        {section.label}
-                      </span>
-                      <span className="flex-1 h-px bg-border/50" />
-                    </div>
-                  )}
-                  <p className="text-sm text-muted-foreground px-2 py-2">
-                    {wildcardCountdown
-                      ? (guaranteedSlots > 0 ? `${guaranteedSlots}+ spots — ${wildcardCountdown}` : wildcardCountdown)
-                      : (guaranteedSlots > 0
-                        ? `${guaranteedSlots}+ wildcard spots will open ${section.signup_opens_at ? format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a") : 'later'}`
-                        : (section.signup_opens_at ? `Opens ${format(parseISO(section.signup_opens_at), "MMM d 'at' h:mm a")}` : 'Opens later'))}
-                  </p>
-                </div>
-              );
+              // Before cutoff: hide wildcard section entirely
+              return null;
             }
 
             // After cutoff: show dynamic wildcard slots
