@@ -221,7 +221,12 @@ export function SpotList({
             slots.push({ number: globalSlotNumber, booking });
           }
 
+          const bookedCount = slots.filter(s => s.booking).length;
           const availableCount = slots.filter(s => !s.booking).length;
+
+          // After cutoff, hide entire section if no bookings
+          if (wildcardCutoffPassed && bookedCount === 0) return null;
+
           const shouldCollapse = section.slots > 6;
           const isExpanded = expandedSections.has(sectionIndex);
 
