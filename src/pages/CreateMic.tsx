@@ -676,7 +676,7 @@ export default function CreateMic() {
                             const reserved = Number(watch(`sections.${index}.slots`)) || 0;
                             return (
                               <p className="text-xs text-muted-foreground">
-                                This show will have {totalRegular + reserved} total spots: {totalRegular} regular + {reserved} guaranteed wildcard
+                                This show will have {totalRegular + reserved} total spots: {totalRegular} regular + {reserved} guaranteed wildcard. Any unfilled regular spots will be added to the wildcard section.
                               </p>
                             );
                           })()}
