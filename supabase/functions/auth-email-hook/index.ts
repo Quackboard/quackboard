@@ -113,7 +113,9 @@ async function sendViaZeptomail(params: {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': apiToken,
+      'Authorization': apiToken.startsWith('Zoho-enczapikey')
+        ? apiToken
+        : `Zoho-enczapikey ${apiToken}`,
     },
     body: JSON.stringify({
       from: { address: fromEmail, name: fromName },
