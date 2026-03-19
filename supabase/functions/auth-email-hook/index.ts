@@ -280,7 +280,7 @@ async function handleWebhook(req: Request): Promise<Response> {
 
   let payload: any
   try {
-    payload = await req.json()
+    payload = JSON.parse(rawBody)
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid JSON' }),
