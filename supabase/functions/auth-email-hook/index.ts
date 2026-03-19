@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Welcome to Quackboard — confirm your email',
-  invite: "You're invited to Quackboard",
-  magiclink: 'Your Quackboard login link',
-  recovery: 'Reset your Quackboard password',
-  email_change: 'Confirm your new email for Quackboard',
-  reauthentication: 'Your Quackboard verification code',
+  signup: 'Confirm your email',
+  invite: "You've been invited",
+  magiclink: 'Your login link',
+  recovery: 'Reset your password',
+  email_change: 'Confirm your new email',
+  reauthentication: 'Your verification code',
 }
 
 // Template mapping
@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Quackboard"
+const SITE_NAME = "quackboard1"
 const SENDER_DOMAIN = "notify.quackboard.com"
 const ROOT_DOMAIN = "quackboard.com"
 const FROM_DOMAIN = "quackboard.com" // Domain shown in From address (may be root or sender subdomain)
