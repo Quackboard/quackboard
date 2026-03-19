@@ -39,12 +39,12 @@ export const EmailChangeEmail = ({
           <Text style={headerText}>Quackboard</Text>
         </Section>
         <Section style={content}>
-          <Heading style={h1}>Confirm your new email</Heading>
+          <Heading style={h1}>Confirm your new email ✉️</Heading>
           <Text style={text}>
-            You requested to change your email from{' '}
-            <Link href={`mailto:${email}`} style={link}>{email}</Link> to{' '}
+            You requested to change your Quackboard email from{' '}
+            <Link href={`mailto:${email}`} style={link}>{email}</Link>{' '}
+            to{' '}
             <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
-            Click below to confirm:
           </Text>
           <Button style={button} href={confirmationUrl}>
             Confirm Email Change

@@ -10,6 +10,7 @@ import {
   Heading,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -28,7 +29,7 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to Quackboard</Preview>
+    <Preview>You're invited to Quackboard 🎤</Preview>
     <Body style={main}>
       <Container style={card}>
         <Section style={header}>
@@ -36,15 +37,19 @@ export const InviteEmail = ({
           <Text style={headerText}>Quackboard</Text>
         </Section>
         <Section style={content}>
-          <Heading style={h1}>You're invited! 🎉</Heading>
+          <Heading style={h1}>You're invited to Quackboard! 🎤</Heading>
           <Text style={text}>
-            Someone wants you on Quackboard — the easiest way to manage open mics. Click below to accept and create your account.
+            You've been invited to join{' '}
+            <Link href={siteUrl} style={link}>
+              <strong>Quackboard</strong>
+            </Link>
+            . Click the button below to accept the invitation and create your account.
           </Text>
           <Button style={button} href={confirmationUrl}>
             Accept Invitation
           </Button>
           <Text style={smallText}>
-            Wasn't expecting this? No worries — just ignore this email.
+            If you weren't expecting this invitation, you can safely ignore this email.
           </Text>
         </Section>
         <Section style={brandFooter}>
@@ -64,6 +69,7 @@ const headerText = { color: '#ffffff', fontSize: '20px', fontWeight: 'bold' as c
 const content = { padding: '32px 28px 20px' }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1a3a34', margin: '0 0 16px' }
 const text = { fontSize: '15px', color: '#5a6b70', lineHeight: '1.6', margin: '0 0 24px' }
+const link = { color: 'inherit', textDecoration: 'underline' }
 const button = { backgroundColor: '#34a08c', color: '#ffffff', fontSize: '15px', fontWeight: '600' as const, borderRadius: '8px', padding: '12px 28px', textDecoration: 'none', display: 'inline-block' }
 const smallText = { fontSize: '13px', color: '#999999', margin: '28px 0 0', lineHeight: '1.5' }
 const brandFooter = { borderTop: '1px solid #e8ecee', padding: '16px 28px', textAlign: 'center' as const }

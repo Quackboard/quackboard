@@ -26,7 +26,7 @@ export const MagicLinkEmail = ({
 }: MagicLinkEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Your login link for Quackboard</Preview>
+    <Preview>Hey! Here's your magic link 🪄</Preview>
     <Body style={main}>
       <Container style={card}>
         <Section style={header}>
@@ -36,10 +36,10 @@ export const MagicLinkEmail = ({
         <Section style={content}>
           <Heading style={h1}>Hey! Here's your magic link 🪄</Heading>
           <Text style={text}>
-            Click the button below to sign in to Quackboard. This link expires shortly, so don't wait too long!
+            Click the button below to log in to Quackboard. This link will expire shortly.
           </Text>
           <Button style={button} href={confirmationUrl}>
-            Sign In
+            Log In to Quackboard
           </Button>
           <Text style={smallText}>
             If you didn't request this link, you can safely ignore this email.

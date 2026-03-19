@@ -29,11 +29,11 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
           <Text style={headerText}>Quackboard</Text>
         </Section>
         <Section style={content}>
-          <Heading style={h1}>Verification code</Heading>
-          <Text style={text}>Use this code to confirm your identity:</Text>
+          <Heading style={h1}>Verification code 🔐</Heading>
+          <Text style={text}>Use the code below to confirm your identity:</Text>
           <Text style={codeStyle}>{token}</Text>
           <Text style={smallText}>
-            This code expires shortly. If you didn't request it, just ignore this email.
+            This code will expire shortly. If you didn't request this, you can safely ignore this email.
           </Text>
         </Section>
         <Section style={brandFooter}>
@@ -53,7 +53,7 @@ const headerText = { color: '#ffffff', fontSize: '20px', fontWeight: 'bold' as c
 const content = { padding: '32px 28px 20px' }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1a3a34', margin: '0 0 16px' }
 const text = { fontSize: '15px', color: '#5a6b70', lineHeight: '1.6', margin: '0 0 24px' }
-const codeStyle = { fontFamily: "'Courier New', Courier, monospace", fontSize: '28px', fontWeight: 'bold' as const, color: '#34a08c', letterSpacing: '4px', margin: '0 0 30px' }
+const codeStyle = { fontFamily: 'Courier, monospace', fontSize: '28px', fontWeight: 'bold' as const, color: '#1a3a34', margin: '0 0 30px', letterSpacing: '4px' }
 const smallText = { fontSize: '13px', color: '#999999', margin: '28px 0 0', lineHeight: '1.5' }
 const brandFooter = { borderTop: '1px solid #e8ecee', padding: '16px 28px', textAlign: 'center' as const }
 const brandFooterText = { fontSize: '12px', color: '#b0b8bc', margin: '0' }

@@ -26,7 +26,7 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reset your Quackboard password</Preview>
+    <Preview>No worries — it happens! Reset your Quackboard password</Preview>
     <Body style={main}>
       <Container style={card}>
         <Section style={header}>
@@ -34,15 +34,15 @@ export const RecoveryEmail = ({
           <Text style={headerText}>Quackboard</Text>
         </Section>
         <Section style={content}>
-          <Heading style={h1}>Reset your password</Heading>
+          <Heading style={h1}>No worries — it happens! 🔑</Heading>
           <Text style={text}>
-            No worries — it happens! Click below to set a new password for your Quackboard account.
+            We received a request to reset your Quackboard password. Click the button below to choose a new one.
           </Text>
           <Button style={button} href={confirmationUrl}>
             Reset Password
           </Button>
           <Text style={smallText}>
-            If you didn't request this, your password won't change — just ignore this email.
+            If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
           </Text>
         </Section>
         <Section style={brandFooter}>
