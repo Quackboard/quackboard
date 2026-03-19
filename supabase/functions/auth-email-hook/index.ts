@@ -202,85 +202,9 @@ async function handlePreview(req: Request): Promise<Response> {
  * The hook must send the email and return an empty JSON object on success.
  */
 async function handleWebhook(req: Request): Promise<Response> {
-  // Supabase Auth Hooks use Standard Webhooks (https://www.standardwebhooks.com/)
-  // The hook secret is in format "v1,whsec_<base64-secret>"
-  // Signature verification uses HMAC-SHA256
-  const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET')
-
-  if (!hookSecret) {
-    console.error('SEND_EMAIL_HOOK_SECRET not configured')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // Read the raw body for signature verification
-  const rawBody = await req.text()
-
-  // Verify Standard Webhook signature
-  const webhookId = req.headers.get('webhook-id')
-  const webhookTimestamp = req.headers.get('webhook-timestamp')
-  const webhookSignature = req.headers.get('webhook-signature')
-
-  if (!webhookId || !webhookTimestamp || !webhookSignature) {
-    console.error('Missing webhook headers', { webhookId: !!webhookId, webhookTimestamp: !!webhookTimestamp, webhookSignature: !!webhookSignature })
-    return new Response(
-      JSON.stringify({ error: 'Missing webhook signature headers' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // Check timestamp is not too old (5 minutes tolerance)
-  const now = Math.floor(Date.now() / 1000)
-  const ts = parseInt(webhookTimestamp, 10)
-  if (isNaN(ts) || Math.abs(now - ts) > 300) {
-    console.error('Webhook timestamp too old or invalid', { webhookTimestamp, now })
-    return new Response(
-      JSON.stringify({ error: 'Invalid webhook timestamp' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // Extract the base64 secret from "v1,whsec_<base64>" format
-  const secretParts = hookSecret.split(',')
-  const rawSecret = secretParts.length > 1
-    ? secretParts[1].replace('whsec_', '')
-    : hookSecret.replace('whsec_', '')
-
-  // Decode the base64 secret
-  const secretBytes = Uint8Array.from(atob(rawSecret), c => c.charCodeAt(0))
-
-  // Build the signed content: "{webhook-id}.{webhook-timestamp}.{body}"
-  const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`
-  const encoder = new TextEncoder()
-
-  // Compute HMAC-SHA256
-  const key = await crypto.subtle.importKey(
-    'raw',
-    secretBytes,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(signedContent))
-  const computedSignature = 'v1,' + btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
-
-  // Compare against provided signatures (there can be multiple, space-separated)
-  const providedSignatures = webhookSignature.split(' ')
-  const isValid = providedSignatures.some(sig => sig === computedSignature)
-
-  if (!isValid) {
-    console.error('Invalid webhook signature')
-    return new Response(
-      JSON.stringify({ error: 'Invalid signature' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
   let payload: any
   try {
-    payload = JSON.parse(rawBody)
+    payload = await req.json()
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid JSON' }),
