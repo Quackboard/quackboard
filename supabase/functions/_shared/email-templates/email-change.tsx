@@ -42,8 +42,7 @@ export const EmailChangeEmail = ({
           <Heading style={h1}>Confirm your new email</Heading>
           <Text style={text}>
             You requested to change your email from{' '}
-            <Link href={`mailto:${email}`} style={link}>{email}</Link>{' '}
-            to{' '}
+            <Link href={`mailto:${email}`} style={link}>{email}</Link> to{' '}
             <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
             Click below to confirm:
           </Text>
@@ -51,7 +50,7 @@ export const EmailChangeEmail = ({
             Confirm Email Change
           </Button>
           <Text style={smallText}>
-            If you didn't request this, please secure your account immediately.
+            If you didn't request this change, please secure your account immediately.
           </Text>
         </Section>
         <Section style={brandFooter}>
@@ -71,7 +70,7 @@ const headerText = { color: '#ffffff', fontSize: '20px', fontWeight: 'bold' as c
 const content = { padding: '32px 28px 20px' }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1a3a34', margin: '0 0 16px' }
 const text = { fontSize: '15px', color: '#5a6b70', lineHeight: '1.6', margin: '0 0 24px' }
-const link = { color: '#34a08c', textDecoration: 'underline' }
+const link = { color: 'inherit', textDecoration: 'underline' }
 const button = { backgroundColor: '#34a08c', color: '#ffffff', fontSize: '15px', fontWeight: '600' as const, borderRadius: '8px', padding: '12px 28px', textDecoration: 'none', display: 'inline-block' }
 const smallText = { fontSize: '13px', color: '#999999', margin: '28px 0 0', lineHeight: '1.5' }
 const brandFooter = { borderTop: '1px solid #e8ecee', padding: '16px 28px', textAlign: 'center' as const }
