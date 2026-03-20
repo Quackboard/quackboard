@@ -169,51 +169,39 @@ export function SpotList({
                   </p>
                 ) : (
                   <div className="space-y-1 mt-2">
-                    {/* Show booked wildcard slots */}
-                    {wildcardBookings.map(booking => {
-                      displayCounter++;
-                      return (
-                        <div
-                          key={booking.id}
-                          className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                        >
-                          <span className="w-6 text-sm font-mono text-muted-foreground">
-                            {displayCounter}.
-                          </span>
-                          <span className="text-sm text-foreground font-medium">
-                            {booking.guest_name}
-                          </span>
-                        </div>
-                      );
-                    })}
-
-                    {/* Show available wildcard slots */}
                     {(() => {
-                      const occupiedPositions = new Set(
-                        wildcardBookings.map(b => b.slot_position)
+                      const occupied = new Map(
+                        wildcardBookings.map(b => [b.slot_position, b])
                       );
+                      const totalPositions = wildcardBookings.length + availableWildcardSlots;
                       let nextPos = totalRegularSlots + 1;
-                      return Array.from({ length: availableWildcardSlots }, () => {
-                        while (occupiedPositions.has(nextPos)) nextPos++;
+                      return Array.from({ length: totalPositions }, () => {
                         const slotPos = nextPos;
                         nextPos++;
                         displayCounter++;
+                        const booking = occupied.get(slotPos);
                         return (
                           <div
-                            key={`wc-${slotPos}`}
+                            key={booking ? booking.id : `wc-${slotPos}`}
                             className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                           >
                             <span className="w-6 text-sm font-mono text-muted-foreground">
                               {displayCounter}.
                             </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openModal(slotPos, section.label)}
-                              className="h-7 text-xs px-3"
-                            >
-                              Grab Spot
-                            </Button>
+                            {booking ? (
+                              <span className="text-sm text-foreground font-medium">
+                                {booking.guest_name}
+                              </span>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openModal(slotPos, section.label)}
+                                className="h-7 text-xs px-3"
+                              >
+                                Grab Spot
+                              </Button>
+                            )}
                           </div>
                         );
                       });
