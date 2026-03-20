@@ -184,9 +184,11 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
               />
-              <p className="text-xs text-muted-foreground pt-1">
-                Full for now, but keep checking this page as people sometimes cancel.
-              </p>
+              {!hasAvailableWildcardSpots && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  Full for now, but keep checking this page as people sometimes cancel.
+                </p>
+              )}
             </>
           )}
         </CardContent>
