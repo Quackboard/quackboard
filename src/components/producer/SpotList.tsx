@@ -188,28 +188,36 @@ export function SpotList({
                     })}
 
                     {/* Show available wildcard slots */}
-                    {Array.from({ length: availableWildcardSlots }, (_, i) => {
-                      const slotPos = totalRegularSlots + bookedWildcardCount + i + 1;
-                      displayCounter++;
-                      return (
-                        <div
-                          key={`wc-${slotPos}`}
-                          className="flex items-center gap-3 py-1.5 px-2 rounded-md"
-                        >
-                          <span className="w-6 text-sm font-mono text-muted-foreground">
-                            {displayCounter}.
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openModal(slotPos, section.label)}
-                            className="h-7 text-xs px-3"
-                          >
-                            Grab Spot
-                          </Button>
-                        </div>
+                    {(() => {
+                      const occupiedPositions = new Set(
+                        wildcardBookings.map(b => b.slot_position)
                       );
-                    })}
+                      let nextPos = totalRegularSlots + 1;
+                      return Array.from({ length: availableWildcardSlots }, () => {
+                        while (occupiedPositions.has(nextPos)) nextPos++;
+                        const slotPos = nextPos;
+                        nextPos++;
+                        displayCounter++;
+                        return (
+                          <div
+                            key={`wc-${slotPos}`}
+                            className="flex items-center gap-3 py-1.5 px-2 rounded-md"
+                          >
+                            <span className="w-6 text-sm font-mono text-muted-foreground">
+                              {displayCounter}.
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openModal(slotPos, section.label)}
+                              className="h-7 text-xs px-3"
+                            >
+                              Grab Spot
+                            </Button>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>
