@@ -132,8 +132,21 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
   const { countdown } = useAutoOpenTimer(event);
   const signupStatus = getSignupStatus(event);
 
-  const totalSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
+  const regularSections = sections.filter(s => s.type !== 'wildcard');
+  const wildcardSection = sections.find(s => s.type === 'wildcard');
+  const totalSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
   const bookedCount = bookings.length;
+
+  // Check if wildcard spots are available (cutoff passed + spots remain)
+  const wildcardCutoffPassed = wildcardSection?.signup_opens_at
+    ? !isAfter(parseISO(wildcardSection.signup_opens_at), new Date())
+    : false;
+  const bookedRegularCount = bookings.filter(b => b.slot_position <= totalSlots).length;
+  const bookedWildcardCount = bookings.filter(b => b.slot_position > totalSlots).length;
+  const totalWildcardSlots = wildcardCutoffPassed
+    ? (totalSlots - bookedRegularCount) + (wildcardSection?.slots || 0)
+    : 0;
+  const hasAvailableWildcardSpots = wildcardCutoffPassed && (totalWildcardSlots - bookedWildcardCount) > 0;
 
   // Desktop: fully expanded card (unchanged)
   if (!isMobile) {
@@ -171,9 +184,11 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
               />
-              <p className="text-xs text-muted-foreground pt-1">
-                Full for now, but keep checking this page as people sometimes cancel.
-              </p>
+              {!hasAvailableWildcardSpots && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  Full for now, but keep checking this page as people sometimes cancel.
+                </p>
+              )}
             </>
           )}
         </CardContent>
