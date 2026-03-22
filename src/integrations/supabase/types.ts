@@ -96,6 +96,13 @@ export type Database = {
             foreignKeyName: "bookings_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_availability"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -205,6 +212,7 @@ export type Database = {
       events: {
         Row: {
           allow_multiple_slots: boolean | null
+          city: string | null
           created_at: string | null
           date: string
           description: string | null
@@ -212,6 +220,8 @@ export type Database = {
           end_time: string
           id: string
           is_info_only: boolean | null
+          latitude: number | null
+          longitude: number | null
           producer_id: string | null
           producer_message: string | null
           publish_at: string | null
@@ -228,6 +238,7 @@ export type Database = {
         }
         Insert: {
           allow_multiple_slots?: boolean | null
+          city?: string | null
           created_at?: string | null
           date: string
           description?: string | null
@@ -235,6 +246,8 @@ export type Database = {
           end_time: string
           id?: string
           is_info_only?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           producer_id?: string | null
           producer_message?: string | null
           publish_at?: string | null
@@ -251,6 +264,7 @@ export type Database = {
         }
         Update: {
           allow_multiple_slots?: boolean | null
+          city?: string | null
           created_at?: string | null
           date?: string
           description?: string | null
@@ -258,6 +272,8 @@ export type Database = {
           end_time?: string
           id?: string
           is_info_only?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           producer_id?: string | null
           producer_message?: string | null
           publish_at?: string | null
@@ -525,6 +541,13 @@ export type Database = {
             foreignKeyName: "scheduled_messages_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_availability"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "scheduled_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -546,7 +569,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      event_availability: {
+        Row: {
+          booked_count: number | null
+          event_id: string | null
+          total_slots: number | null
+        }
+        Insert: {
+          booked_count?: never
+          event_id?: string | null
+          total_slots?: never
+        }
+        Update: {
+          booked_count?: never
+          event_id?: string | null
+          total_slots?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       validate_beta_code: { Args: { code_input: string }; Returns: boolean }
