@@ -10,7 +10,8 @@ import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-rea
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_INDICES = [1, 2, 3, 4, 5, 6, 0]; // Map label position to JS getDay() value
 
 const DISCOVER_PRODUCER_IDS = [
   '1a0ffb85-e5e2-4c33-8eaa-15ae64f38066',
