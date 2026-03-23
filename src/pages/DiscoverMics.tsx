@@ -154,9 +154,21 @@ export default function DiscoverMics() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Mic className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">Discover Mics</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Mic className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-bold text-foreground">Discover Mics</h1>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={`mailto:hello@quackboard.com?subject=${encodeURIComponent('Mic Submission')}&body=${encodeURIComponent('Mic Name:\nVenue:\nCity:\nWhen & How Often:\nStart Time:\nEnd Time:\nDetails You Want Included (sign-up type, price, description):\nLink (optional):\nInstagram (optional):')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Plus className="h-4 w-4" />
+                Submit a Mic
+              </a>
+            </Button>
           </div>
           <p className="text-muted-foreground text-xs">Find open mics happening near you</p>
         </div>
