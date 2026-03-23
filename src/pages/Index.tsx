@@ -102,20 +102,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Browse Mics CTA */}
-        <section className="px-4 py-12 bg-muted/30">
-          <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
-              Looking for stage time?
-            </h2>
-            <p className="text-muted-foreground">
-              Browse open mics happening near you and find your next spot.
-            </p>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/browse">Browse Open Mics</Link>
-            </Button>
-          </div>
-        </section>
 
         {/* CTA Section */}
         <section className="px-4 py-16 md:py-24 text-center">
