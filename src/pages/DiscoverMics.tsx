@@ -155,15 +155,23 @@ export default function DiscoverMics() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top branding bar */}
+      <header className="border-b border-border bg-background sticky top-0 z-50">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link to="/" className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+            <img src="/favicon.png" alt="Quackboard" className="h-5 w-5" />
+            <span className="text-lg font-bold font-outfit text-foreground">Quackboard</span>
+          </Link>
+          <ListMicSheet />
+        </div>
+      </header>
+
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-5">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <Mic className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-bold text-foreground">Browse Mics</h1>
-            </div>
-            <ListMicSheet />
+          <div className="flex items-center gap-2 mb-1">
+            <Mic className="h-5 w-5 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">Browse Mics</h1>
           </div>
           <p className="text-muted-foreground text-xs">Find open mics happening near you</p>
         </div>
