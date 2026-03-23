@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, getDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
+import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, Plus } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
