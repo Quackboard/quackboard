@@ -347,6 +347,7 @@ export default function DiscoverMics() {
             );
           })}
         </div>
+        </div>
       </div>
     </div>
   );
