@@ -176,6 +176,9 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           
           {signupStatus.isOpen && sections.length > 0 && (
             <>
+              <p className="text-xs text-muted-foreground">
+                {Math.max(0, displayAvailable)}/{displayTotal} available
+              </p>
               <SpotList 
                 sectionsConfig={sections} 
                 bookings={bookings} 
