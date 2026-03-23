@@ -12,6 +12,11 @@ import { MapPin, Clock, Mic, CalendarDays } from 'lucide-react';
 const TZ = 'America/Los_Angeles';
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Allowlisted producer IDs for platform (is_info_only=false) mics on Discover
+const DISCOVER_PRODUCER_IDS = [
+  '1a0ffb85-e5e2-4c33-8eaa-15ae64f38066', // Seven Minutes in Heaven
+];
+
 type FilterMode = 'all' | 'today' | 'starting-soon' | string; // string for day numbers
 
 export default function DiscoverMics() {
