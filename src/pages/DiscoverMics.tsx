@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { format, parseISO, getDay } from 'date-fns';
+import { format, parseISO, getDay, startOfWeek, endOfWeek } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, Plus } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
@@ -39,6 +39,8 @@ export default function DiscoverMics() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const nowLA = useMemo(() => toZonedTime(new Date(), TZ), []);
+  const mondayStr = useMemo(() => format(startOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
+  const sundayStr = useMemo(() => format(endOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
   const todayStr = format(nowLA, 'yyyy-MM-dd');
 
   const toggleExpand = (id: string) => {
@@ -50,13 +52,14 @@ export default function DiscoverMics() {
   };
 
   const { data: events } = useQuery({
-    queryKey: ['discover-events'],
+    queryKey: ['discover-events', mondayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
         .eq('status', 'published')
-        .gte('date', todayStr)
+        .gte('date', mondayStr)
+        .lte('date', sundayStr)
         .order('date')
         .order('start_time');
       if (error) throw error;
