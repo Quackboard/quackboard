@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, getDay, startOfWeek, endOfWeek } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, Plus } from 'lucide-react';
+import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
+import ListMicSheet from '@/components/discover/ListMicSheet';
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
@@ -162,16 +163,7 @@ export default function DiscoverMics() {
               <Mic className="h-5 w-5 text-primary" />
               <h1 className="text-xl font-bold text-foreground">Browse Mics</h1>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href={`mailto:hello@quackboard.com?subject=${encodeURIComponent('Mic Submission')}&body=${encodeURIComponent('Mic Name:\nVenue:\nCity:\nWhen & How Often:\nStart Time:\nEnd Time:\nDetails You Want Included (sign-up type, price, description):\nLink (optional):\nInstagram (optional):')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Plus className="h-4 w-4" />
-                Submit a Mic
-              </a>
-            </Button>
+            <ListMicSheet />
           </div>
           <p className="text-muted-foreground text-xs">Find open mics happening near you</p>
         </div>
