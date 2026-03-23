@@ -157,7 +157,7 @@ export default function DiscoverMics() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Mic className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-bold text-foreground">Discover Mics</h1>
+              <h1 className="text-xl font-bold text-foreground">Browse Mics</h1>
             </div>
             <Button variant="outline" size="sm" asChild>
               <a
