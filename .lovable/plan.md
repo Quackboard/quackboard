@@ -1,41 +1,61 @@
 
 
-## Plan: Add Columns + Import External Mics via Script
+## Plan: Redesign Discover Page UX
 
-### Step 1 -- Migration: Add columns to events table
-Add two nullable text columns via SQL migration. No defaults, no constraints, no RLS changes.
+### Problems to fix
+1. Times display in military format (`19:00 – 21:00`) instead of 12-hour (`7:00 PM`)
+2. Flat list of cards is hard to scan -- comics want to browse by day
+3. Day-of-week filters don't show actual dates
 
-```sql
-ALTER TABLE public.events ADD COLUMN instagram_url text;
-ALTER TABLE public.events ADD COLUMN source_link text;
+### Approach
+Group events by date with sticky date headers, use the existing `formatTime` helper for 12h display, and simplify filters.
+
+### Changes (single file: `src/pages/DiscoverMics.tsx`)
+
+**1. Use `formatTime` for 12-hour display**
+- Import `formatTime` from `@/lib/utils`
+- Replace `ev.start_time.slice(0, 5) – ev.end_time.slice(0, 5)` with `formatTime(ev.start_time) – formatTime(ev.end_time)`
+
+**2. Group events by date with clear headers**
+- After filtering, group events into `Map<string, Event[]>` keyed by date string
+- Render each group with a prominent date header: **"Monday, March 24"** (full day name + date)
+- Within each group, events sorted by start_time (already sorted from query)
+
+**3. Simplify and improve filters**
+- Keep "All", "Today", "This Week" (next 7 days) as top-level quick filters
+- Keep day-of-week pill filters but show them as toggle chips below
+- Remove "Starting Soon" (low utility, can revisit later) -- or keep if preferred
+
+**4. Card layout improvements**
+- Show time more prominently -- move it next to the title or make it the leading element since comics scan by time
+- Format: `7:00 PM · Venue Name` on one line for quick scanning
+- Date is already in the section header so remove the per-card date line to reduce noise
+- Keep venue address, badges, expand chevron as-is
+
+### Visual structure
+```text
+[All] [Today] [This Week]
+[Sun] [Mon] [Tue] [Wed] [Thu] [Fri] [Sat]
+
+── Monday, March 24 ──────────────────
+┌─────────────────────────────────────┐
+│ Open Mic Title              [badges]│
+│ 7:00 PM – 9:00 PM · The Comedy Store│
+│ 📍 8433 Sunset Blvd            [▼] │
+└─────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│ Another Mic                         │
+│ 9:30 PM – 11:00 PM · Flappers      │
+│ 📍 102 E Magnolia Blvd         [▼] │
+└─────────────────────────────────────┘
+
+── Tuesday, March 25 ─────────────────
+...
 ```
 
-### Step 2 -- Import ~44 rows via lov-exec Python script
-- Read uploaded XLSX with pandas
-- Filter out rows with date before 2026-03-23
-- Convert dates from `M/D/YY` to `YYYY-MM-DD`
-- Convert times from `7:00 PM` format to `19:00:00` (24h string, no TZ math) -- columns are `time without time zone`, display code reads them as-is
-- Set `producer_id = NULL`, `is_info_only = true`, `status = 'published'`, `sections_config = '[]'::jsonb`
-- Include `instagram_url` and `source_link` values from spreadsheet
-- INSERT into events table via psql
-
-### Step 3 -- Update DiscoverMics.tsx
-- Add `description, instagram_url, source_link` to the query SELECT
-- Expandable description: tap/click a chevron to toggle description text below card metadata (React state with a Set of expanded event IDs)
-- For info-only mics with `source_link`: render "More Info" link with `target="_blank" rel="noopener noreferrer"`
-- For info-only mics with `instagram_url`: render Instagram icon link with `target="_blank" rel="noopener noreferrer"`
-- External mics don't link to producer pages (no slug)
-
-### Step 4 -- Regenerate Supabase types
-Auto-updates after migration to include `instagram_url` and `source_link` on the events type.
-
-### Files touched
-- **Migration** (new): add two columns
-- **lov-exec script** (one-time, `/tmp/`): import ~44 rows
-- **`src/pages/DiscoverMics.tsx`**: query + card UI updates
-
 ### What does NOT change
-- EventCard, SpotList, producer pages, booking flow
-- RLS policies, triggers, views
-- Existing external link security (all already have `rel="noopener noreferrer"`)
+- Data fetching queries, producer allowlist, availability logic
+- Expandable description + external links behavior
+- Producer page linking logic
+- Any other page or component
 
