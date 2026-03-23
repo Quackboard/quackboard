@@ -1,27 +1,19 @@
 
 
-## Plan: "Submit a Mic" Mailto Button
+## Plan: Limit Browse Page to Current Week (Mon–Sun)
 
-### Changes (single file: `src/pages/DiscoverMics.tsx`)
+### Change (single file: `src/pages/DiscoverMics.tsx`)
 
-**1. Add "Submit a Mic" button in the header**
-- Small outlined button next to the page title
+Compute the current week's Monday and Sunday in LA timezone, then filter the Supabase query to only fetch events within that range.
 
-**2. On click, open mailto link**
-- `mailto:hello@quackboard.com`
-- Subject: `Mic Submission`
-- Body template:
-  ```
-  Mic Name:
-  Venue:
-  City:
-  When & How Often:
-  Start Time:
-  End Time:
-  Details You Want Included (sign-up type, price, description):
-  Link (optional):
-  Instagram (optional):
-  ```
+**Specifically:**
 
-No modal, no database, no edge function. One button click opens the user's email client.
+1. Import `startOfWeek`, `endOfWeek`, `addDays` from `date-fns`
+2. After computing `nowLA`, calculate:
+   - `mondayStr` — start of week with `weekStartsOn: 1` (Monday), formatted as `yyyy-MM-dd`
+   - `sundayStr` — end of week with `weekStartsOn: 1`, formatted as `yyyy-MM-dd`
+3. Update the Supabase query: replace `.gte('date', todayStr)` with `.gte('date', mondayStr).lte('date', sundayStr)`
+4. Update the `queryKey` to include `mondayStr` so the cache refreshes each week
+
+This shows past days of the current week too (e.g., if today is Wednesday, Monday and Tuesday events still appear). If you'd prefer to start from today instead of Monday, let me know.
 
