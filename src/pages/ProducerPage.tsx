@@ -216,14 +216,6 @@ export default function ProducerPage() {
         )}
 
         <footer className="mt-12 pt-6 border-t border-border text-center space-y-2">
-          <a
-            href="/browse"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-sm font-medium text-primary hover:underline"
-          >
-            Browse more open mics →
-          </a>
           <div>
             <a href="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <img src="/favicon.png" alt="Quackboard" className="h-4 w-4" />
