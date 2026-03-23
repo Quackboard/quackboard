@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { format, parseISO, addDays, getDay } from 'date-fns';
+import { format, parseISO, getDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { MapPin, Clock, Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
+import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
@@ -16,15 +16,28 @@ const DISCOVER_PRODUCER_IDS = [
   '1a0ffb85-e5e2-4c33-8eaa-15ae64f38066',
 ];
 
-type FilterMode = 'all' | 'today' | 'this-week' | string;
+type TimeFilter = 'all' | 'morning' | 'afternoon' | 'evening';
+type DayFilter = number | null; // 0-6 or null for all
+
+function getHour(timeStr: string): number {
+  const parts = timeStr.split(':');
+  return parseInt(parts[0], 10);
+}
+
+function getTimeOfDay(timeStr: string): 'morning' | 'afternoon' | 'evening' {
+  const h = getHour(timeStr);
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
 
 export default function DiscoverMics() {
-  const [filter, setFilter] = useState<FilterMode>('all');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [dayFilter, setDayFilter] = useState<DayFilter>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const nowLA = useMemo(() => toZonedTime(new Date(), TZ), []);
   const todayStr = format(nowLA, 'yyyy-MM-dd');
-  const weekEndStr = format(addDays(nowLA, 7), 'yyyy-MM-dd');
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -39,7 +52,7 @@ export default function DiscoverMics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, venue_name, venue_address, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
+        .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
         .eq('status', 'published')
         .gte('date', todayStr)
         .order('date')
@@ -96,24 +109,25 @@ export default function DiscoverMics() {
     if (!events) return [];
 
     return events.filter(ev => {
+      // Producer allowlist for platform mics
       if (ev.is_info_only === false && !DISCOVER_PRODUCER_IDS.includes(ev.producer_id)) {
         return false;
       }
 
-      if (filter === 'all') return true;
-      if (filter === 'today') return ev.date === todayStr;
-      if (filter === 'this-week') return ev.date >= todayStr && ev.date <= weekEndStr;
+      // Time of day filter
+      if (timeFilter !== 'all' && getTimeOfDay(ev.start_time) !== timeFilter) {
+        return false;
+      }
 
       // Day of week filter
-      const dayNum = parseInt(filter, 10);
-      if (!isNaN(dayNum)) {
+      if (dayFilter !== null) {
         const eventDate = parseISO(ev.date);
-        return getDay(eventDate) === dayNum;
+        if (getDay(eventDate) !== dayFilter) return false;
       }
 
       return true;
     });
-  }, [events, filter, todayStr, weekEndStr]);
+  }, [events, timeFilter, dayFilter]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -126,27 +140,35 @@ export default function DiscoverMics() {
     return map;
   }, [filtered]);
 
+  const timeFilters: { key: TimeFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'morning', label: 'Morning' },
+    { key: 'afternoon', label: 'Afternoon' },
+    { key: 'evening', label: 'Evening' },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <Mic className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Discover Mics</h1>
+            <Mic className="h-5 w-5 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">Discover Mics</h1>
           </div>
-          <p className="text-muted-foreground text-sm">Find open mics happening near you</p>
+          <p className="text-muted-foreground text-xs">Find open mics happening near you</p>
         </div>
 
         {/* Filters */}
-        <div className="mb-6 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {([['all', 'All'], ['today', 'Today'], ['this-week', 'This Week']] as const).map(([key, label]) => (
+        <div className="mb-5 space-y-2">
+          {/* Time of day */}
+          <div className="flex flex-wrap gap-1.5">
+            {timeFilters.map(({ key, label }) => (
               <button
                 key={key}
-                onClick={() => setFilter(key)}
+                onClick={() => setTimeFilter(key)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  filter === key
+                  timeFilter === key
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-accent'
                 }`}
@@ -156,13 +178,14 @@ export default function DiscoverMics() {
             ))}
           </div>
 
+          {/* Day of week */}
           <div className="flex flex-wrap gap-1.5">
             {DAY_LABELS.map((label, i) => (
               <button
                 key={i}
-                onClick={() => setFilter(filter === String(i) ? 'all' : String(i))}
+                onClick={() => setDayFilter(dayFilter === i ? null : i)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  filter === String(i)
+                  dayFilter === i
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`}
@@ -173,8 +196,8 @@ export default function DiscoverMics() {
           </div>
         </div>
 
-        {/* Grouped event list */}
-        <div className="space-y-6">
+        {/* Event list grouped by date */}
+        <div className="space-y-4">
           {filtered.length === 0 && (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No mics found for this filter.
@@ -189,16 +212,18 @@ export default function DiscoverMics() {
 
             return (
               <div key={dateStr}>
-                {/* Date header */}
-                <div className="flex items-center gap-3 mb-3">
-                  <h2 className="text-sm font-semibold text-foreground whitespace-nowrap">
-                    {isToday ? `Today · ${dateHeader}` : dateHeader}
-                  </h2>
-                  <div className="h-px flex-1 bg-border" />
+                {/* Sticky date header */}
+                <div className="sticky top-0 z-10 bg-background py-2">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      {isToday ? `Today · ${dateHeader}` : dateHeader}
+                    </h2>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
                 </div>
 
-                {/* Events for this date */}
-                <div className="space-y-2">
+                {/* Compact event cards */}
+                <div className="space-y-1.5">
                   {dayEvents.map(ev => {
                     const producer = ev.producer_id ? producerMap.get(ev.producer_id) : null;
                     const avail = availMap.get(ev.id);
@@ -207,35 +232,31 @@ export default function DiscoverMics() {
                     const isExpanded = expanded.has(ev.id);
                     const hasDescription = !!ev.description;
                     const isInfoOnly = ev.is_info_only === true;
+                    const cityDisplay = ev.city || '';
 
                     const cardContent = (
                       <Card className="transition-shadow hover:shadow-md">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-3">
+                        <CardContent className="px-3 py-2.5">
+                          <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-semibold text-foreground text-sm truncate">
+                              <h3 className="font-semibold text-foreground text-sm truncate leading-tight">
                                 {ev.title}
                               </h3>
-                              <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 shrink-0" />
-                                <span>{formatTime(ev.start_time)} – {formatTime(ev.end_time)}</span>
-                                <span className="text-muted-foreground/50">·</span>
-                                <span className="truncate">{ev.venue_name}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{ev.venue_address}</span>
-                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                {formatTime(ev.start_time)} – {formatTime(ev.end_time)}
+                                {ev.venue_name && <> · {ev.venue_name}</>}
+                                {cityDisplay && <> · {cityDisplay}</>}
+                              </p>
                             </div>
 
-                            <div className="flex flex-col items-end gap-1 shrink-0">
+                            <div className="flex items-center gap-1 shrink-0">
                               {isPlatform && (
                                 <>
-                                  <Badge variant="secondary" className="text-[10px]">
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                                     On Quackboard
                                   </Badge>
                                   {avail && spotsAvailable && (
-                                    <Badge variant="default" className="text-[10px]">
+                                    <Badge variant="default" className="text-[10px] px-1.5 py-0">
                                       Spots Open
                                     </Badge>
                                   )}
@@ -244,10 +265,10 @@ export default function DiscoverMics() {
                               {hasDescription && (
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpand(ev.id); }}
-                                  className="p-1 rounded hover:bg-accent transition-colors"
+                                  className="p-0.5 rounded hover:bg-accent transition-colors"
                                   aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
                                 >
-                                  {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                                  {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
                                 </button>
                               )}
                             </div>
@@ -255,7 +276,7 @@ export default function DiscoverMics() {
 
                           {/* Expanded description + links */}
                           {isExpanded && ev.description && (
-                            <div className="mt-3 pt-3 border-t border-border">
+                            <div className="mt-2 pt-2 border-t border-border">
                               <p className="text-xs text-muted-foreground whitespace-pre-line">{ev.description}</p>
                               {isInfoOnly && (ev.source_link || ev.instagram_url) && (
                                 <div className="flex items-center gap-3 mt-2">
