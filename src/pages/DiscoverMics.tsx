@@ -39,6 +39,8 @@ export default function DiscoverMics() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const nowLA = useMemo(() => toZonedTime(new Date(), TZ), []);
+  const mondayStr = useMemo(() => format(startOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
+  const sundayStr = useMemo(() => format(endOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
   const todayStr = format(nowLA, 'yyyy-MM-dd');
 
   const toggleExpand = (id: string) => {
