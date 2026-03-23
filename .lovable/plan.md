@@ -1,61 +1,58 @@
+## Plan: Discover Page -- Compact Schedule View
 
+### Problems visible
 
-## Plan: Redesign Discover Page UX
-
-### Problems to fix
-1. Times display in military format (`19:00 – 21:00`) instead of 12-hour (`7:00 PM`)
-2. Flat list of cards is hard to scan -- comics want to browse by day
-3. Day-of-week filters don't show actual dates
-
-### Approach
-Group events by date with sticky date headers, use the existing `formatTime` helper for 12h display, and simplify filters.
+- Full street addresses repeat on every card, adding visual noise
+- Many same-venue events (e.g., 8 "No Bad Mics" slots) create a wall of near-identical cards
+- No way to filter by time of day, which is how comics actually browse
 
 ### Changes (single file: `src/pages/DiscoverMics.tsx`)
 
-**1. Use `formatTime` for 12-hour display**
-- Import `formatTime` from `@/lib/utils`
-- Replace `ev.start_time.slice(0, 5) – ev.end_time.slice(0, 5)` with `formatTime(ev.start_time) – formatTime(ev.end_time)`
+**1. Sticky date headers**
 
-**2. Group events by date with clear headers**
-- After filtering, group events into `Map<string, Event[]>` keyed by date string
-- Render each group with a prominent date header: **"Monday, March 24"** (full day name + date)
-- Within each group, events sorted by start_time (already sorted from query)
+- Add `sticky top-0 z-10 bg-background` to each date group header so the current date stays visible while scrolling
 
-**3. Simplify and improve filters**
-- Keep "All", "Today", "This Week" (next 7 days) as top-level quick filters
-- Keep day-of-week pill filters but show them as toggle chips below
-- Remove "Starting Soon" (low utility, can revisit later) -- or keep if preferred
+**2. Remove full address, show city only**
 
-**4. Card layout improvements**
-- Show time more prominently -- move it next to the title or make it the leading element since comics scan by time
-- Format: `7:00 PM · Venue Name` on one line for quick scanning
-- Date is already in the section header so remove the per-card date line to reduce noise
-- Keep venue address, badges, expand chevron as-is
+- Drop the `MapPin` / `venue_address` line entirely from card preview
+- Add `city` to the Supabase query SELECT
+- Show venue as `Venue Name · City` on the time line (e.g., `7:00 PM – 9:00 PM · The Comedy Store · West Hollywood`)
+
+**3. Replace top filters with time-of-day filters**
+
+- Remove "All", "Today", "This Week"
+- Replace with: `All` (default), `Morning` (start_time < 12:00), `Afternoon` (12:00–16:59), `Evening` (17:00+)
+- Keep day-of-week toggle chips below with exact dates
+- Both filters combine (e.g., "Evening" + "Wed" shows Wednesday evening mics)
+
+**4. Compact card design**
+
+- Reduce padding and spacing to show more events per screen
+- Single-line format: **Title** on first line, `Time · Venue · City` on second line, badges on the right
+- No third line (address removed)
 
 ### Visual structure
+
 ```text
-[All] [Today] [This Week]
+[All] [Morning] [Afternoon] [Evening]
 [Sun] [Mon] [Tue] [Wed] [Thu] [Fri] [Sat]
 
-── Monday, March 24 ──────────────────
-┌─────────────────────────────────────┐
-│ Open Mic Title              [badges]│
-│ 7:00 PM – 9:00 PM · The Comedy Store│
-│ 📍 8433 Sunset Blvd            [▼] │
-└─────────────────────────────────────┘
-┌─────────────────────────────────────┐
-│ Another Mic                         │
-│ 9:30 PM – 11:00 PM · Flappers      │
-│ 📍 102 E Magnolia Blvd         [▼] │
-└─────────────────────────────────────┘
+── Today · Monday, March 23 ─────── (sticky)
 
-── Tuesday, March 25 ─────────────────
-...
+┌────────────────────────────────────────┐
+│ No Bad Mics                     [▼]   │
+│ 1:30 PM – 2:30 PM · Best Comedy · WeHo│
+├────────────────────────────────────────┤
+│ No Bad Mics                     [▼]   │
+│ 2:30 PM – 3:30 PM · Best Comedy · WeHo│
+├────────────────────────────────────────┤
+│ Potluck                    [badges][▼]│
+│ 4:00 PM – 9:00 PM · Comedy Store · WeHo│
+└────────────────────────────────────────┘
 ```
 
 ### What does NOT change
+
 - Data fetching queries, producer allowlist, availability logic
 - Expandable description + external links behavior
-- Producer page linking logic
-- Any other page or component
-
+- Producer page linking, badge logic
