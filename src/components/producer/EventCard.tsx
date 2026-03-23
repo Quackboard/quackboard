@@ -204,7 +204,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {totalSlots - bookedCount}/{totalSlots} available
+              {Math.max(0, displayAvailable)}/{displayTotal} available
             </span>
             {expanded 
               ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> 
