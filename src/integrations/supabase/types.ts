@@ -219,6 +219,7 @@ export type Database = {
           email_frequency: string | null
           end_time: string
           id: string
+          instagram_url: string | null
           is_info_only: boolean | null
           latitude: number | null
           longitude: number | null
@@ -228,6 +229,7 @@ export type Database = {
           sections_config: Json
           series_id: string | null
           signup_opens_at: string | null
+          source_link: string | null
           start_time: string
           status: string | null
           template_id: string | null
@@ -245,6 +247,7 @@ export type Database = {
           email_frequency?: string | null
           end_time: string
           id?: string
+          instagram_url?: string | null
           is_info_only?: boolean | null
           latitude?: number | null
           longitude?: number | null
@@ -254,6 +257,7 @@ export type Database = {
           sections_config?: Json
           series_id?: string | null
           signup_opens_at?: string | null
+          source_link?: string | null
           start_time: string
           status?: string | null
           template_id?: string | null
@@ -271,6 +275,7 @@ export type Database = {
           email_frequency?: string | null
           end_time?: string
           id?: string
+          instagram_url?: string | null
           is_info_only?: boolean | null
           latitude?: number | null
           longitude?: number | null
@@ -280,6 +285,7 @@ export type Database = {
           sections_config?: Json
           series_id?: string | null
           signup_opens_at?: string | null
+          source_link?: string | null
           start_time?: string
           status?: string | null
           template_id?: string | null
