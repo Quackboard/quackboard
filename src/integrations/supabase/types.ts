@@ -419,6 +419,60 @@ export type Database = {
           },
         ]
       }
+      mic_submissions: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          details: string | null
+          end_time: string | null
+          external_link: string | null
+          id: string
+          instagram_url: string | null
+          mic_name: string
+          next_occurrence: string | null
+          recurrence: string | null
+          start_time: string | null
+          status: string | null
+          submitter_email: string
+          submitter_name: string
+          venue_name: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          details?: string | null
+          end_time?: string | null
+          external_link?: string | null
+          id?: string
+          instagram_url?: string | null
+          mic_name: string
+          next_occurrence?: string | null
+          recurrence?: string | null
+          start_time?: string | null
+          status?: string | null
+          submitter_email: string
+          submitter_name: string
+          venue_name?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          details?: string | null
+          end_time?: string | null
+          external_link?: string | null
+          id?: string
+          instagram_url?: string | null
+          mic_name?: string
+          next_occurrence?: string | null
+          recurrence?: string | null
+          start_time?: string | null
+          status?: string | null
+          submitter_email?: string
+          submitter_name?: string
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
       producer_features: {
         Row: {
           feature: string
