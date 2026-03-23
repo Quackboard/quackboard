@@ -1,13 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { format, parseISO, addHours, isAfter, isBefore, addDays, getDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { MapPin, Clock, Mic, CalendarDays } from 'lucide-react';
+import { MapPin, Clock, Mic, CalendarDays, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
 
 const TZ = 'America/Los_Angeles';
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -17,14 +16,23 @@ const DISCOVER_PRODUCER_IDS = [
   '1a0ffb85-e5e2-4c33-8eaa-15ae64f38066', // Seven Minutes in Heaven
 ];
 
-type FilterMode = 'all' | 'today' | 'starting-soon' | string; // string for day numbers
+type FilterMode = 'all' | 'today' | 'starting-soon' | string;
 
 export default function DiscoverMics() {
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const nowLA = useMemo(() => toZonedTime(new Date(), TZ), []);
   const todayStr = format(nowLA, 'yyyy-MM-dd');
   const tomorrowStr = format(addDays(nowLA, 1), 'yyyy-MM-dd');
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   // Fetch published events with date >= today
   const { data: events } = useQuery({
@@ -32,7 +40,7 @@ export default function DiscoverMics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, venue_name, venue_address, date, start_time, end_time, is_info_only, producer_id, sections_config')
+        .select('id, title, venue_name, venue_address, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
         .eq('status', 'published')
         .gte('date', todayStr)
         .order('date')
@@ -110,7 +118,7 @@ export default function DiscoverMics() {
         return isAfter(eventLA, nowLA) && isBefore(eventLA, twoHoursFromNow);
       }
 
-      // Day of week filter (filter is a number string "0"-"6")
+      // Day of week filter
       const dayNum = parseInt(filter, 10);
       if (!isNaN(dayNum)) {
         const eventDate = parseISO(ev.date);
@@ -136,39 +144,21 @@ export default function DiscoverMics() {
         {/* Filters */}
         <div className="mb-6 space-y-3">
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter('today')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === 'today'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setFilter('starting-soon')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === 'starting-soon'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              Starting Soon
-            </button>
+            {(['all', 'today', 'starting-soon'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  filter === f
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'today' ? 'Today' : 'Starting Soon'}
+              </button>
+            ))}
           </div>
 
-          {/* Day of week buttons */}
           <div className="flex flex-wrap gap-1.5">
             {DAY_LABELS.map((label, i) => (
               <button
@@ -201,6 +191,9 @@ export default function DiscoverMics() {
             const spotsAvailable = avail ? avail.total_slots - avail.booked_count > 0 : false;
             const eventDate = parseISO(ev.date);
             const dayLabel = format(eventDate, 'EEE, MMM d');
+            const isExpanded = expanded.has(ev.id);
+            const hasDescription = !!ev.description;
+            const isInfoOnly = ev.is_info_only === true;
 
             const cardContent = (
               <Card className="transition-shadow hover:shadow-md">
@@ -224,19 +217,65 @@ export default function DiscoverMics() {
                       </div>
                     </div>
 
-                    {isPlatform && (
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <Badge variant="secondary" className="text-[10px]">
-                          On Quackboard
-                        </Badge>
-                        {avail && spotsAvailable && (
-                          <Badge variant="default" className="text-[10px]">
-                            Spots Open
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {isPlatform && (
+                        <>
+                          <Badge variant="secondary" className="text-[10px]">
+                            On Quackboard
                           </Badge>
-                        )}
-                      </div>
-                    )}
+                          {avail && spotsAvailable && (
+                            <Badge variant="default" className="text-[10px]">
+                              Spots Open
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                      {hasDescription && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpand(ev.id); }}
+                          className="p-1 rounded hover:bg-accent transition-colors"
+                          aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+                        >
+                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Expanded description + links */}
+                  {isExpanded && ev.description && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-xs text-muted-foreground whitespace-pre-line">{ev.description}</p>
+                      {isInfoOnly && (ev.source_link || ev.instagram_url) && (
+                        <div className="flex items-center gap-3 mt-2">
+                          {ev.source_link && (
+                            <a
+                              href={ev.source_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              More Info
+                            </a>
+                          )}
+                          {ev.instagram_url && (
+                            <a
+                              href={ev.instagram_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <Instagram className="h-3 w-3" />
+                              Instagram
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
