@@ -134,19 +134,19 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
 
   const regularSections = sections.filter(s => s.type !== 'wildcard');
   const wildcardSection = sections.find(s => s.type === 'wildcard');
-  const totalSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
+  const totalRegularSlots = regularSections.reduce((sum, s) => sum + s.slots, 0);
   const bookedCount = bookings.length;
 
-  // Check if wildcard spots are available (cutoff passed + spots remain)
+  // Check if wildcard cutoff has passed
   const wildcardCutoffPassed = wildcardSection?.signup_opens_at
     ? !isAfter(parseISO(wildcardSection.signup_opens_at), new Date())
     : false;
-  const bookedRegularCount = bookings.filter(b => b.slot_position <= totalSlots).length;
-  const bookedWildcardCount = bookings.filter(b => b.slot_position > totalSlots).length;
-  const totalWildcardSlots = wildcardCutoffPassed
-    ? (totalSlots - bookedRegularCount) + (wildcardSection?.slots || 0)
-    : 0;
-  const hasAvailableWildcardSpots = wildcardCutoffPassed && (totalWildcardSlots - bookedWildcardCount) > 0;
+
+  // Compute display totals: before cutoff show only regular; after cutoff show regular + wildcard
+  const displayTotal = wildcardCutoffPassed
+    ? totalRegularSlots + (wildcardSection?.slots || 0)
+    : totalRegularSlots;
+  const displayAvailable = displayTotal - bookedCount;
 
   // Desktop: fully expanded card (unchanged)
   if (!isMobile) {
@@ -204,7 +204,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {totalSlots - bookedCount}/{totalSlots} available
+              {Math.max(0, displayAvailable)}/{displayTotal} available
             </span>
             {expanded 
               ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> 
