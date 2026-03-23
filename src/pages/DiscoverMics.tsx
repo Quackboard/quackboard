@@ -181,19 +181,22 @@ export default function DiscoverMics() {
 
           {/* Day of week */}
           <div className="flex flex-wrap gap-1.5">
-            {DAY_LABELS.map((label, i) => (
-              <button
-                key={i}
-                onClick={() => setDayFilter(dayFilter === i ? null : i)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  dayFilter === i
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {DAY_LABELS.map((label, i) => {
+              const dayIndex = DAY_INDICES[i];
+              return (
+                <button
+                  key={dayIndex}
+                  onClick={() => setDayFilter(dayFilter === dayIndex ? null : dayIndex)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    dayFilter === dayIndex
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
