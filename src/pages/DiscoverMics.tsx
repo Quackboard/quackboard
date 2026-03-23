@@ -91,6 +91,11 @@ export default function DiscoverMics() {
     if (!events) return [];
 
     return events.filter(ev => {
+      // For platform mics, only show allowlisted producers
+      if (ev.is_info_only === false && !DISCOVER_PRODUCER_IDS.includes(ev.producer_id)) {
+        return false;
+      }
+
       if (filter === 'all') return true;
 
       if (filter === 'today') {
