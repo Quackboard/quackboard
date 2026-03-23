@@ -52,13 +52,14 @@ export default function DiscoverMics() {
   };
 
   const { data: events } = useQuery({
-    queryKey: ['discover-events'],
+    queryKey: ['discover-events', mondayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
         .eq('status', 'published')
-        .gte('date', todayStr)
+        .gte('date', mondayStr)
+        .lte('date', sundayStr)
         .order('date')
         .order('start_time');
       if (error) throw error;
