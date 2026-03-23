@@ -10,7 +10,8 @@ import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-rea
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_INDICES = [1, 2, 3, 4, 5, 6, 0]; // Map label position to JS getDay() value
 
 const DISCOVER_PRODUCER_IDS = [
   '1a0ffb85-e5e2-4c33-8eaa-15ae64f38066',
@@ -180,19 +181,22 @@ export default function DiscoverMics() {
 
           {/* Day of week */}
           <div className="flex flex-wrap gap-1.5">
-            {DAY_LABELS.map((label, i) => (
-              <button
-                key={i}
-                onClick={() => setDayFilter(dayFilter === i ? null : i)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  dayFilter === i
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {DAY_LABELS.map((label, i) => {
+              const dayIndex = DAY_INDICES[i];
+              return (
+                <button
+                  key={dayIndex}
+                  onClick={() => setDayFilter(dayFilter === dayIndex ? null : dayIndex)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    dayFilter === dayIndex
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
