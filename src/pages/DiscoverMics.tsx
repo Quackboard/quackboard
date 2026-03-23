@@ -227,14 +227,11 @@ export default function DiscoverMics() {
                     {isPlatform && (
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <Badge variant="secondary" className="text-[10px]">
-                          Verified
+                          On Quackboard
                         </Badge>
-                        {avail && (
-                          <Badge
-                            variant={spotsAvailable ? 'default' : 'outline'}
-                            className="text-[10px]"
-                          >
-                            {spotsAvailable ? 'Spots Available' : 'Full'}
+                        {avail && spotsAvailable && (
+                          <Badge variant="default" className="text-[10px]">
+                            Spots Open
                           </Badge>
                         )}
                       </div>
