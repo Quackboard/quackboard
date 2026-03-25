@@ -286,7 +286,7 @@ export default function EditMic() {
           publishAt: publishAtDate,
           publishAtTime,
           signupOption,
-          signupOpensAt: signupOpensAtDate,
+          signupDaysBefore,
           signupOpensAtTime,
           producerMessage: event.producer_message || '',
           emailFrequency: event.email_frequency === 'disabled' || event.email_frequency === 'Email setting not active'
