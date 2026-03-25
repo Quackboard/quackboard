@@ -345,7 +345,7 @@ export default function CreateMic() {
         allow_multiple_slots: data.allowMultipleSlots,
         status,
         publish_at: publishAt,
-        signup_opens_at: signupOpensAt,
+        signup_opens_at: computeSignupOpensAt(format(data.date, 'yyyy-MM-dd')),
         series_id: seriesId,
         // Explicit mapping to 'disabled' for backend clarity
         email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
