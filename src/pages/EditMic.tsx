@@ -418,11 +418,15 @@ export default function EditMic() {
         publishAt = fromZonedTime(localDateTime, timezone).toISOString();
       }
 
-      // Handle signup_opens_at
+      // Handle signup_opens_at - compute from relative offset
       let signupOpensAt: string | null = null;
-      if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-        const localDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        signupOpensAt = fromZonedTime(localDateTime, timezone).toISOString();
+      if (data.signupOption === 'later' && data.signupDaysBefore !== undefined && data.signupOpensAtTime) {
+        const eventDateObj = new Date(format(data.date, 'yyyy-MM-dd') + 'T00:00:00');
+        const signupDate = new Date(eventDateObj);
+        signupDate.setDate(signupDate.getDate() - data.signupDaysBefore);
+        const [h, m] = data.signupOpensAtTime.split(':').map(Number);
+        signupDate.setHours(h, m, 0, 0);
+        signupOpensAt = fromZonedTime(signupDate, timezone).toISOString();
       }
 
       const previousStatus = event?.status;
