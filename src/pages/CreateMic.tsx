@@ -73,7 +73,7 @@ const formSchema = z.object({
   publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
+  signupDaysBefore: z.number().min(0).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
   emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
@@ -110,12 +110,12 @@ const formSchema = z.object({
   path: ['publishAt'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
-    if (!data.signupOpensAt) return false;
+    if (data.signupDaysBefore === undefined || data.signupDaysBefore === null) return false;
   }
   return true;
 }, {
-  message: 'Please select a signup date',
-  path: ['signupOpensAt'],
+  message: 'Please specify days before',
+  path: ['signupDaysBefore'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
     if (!data.signupOpensAtTime) return false;
@@ -125,36 +125,14 @@ const formSchema = z.object({
   message: 'Please select a signup time',
   path: ['signupOpensAtTime'],
 }).refine((data) => {
-  if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime > new Date();
-  }
-  return true;
-}, {
-  message: 'Signup time must be in the future',
-  path: ['signupOpensAt'],
-}).refine((data) => {
-  if (data.publishOption === 'later' && data.signupOption === 'later') {
-    if (!data.publishAt || !data.publishAtTime || !data.signupOpensAt || !data.signupOpensAtTime) return true;
-    const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime >= publishDateTime;
-  }
-  return true;
-}, {
-  message: 'Signup time must be on or after publish time',
-  path: ['signupOpensAt'],
-}).refine((data) => {
-  // Check signup opens before event starts
-  if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
-    const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime < eventStartDateTime;
+  // If 0 days before, signup time must be before event start time
+  if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
+    return data.signupOpensAtTime < data.startTime;
   }
   return true;
 }, {
   message: 'Sign-ups must open before the mic starts',
-  path: ['signupOpensAt'],
+  path: ['signupOpensAtTime'],
 });
 
 function combineDateAndTime(date: Date, time: string): Date {
@@ -269,12 +247,16 @@ export default function CreateMic() {
         publishAt = fromZonedTime(localDateTime, timezone).toISOString();
       }
 
-      // Handle signup_opens_at
-      let signupOpensAt: string | null = null;
-      if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-        const localDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        signupOpensAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // Helper to compute signup_opens_at per event date
+      const computeSignupOpensAt = (eventDateStr: string): string | null => {
+        if (data.signupOption !== 'later' || data.signupDaysBefore === undefined || !data.signupOpensAtTime) return null;
+        const eventDate = new Date(eventDateStr + 'T00:00:00');
+        const signupDate = new Date(eventDate);
+        signupDate.setDate(signupDate.getDate() - data.signupDaysBefore);
+        const [h, m] = data.signupOpensAtTime.split(':').map(Number);
+        signupDate.setHours(h, m, 0, 0);
+        return fromZonedTime(signupDate, timezone).toISOString();
+      };
 
       const seriesId = crypto.randomUUID();
 
@@ -308,7 +290,7 @@ export default function CreateMic() {
             allow_multiple_slots: data.allowMultipleSlots,
             status,
             publish_at: publishAt,
-            signup_opens_at: signupOpensAt,
+            signup_opens_at: computeSignupOpensAt(format(dateObj, 'yyyy-MM-dd')),
             series_id: seriesId,
             email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
             producer_message: data.producerMessage || null,
@@ -363,7 +345,7 @@ export default function CreateMic() {
         allow_multiple_slots: data.allowMultipleSlots,
         status,
         publish_at: publishAt,
-        signup_opens_at: signupOpensAt,
+        signup_opens_at: computeSignupOpensAt(format(data.date, 'yyyy-MM-dd')),
         series_id: seriesId,
         // Explicit mapping to 'disabled' for backend clarity
         email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
@@ -846,36 +828,31 @@ export default function CreateMic() {
                 </RadioGroup>
 
                 {watchSignupOption === 'later' && (
-                  <div className="grid grid-cols-2 gap-3 pl-6">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'justify-start text-left font-normal',
-                            !watch('signupOpensAt') && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {watch('signupOpensAt') ? format(watch('signupOpensAt')!, 'PP') : 'Date'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={watch('signupOpensAt')}
-                          onSelect={(date) => date && setValue('signupOpensAt', date)}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <Input
-                      type="time"
-                      {...register('signupOpensAtTime')}
-                    />
-                    {errors.signupOpensAt && (
-                      <p className="text-sm text-destructive col-span-2">{errors.signupOpensAt.message}</p>
+                  <div className="space-y-3 pl-6">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        className="w-20"
+                        {...register('signupDaysBefore', { valueAsNumber: true })}
+                      />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
+                      <Input
+                        type="time"
+                        className="w-32"
+                        {...register('signupOpensAtTime')}
+                      />
+                    </div>
+                    {watchDate && watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (
+                      <p className="text-xs text-muted-foreground">
+                        Sign-ups will open {watch('signupDaysBefore')} day{watch('signupDaysBefore') !== 1 ? 's' : ''} before each event at {watch('signupOpensAtTime')}
+                      </p>
+                    )}
+                    {errors.signupDaysBefore && (
+                      <p className="text-sm text-destructive">{errors.signupDaysBefore.message}</p>
+                    )}
+                    {errors.signupOpensAtTime && (
+                      <p className="text-sm text-destructive">{errors.signupOpensAtTime.message}</p>
                     )}
                   </div>
                 )}

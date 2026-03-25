@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, parseISO, isPast, startOfDay } from 'date-fns';
+import { format, parseISO, isPast, startOfDay, differenceInCalendarDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { CalendarIcon, Plus, Trash2, Loader2, Copy, ArrowLeft, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -87,7 +87,7 @@ const formSchema = z.object({
   publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
+  signupDaysBefore: z.number().min(0).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
   emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
@@ -242,14 +242,16 @@ export default function EditMic() {
         publishAtTime = format(localPublishAt, 'HH:mm');
       }
 
-      // Parse signup_opens_at to local timezone
+      // Parse signup_opens_at to relative offset
       let signupOption: 'live' | 'later' = 'live';
-      let signupOpensAtDate: Date | undefined;
+      let signupDaysBefore: number | undefined;
       let signupOpensAtTime: string | undefined;
       if (event.signup_opens_at) {
         const localSignupAt = toZonedTime(parseISO(event.signup_opens_at), timezone);
+        const eventDateObj = parseISO(event.date);
         signupOption = 'later';
-        signupOpensAtDate = localSignupAt;
+        signupDaysBefore = differenceInCalendarDays(eventDateObj, localSignupAt);
+        if (signupDaysBefore < 0) signupDaysBefore = 0;
         signupOpensAtTime = format(localSignupAt, 'HH:mm');
       }
 
@@ -284,7 +286,7 @@ export default function EditMic() {
           publishAt: publishAtDate,
           publishAtTime,
           signupOption,
-          signupOpensAt: signupOpensAtDate,
+          signupDaysBefore,
           signupOpensAtTime,
           producerMessage: event.producer_message || '',
           emailFrequency: event.email_frequency === 'disabled' || event.email_frequency === 'Email setting not active'
@@ -368,35 +370,9 @@ export default function EditMic() {
       }
     }
 
-    // Check signup_opens_at - only if changed
-    if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-      const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-      const utcSignup = fromZonedTime(signupDateTime, timezone);
-
-      const originalWasScheduled = !!originalSignupOpensAt;
-      const isChanged = !originalWasScheduled || utcSignup.toISOString() !== originalSignupOpensAt;
-
-      if (isChanged && utcSignup <= now) {
-        return 'Signup time must be in the future';
-      }
-    }
-
-    // Check signup_opens_at >= publish_at
-    if (data.publishOption === 'later' && data.signupOption === 'later') {
-      if (data.publishAt && data.publishAtTime && data.signupOpensAt && data.signupOpensAtTime) {
-        const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        if (signupDateTime < publishDateTime) {
-          return 'Signup time must be on or after publish time';
-        }
-      }
-    }
-
-    // Check signup opens before event starts
-    if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
-      const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
-      const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-      if (signupDateTime >= eventStartDateTime) {
+    // Check signup_opens_at - validate 0 days before means time must be before start
+    if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
+      if (data.signupOpensAtTime >= data.startTime) {
         return 'Sign-ups must open before the mic starts';
       }
     }
@@ -442,11 +418,15 @@ export default function EditMic() {
         publishAt = fromZonedTime(localDateTime, timezone).toISOString();
       }
 
-      // Handle signup_opens_at
+      // Handle signup_opens_at - compute from relative offset
       let signupOpensAt: string | null = null;
-      if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-        const localDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        signupOpensAt = fromZonedTime(localDateTime, timezone).toISOString();
+      if (data.signupOption === 'later' && data.signupDaysBefore !== undefined && data.signupOpensAtTime) {
+        const eventDateObj = new Date(format(data.date, 'yyyy-MM-dd') + 'T00:00:00');
+        const signupDate = new Date(eventDateObj);
+        signupDate.setDate(signupDate.getDate() - data.signupDaysBefore);
+        const [h, m] = data.signupOpensAtTime.split(':').map(Number);
+        signupDate.setHours(h, m, 0, 0);
+        signupOpensAt = fromZonedTime(signupDate, timezone).toISOString();
       }
 
       const previousStatus = event?.status;
@@ -1127,34 +1107,26 @@ export default function EditMic() {
             </RadioGroup>
 
             {watchSignupOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('signupOpensAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('signupOpensAt') ? format(watch('signupOpensAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('signupOpensAt')}
-                      onSelect={(date) => date && setValue('signupOpensAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('signupOpensAtTime')}
-                />
+              <div className="space-y-3 pl-6">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    className="w-20"
+                    {...register('signupDaysBefore', { valueAsNumber: true })}
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
+                  <Input
+                    type="time"
+                    className="w-32"
+                    {...register('signupOpensAtTime')}
+                  />
+                </div>
+                {watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (
+                  <p className="text-xs text-muted-foreground">
+                    Sign-ups will open {watch('signupDaysBefore')} day{watch('signupDaysBefore') !== 1 ? 's' : ''} before the event at {watch('signupOpensAtTime')}
+                  </p>
+                )}
               </div>
             )}
           </div>
