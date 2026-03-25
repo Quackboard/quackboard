@@ -230,11 +230,15 @@ export default function CreateMic() {
     setIsSubmitting(true);
 
     try {
-      // Build sections config
-      const sectionsConfig = data.sections.map(s => {
-        if (s.type === 'wildcard' && s.signup_opens_at_date && s.signup_opens_at_time) {
-          const localCutoff = combineDateAndTime(s.signup_opens_at_date, s.signup_opens_at_time);
-          const utcCutoff = fromZonedTime(localCutoff, timezone).toISOString();
+      // Build sections config as a function of event date (for per-event wildcard cutoff)
+      const buildSectionsConfig = (eventDateStr: string) => data.sections.map(s => {
+        if (s.type === 'wildcard' && s.signup_opens_at_days_before !== undefined && s.signup_opens_at_time) {
+          const eventDate = new Date(eventDateStr + 'T00:00:00');
+          const cutoffDate = new Date(eventDate);
+          cutoffDate.setDate(cutoffDate.getDate() - s.signup_opens_at_days_before);
+          const [h, m] = s.signup_opens_at_time.split(':').map(Number);
+          cutoffDate.setHours(h, m, 0, 0);
+          const utcCutoff = fromZonedTime(cutoffDate, timezone).toISOString();
           return { label: s.label, slots: s.slots || 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
         }
         return { label: s.label, slots: s.slots };
