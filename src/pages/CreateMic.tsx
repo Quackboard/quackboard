@@ -73,7 +73,7 @@ const formSchema = z.object({
   publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
+  signupDaysBefore: z.number().min(0).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
   emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
@@ -110,12 +110,12 @@ const formSchema = z.object({
   path: ['publishAt'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
-    if (!data.signupOpensAt) return false;
+    if (data.signupDaysBefore === undefined || data.signupDaysBefore === null) return false;
   }
   return true;
 }, {
-  message: 'Please select a signup date',
-  path: ['signupOpensAt'],
+  message: 'Please specify days before',
+  path: ['signupDaysBefore'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
     if (!data.signupOpensAtTime) return false;
@@ -125,36 +125,14 @@ const formSchema = z.object({
   message: 'Please select a signup time',
   path: ['signupOpensAtTime'],
 }).refine((data) => {
-  if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime > new Date();
-  }
-  return true;
-}, {
-  message: 'Signup time must be in the future',
-  path: ['signupOpensAt'],
-}).refine((data) => {
-  if (data.publishOption === 'later' && data.signupOption === 'later') {
-    if (!data.publishAt || !data.publishAtTime || !data.signupOpensAt || !data.signupOpensAtTime) return true;
-    const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime >= publishDateTime;
-  }
-  return true;
-}, {
-  message: 'Signup time must be on or after publish time',
-  path: ['signupOpensAt'],
-}).refine((data) => {
-  // Check signup opens before event starts
-  if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
-    const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
-    const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-    return signupDateTime < eventStartDateTime;
+  // If 0 days before, signup time must be before event start time
+  if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
+    return data.signupOpensAtTime < data.startTime;
   }
   return true;
 }, {
   message: 'Sign-ups must open before the mic starts',
-  path: ['signupOpensAt'],
+  path: ['signupOpensAtTime'],
 });
 
 function combineDateAndTime(date: Date, time: string): Date {
