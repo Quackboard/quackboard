@@ -262,11 +262,13 @@ export default function EditMic() {
         const formSections = (sections.length > 0 ? sections : [{ label: '', slots: 10 }]).map(s => {
           if (s.type === 'wildcard' && s.signup_opens_at) {
             const localCutoff = toZonedTime(parseISO(s.signup_opens_at), timezone);
+            const eventDateObj = parseISO(event.date);
+            const daysBefore = differenceInCalendarDays(eventDateObj, localCutoff);
             return {
               label: s.label,
               slots: s.slots,
               type: s.type as 'regular' | 'wildcard',
-              signup_opens_at_date: localCutoff,
+              signup_opens_at_days_before: daysBefore < 0 ? 0 : daysBefore,
               signup_opens_at_time: format(localCutoff, 'HH:mm'),
             };
           }
