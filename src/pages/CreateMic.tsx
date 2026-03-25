@@ -607,41 +607,24 @@ export default function CreateMic() {
                           {...register(`sections.${index}.label`)}
                         />
                         <div className="space-y-2">
-                          <Label className="text-sm">Cutoff / Signup opens at</Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    'justify-start text-left font-normal',
-                                    !watch(`sections.${index}.signup_opens_at_date`) && 'text-muted-foreground'
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {watch(`sections.${index}.signup_opens_at_date`)
-                                    ? format(watch(`sections.${index}.signup_opens_at_date`)!, 'PP')
-                                    : 'Date'}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={watch(`sections.${index}.signup_opens_at_date`)}
-                                  onSelect={(date) => date && setValue(`sections.${index}.signup_opens_at_date`, date)}
-                                  initialFocus
-                                  className="pointer-events-auto"
-                                />
-                              </PopoverContent>
-                            </Popover>
+                          <Label className="text-sm">Wildcard cutoff</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              className="w-20"
+                              {...register(`sections.${index}.signup_opens_at_days_before`, { valueAsNumber: true })}
+                            />
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
                             <Input
                               type="time"
+                              className="w-32"
                               {...register(`sections.${index}.signup_opens_at_time`)}
                             />
                           </div>
                           {errors.sections?.[index] && (
                             <p className="text-sm text-destructive">
-                              {(errors.sections[index] as any)?.signup_opens_at_date?.message ||
+                              {(errors.sections[index] as any)?.signup_opens_at_days_before?.message ||
                                (errors.sections[index] as any)?.signup_opens_at_time?.message}
                             </p>
                           )}
