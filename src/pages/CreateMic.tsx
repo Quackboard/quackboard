@@ -44,15 +44,15 @@ const sectionSchema = z.object({
   label: z.string(),
   slots: z.number().min(0),
   type: z.enum(['regular', 'wildcard']).optional(),
-  signup_opens_at_date: z.date().optional(),
+  signup_opens_at_days_before: z.number().min(0).optional(),
   signup_opens_at_time: z.string().optional(),
 }).refine((data) => {
   if (data.type === 'wildcard') return true;
   return data.slots >= 1;
 }, { message: 'At least 1 spot required', path: ['slots'] }).refine((data) => {
-  if (data.type === 'wildcard' && !data.signup_opens_at_date) return false;
+  if (data.type === 'wildcard' && (data.signup_opens_at_days_before === undefined || data.signup_opens_at_days_before === null)) return false;
   return true;
-}, { message: 'Cutoff date is required', path: ['signup_opens_at_date'] }).refine((data) => {
+}, { message: 'Days before is required', path: ['signup_opens_at_days_before'] }).refine((data) => {
   if (data.type === 'wildcard' && !data.signup_opens_at_time) return false;
   return true;
 }, { message: 'Cutoff time is required', path: ['signup_opens_at_time'] });
