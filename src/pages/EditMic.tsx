@@ -1107,34 +1107,26 @@ export default function EditMic() {
             </RadioGroup>
 
             {watchSignupOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('signupOpensAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('signupOpensAt') ? format(watch('signupOpensAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('signupOpensAt')}
-                      onSelect={(date) => date && setValue('signupOpensAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('signupOpensAtTime')}
-                />
+              <div className="space-y-3 pl-6">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    className="w-20"
+                    {...register('signupDaysBefore', { valueAsNumber: true })}
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
+                  <Input
+                    type="time"
+                    className="w-32"
+                    {...register('signupOpensAtTime')}
+                  />
+                </div>
+                {watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (
+                  <p className="text-xs text-muted-foreground">
+                    Sign-ups will open {watch('signupDaysBefore')} day{watch('signupDaysBefore') !== 1 ? 's' : ''} before the event at {watch('signupOpensAtTime')}
+                  </p>
+                )}
               </div>
             )}
           </div>
