@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, parseISO, isPast, startOfDay } from 'date-fns';
+import { format, parseISO, isPast, startOfDay, differenceInCalendarDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { CalendarIcon, Plus, Trash2, Loader2, Copy, ArrowLeft, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
