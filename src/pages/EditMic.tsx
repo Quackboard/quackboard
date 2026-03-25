@@ -58,15 +58,15 @@ const sectionSchema = z.object({
   label: z.string(),
   slots: z.number().min(0),
   type: z.enum(['regular', 'wildcard']).optional(),
-  signup_opens_at_date: z.date().optional(),
+  signup_opens_at_days_before: z.number().min(0).optional(),
   signup_opens_at_time: z.string().optional(),
 }).refine((data) => {
   if (data.type === 'wildcard') return true;
   return data.slots >= 1;
 }, { message: 'At least 1 spot required', path: ['slots'] }).refine((data) => {
-  if (data.type === 'wildcard' && !data.signup_opens_at_date) return false;
+  if (data.type === 'wildcard' && (data.signup_opens_at_days_before === undefined || data.signup_opens_at_days_before === null)) return false;
   return true;
-}, { message: 'Cutoff date is required', path: ['signup_opens_at_date'] }).refine((data) => {
+}, { message: 'Days before is required', path: ['signup_opens_at_days_before'] }).refine((data) => {
   if (data.type === 'wildcard' && !data.signup_opens_at_time) return false;
   return true;
 }, { message: 'Cutoff time is required', path: ['signup_opens_at_time'] });
@@ -262,11 +262,13 @@ export default function EditMic() {
         const formSections = (sections.length > 0 ? sections : [{ label: '', slots: 10 }]).map(s => {
           if (s.type === 'wildcard' && s.signup_opens_at) {
             const localCutoff = toZonedTime(parseISO(s.signup_opens_at), timezone);
+            const eventDateObj = parseISO(event.date);
+            const daysBefore = differenceInCalendarDays(eventDateObj, localCutoff);
             return {
               label: s.label,
               slots: s.slots,
               type: s.type as 'regular' | 'wildcard',
-              signup_opens_at_date: localCutoff,
+              signup_opens_at_days_before: daysBefore < 0 ? 0 : daysBefore,
               signup_opens_at_time: format(localCutoff, 'HH:mm'),
             };
           }
@@ -402,10 +404,14 @@ export default function EditMic() {
     setIsSubmitting(true);
 
     try {
-      const sectionsConfig = data.sections.map(s => {
-        if (s.type === 'wildcard' && s.signup_opens_at_date && s.signup_opens_at_time) {
-          const localCutoff = combineDateAndTime(s.signup_opens_at_date, s.signup_opens_at_time);
-          const utcCutoff = fromZonedTime(localCutoff, timezone).toISOString();
+      const buildSectionsConfig = (eventDateStr: string) => data.sections.map(s => {
+        if (s.type === 'wildcard' && s.signup_opens_at_days_before !== undefined && s.signup_opens_at_time) {
+          const eventDate = new Date(eventDateStr + 'T00:00:00');
+          const cutoffDate = new Date(eventDate);
+          cutoffDate.setDate(cutoffDate.getDate() - s.signup_opens_at_days_before);
+          const [h, m] = s.signup_opens_at_time.split(':').map(Number);
+          cutoffDate.setHours(h, m, 0, 0);
+          const utcCutoff = fromZonedTime(cutoffDate, timezone).toISOString();
           return { label: s.label, slots: s.slots || 0, type: 'wildcard' as const, signup_opens_at: utcCutoff };
         }
         return { label: s.label, slots: s.slots };
@@ -443,7 +449,7 @@ export default function EditMic() {
           title: data.title || `Mic on ${format(data.date, 'MMM d')}`,
           venue_name: data.venueName,
           venue_address: data.venueAddress,
-          sections_config: sectionsConfig,
+          sections_config: buildSectionsConfig(format(data.date, 'yyyy-MM-dd')),
           allow_multiple_slots: data.allowMultipleSlots,
           status,
           publish_at: publishAt,
@@ -873,41 +879,24 @@ export default function EditMic() {
                       {...register(`sections.${index}.label`)}
                     />
                     <div className="space-y-2">
-                      <Label className="text-sm">Cutoff / Signup opens at</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                'justify-start text-left font-normal',
-                                !watch(`sections.${index}.signup_opens_at_date`) && 'text-muted-foreground'
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {watch(`sections.${index}.signup_opens_at_date`)
-                                ? format(watch(`sections.${index}.signup_opens_at_date`)!, 'PP')
-                                : 'Date'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={watch(`sections.${index}.signup_opens_at_date`)}
-                              onSelect={(date) => date && setValue(`sections.${index}.signup_opens_at_date`, date)}
-                              initialFocus
-                              className="pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <Label className="text-sm">Wildcard cutoff</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          className="w-20"
+                          {...register(`sections.${index}.signup_opens_at_days_before`, { valueAsNumber: true })}
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
                         <Input
                           type="time"
+                          className="w-32"
                           {...register(`sections.${index}.signup_opens_at_time`)}
                         />
                       </div>
                       {errors.sections?.[index] && (
                         <p className="text-sm text-destructive">
-                          {(errors.sections[index] as any)?.signup_opens_at_date?.message ||
+                          {(errors.sections[index] as any)?.signup_opens_at_days_before?.message ||
                            (errors.sections[index] as any)?.signup_opens_at_time?.message}
                         </p>
                       )}
