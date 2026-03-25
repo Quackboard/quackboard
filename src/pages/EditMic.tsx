@@ -242,14 +242,16 @@ export default function EditMic() {
         publishAtTime = format(localPublishAt, 'HH:mm');
       }
 
-      // Parse signup_opens_at to local timezone
+      // Parse signup_opens_at to relative offset
       let signupOption: 'live' | 'later' = 'live';
-      let signupOpensAtDate: Date | undefined;
+      let signupDaysBefore: number | undefined;
       let signupOpensAtTime: string | undefined;
       if (event.signup_opens_at) {
         const localSignupAt = toZonedTime(parseISO(event.signup_opens_at), timezone);
+        const eventDateObj = parseISO(event.date);
         signupOption = 'later';
-        signupOpensAtDate = localSignupAt;
+        signupDaysBefore = differenceInCalendarDays(eventDateObj, localSignupAt);
+        if (signupDaysBefore < 0) signupDaysBefore = 0;
         signupOpensAtTime = format(localSignupAt, 'HH:mm');
       }
 
