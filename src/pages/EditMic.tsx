@@ -87,7 +87,7 @@ const formSchema = z.object({
   publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
+  signupDaysBefore: z.number().min(0).optional(),
   signupOpensAtTime: z.string().optional(),
   producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
   emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
