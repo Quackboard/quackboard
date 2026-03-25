@@ -345,7 +345,7 @@ export default function CreateMic() {
         title: data.title || `Mic on ${format(data.date, 'MMM d')}`,
         venue_name: data.venueName,
         venue_address: data.venueAddress,
-        sections_config: sectionsConfig,
+        sections_config: buildSectionsConfig(format(data.date, 'yyyy-MM-dd')),
         allow_multiple_slots: data.allowMultipleSlots,
         status,
         publish_at: publishAt,
