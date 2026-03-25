@@ -247,12 +247,16 @@ export default function CreateMic() {
         publishAt = fromZonedTime(localDateTime, timezone).toISOString();
       }
 
-      // Handle signup_opens_at
-      let signupOpensAt: string | null = null;
-      if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-        const localDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        signupOpensAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // Helper to compute signup_opens_at per event date
+      const computeSignupOpensAt = (eventDateStr: string): string | null => {
+        if (data.signupOption !== 'later' || data.signupDaysBefore === undefined || !data.signupOpensAtTime) return null;
+        const eventDate = new Date(eventDateStr + 'T00:00:00');
+        const signupDate = new Date(eventDate);
+        signupDate.setDate(signupDate.getDate() - data.signupDaysBefore);
+        const [h, m] = data.signupOpensAtTime.split(':').map(Number);
+        signupDate.setHours(h, m, 0, 0);
+        return fromZonedTime(signupDate, timezone).toISOString();
+      };
 
       const seriesId = crypto.randomUUID();
 
