@@ -370,35 +370,9 @@ export default function EditMic() {
       }
     }
 
-    // Check signup_opens_at - only if changed
-    if (data.signupOption === 'later' && data.signupOpensAt && data.signupOpensAtTime) {
-      const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-      const utcSignup = fromZonedTime(signupDateTime, timezone);
-
-      const originalWasScheduled = !!originalSignupOpensAt;
-      const isChanged = !originalWasScheduled || utcSignup.toISOString() !== originalSignupOpensAt;
-
-      if (isChanged && utcSignup <= now) {
-        return 'Signup time must be in the future';
-      }
-    }
-
-    // Check signup_opens_at >= publish_at
-    if (data.publishOption === 'later' && data.signupOption === 'later') {
-      if (data.publishAt && data.publishAtTime && data.signupOpensAt && data.signupOpensAtTime) {
-        const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-        if (signupDateTime < publishDateTime) {
-          return 'Signup time must be on or after publish time';
-        }
-      }
-    }
-
-    // Check signup opens before event starts
-    if (data.signupOption === 'later' && data.date && data.startTime && data.signupOpensAt && data.signupOpensAtTime) {
-      const eventStartDateTime = combineDateAndTime(data.date, data.startTime);
-      const signupDateTime = combineDateAndTime(data.signupOpensAt, data.signupOpensAtTime);
-      if (signupDateTime >= eventStartDateTime) {
+    // Check signup_opens_at - validate 0 days before means time must be before start
+    if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
+      if (data.signupOpensAtTime >= data.startTime) {
         return 'Sign-ups must open before the mic starts';
       }
     }
