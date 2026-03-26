@@ -16,6 +16,16 @@ export function ProducerHeader({ producer }: ProducerHeaderProps) {
           {producer.venue_name}
         </p>
       )}
+      {producer.venue_address && (
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(producer.venue_address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          📍 {producer.venue_address}
+        </a>
+      )}
       {producer.bio_markdown && (
         <div className="mt-4 text-sm text-muted-foreground prose prose-sm prose-invert max-w-none prose-p:my-2 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-em:text-muted-foreground">
           <ReactMarkdown
