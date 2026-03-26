@@ -270,15 +270,6 @@ export default function CreateMic() {
         if (error) throw error;
         if (!createdEvents || createdEvents.length === 0) throw new Error('Failed to create events');
 
-        // HOURLY/RECURRING EMAIL FIX: Send/Schedule exactly 1 email for the first mic in the series
-        // createdEvents is ordered by date ascending so [0] is guaranteed to be the earliest mic
-        if (status === 'published') {
-          const firstEventId = createdEvents[0].id;
-          await sendMicGoesLiveEmail({
-            eventId: firstEventId,
-            producerId: user.id,
-          });
-        }
 
         toast({
           title: `${eventsToInsert.length} mics created!`,
