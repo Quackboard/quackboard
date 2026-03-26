@@ -125,6 +125,7 @@ export function EditProfile() {
         instagram: handleToInstagramUrl(data.instagram || ''),
         website: data.website || null,
         bio_markdown: data.bio_markdown,
+        event_window_days: data.event_window_days,
         updated_at: new Date().toISOString(),
       };
 
