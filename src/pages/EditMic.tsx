@@ -291,7 +291,6 @@ export default function EditMic() {
   });
 
   const watchSignupOption = watch('signupOption');
-  const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
   const watchSections = watch('sections');
 
