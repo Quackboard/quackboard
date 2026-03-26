@@ -96,8 +96,8 @@ export default function DiscoverMics() {
   });
 
   const producerMap = useMemo(() => {
-    const m = new Map<string, { name: string | null; slug: string | null }>();
-    producers?.forEach(p => m.set(p.id, { name: p.name, slug: p.slug }));
+    const m = new Map<string, { name: string | null; slug: string | null; discoverable: boolean }>();
+    producers?.forEach(p => m.set(p.id, { name: p.name, slug: p.slug, discoverable: p.discoverable }));
     return m;
   }, [producers]);
 
