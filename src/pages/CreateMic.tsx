@@ -70,6 +70,17 @@ const formSchema = z.object({
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
   allowMultipleSlots: z.boolean(),
   signupOption: z.enum(['live', 'later']),
+  signupDaysBefore: z.number().min(0).optional(),
+  signupOpensAtTime: z.string().optional(),
+  producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
+  emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
+}).refine((data) => {
+  if (!data.startTime || !data.endTime) return true;
+  return data.startTime < data.endTime;
+}, {
+  message: 'End time must be after start time',
+  path: ['endTime'],
+}).refine((data) => {
   if (data.signupOption === 'later') {
     if (data.signupDaysBefore === undefined || data.signupDaysBefore === null) return false;
   }
@@ -86,7 +97,6 @@ const formSchema = z.object({
   message: 'Please select a signup time',
   path: ['signupOpensAtTime'],
 }).refine((data) => {
-  // If 0 days before, signup time must be before event start time
   if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
     return data.signupOpensAtTime < data.startTime;
   }
