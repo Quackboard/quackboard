@@ -243,6 +243,31 @@ export default function Onboarding() {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="instagram">Instagram</Label>
+          <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+              instagram.com/
+            </span>
+            <Input
+              id="instagram"
+              placeholder="yourhandle"
+              {...register('instagram')}
+              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            type="text"
+            placeholder="https://yourwebsite.com"
+            {...register('website')}
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="bio">Display Text for Public Page</Label>
           <Controller
             name="bio"
