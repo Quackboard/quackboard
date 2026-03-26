@@ -51,6 +51,8 @@ export default function Onboarding() {
       slug: '',
       venue_name: '',
       venue_address: '',
+      instagram: '',
+      website: '',
       bio: '',
     },
   });
