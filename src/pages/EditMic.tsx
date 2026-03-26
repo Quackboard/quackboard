@@ -419,66 +419,12 @@ export default function EditMic() {
 
       if (error) throw error;
 
-      // Handle email notification based on publish option
-      if (status === 'published') {
-        if (isBeingPublished) {
-          // Event is being published for the first time
-          if (data.publishOption === 'now') {
-            // Send email immediately
-            await sendMicGoesLiveEmail({
-              eventId: id!,
-              producerId: user.id,
-            });
-          } else if (data.publishOption === 'later' && publishAt) {
-            // Schedule email to be sent when mic goes live (at publish_at time)
-            const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-              producer_id: user.id,
-              event_id: id!,
-              subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
-              body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
-              send_at: publishAt,
-              status: 'pending',
-            });
-
-            if (scheduleError) {
-              console.error('Error scheduling mic goes live email:', scheduleError);
-            }
-          }
-        } else if (publishAtChanged && data.publishOption === 'later' && publishAt) {
-          // Event was already published but publish_at changed - update scheduled message
-          // First, delete any existing scheduled messages for this event
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('event_id', id!)
-            .eq('status', 'pending');
-
-          // Create new scheduled message with updated time
-          const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-            producer_id: user.id,
-            event_id: id!,
-            subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
-            body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
-            send_at: publishAt,
-            status: 'pending',
-          });
-
-          if (scheduleError) {
-            console.error('Error updating scheduled mic goes live email:', scheduleError);
-          }
-        } else if (publishAtChanged && data.publishOption === 'now') {
-          // Changed from scheduled to now - send immediately and delete scheduled message
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('event_id', id!)
-            .eq('status', 'pending');
-
-          await sendMicGoesLiveEmail({
-            eventId: id!,
-            producerId: user.id,
-          });
-        }
+      // Send email when publishing for the first time
+      if (status === 'published' && isBeingPublished) {
+        await sendMicGoesLiveEmail({
+          eventId: id!,
+          producerId: user.id,
+        });
       }
 
       toast({
