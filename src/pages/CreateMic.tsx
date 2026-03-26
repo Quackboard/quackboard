@@ -303,13 +303,6 @@ export default function CreateMic() {
       if (error) throw error;
       if (!createdEvent) throw new Error('Failed to create event');
 
-      // Send email immediately when publishing
-      if (status === 'published') {
-        await sendMicGoesLiveEmail({
-          eventId: createdEvent.id,
-          producerId: user.id,
-        });
-      }
 
       toast({
         title: 'Mic created!',

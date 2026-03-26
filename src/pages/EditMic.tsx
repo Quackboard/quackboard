@@ -419,13 +419,6 @@ export default function EditMic() {
 
       if (error) throw error;
 
-      // Send email when publishing for the first time
-      if (status === 'published' && isBeingPublished) {
-        await sendMicGoesLiveEmail({
-          eventId: id!,
-          producerId: user.id,
-        });
-      }
 
       toast({
         title: 'Mic updated!',
