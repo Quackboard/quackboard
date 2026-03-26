@@ -6,6 +6,8 @@ export interface Producer {
   venue_name: string | null;
   venue_address: string | null;
   bio_markdown: string | null;
+  instagram: string | null;
+  website: string | null;
 }
 
 export interface Section {

@@ -29,6 +29,8 @@ const onboardingSchema = z.object({
     .refine(val => !RESERVED_SLUGS.includes(val), 'This URL is reserved. Try another.'),
   venue_name: z.string().trim().min(1, 'Venue name is required').max(200),
   venue_address: z.string().trim().min(1, 'Venue address is required').max(500),
+  instagram: z.string().trim().max(50).optional(),
+  website: z.string().trim().max(500).optional(),
   bio: z.string().max(2000).optional(),
 });
 
@@ -49,6 +51,8 @@ export default function Onboarding() {
       slug: '',
       venue_name: '',
       venue_address: '',
+      instagram: '',
+      website: '',
       bio: '',
     },
   });
@@ -132,6 +136,8 @@ export default function Onboarding() {
         slug: data.slug,
         venue_name: data.venue_name,
         venue_address: data.venue_address,
+        instagram: data.instagram ? `instagram.com/${data.instagram.replace(/^@/, '').trim()}` : null,
+        website: data.website || null,
         bio_markdown: data.bio || null,
       })
       .eq('id', user.id);
@@ -234,6 +240,31 @@ export default function Onboarding() {
           {errors.venue_address && (
             <p className="text-sm text-destructive">{errors.venue_address.message}</p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="instagram">Instagram</Label>
+          <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+              instagram.com/
+            </span>
+            <Input
+              id="instagram"
+              placeholder="yourhandle"
+              {...register('instagram')}
+              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            type="text"
+            placeholder="https://yourwebsite.com"
+            {...register('website')}
+          />
         </div>
 
         <div className="space-y-2">

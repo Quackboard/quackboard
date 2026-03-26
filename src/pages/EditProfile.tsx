@@ -18,6 +18,7 @@ const editProfileSchema = z.object({
   venue_name: z.string().trim().max(200).optional(),
   venue_address: z.string().trim().max(500).optional(),
   instagram: z.string().trim().max(50).optional(),
+  website: z.string().trim().max(500).optional(),
   bio_markdown: z.string().max(2000).optional(),
 });
 
@@ -53,6 +54,7 @@ export function EditProfile() {
       venue_name: '',
       venue_address: '',
       instagram: '',
+      website: '',
       bio_markdown: '',
     },
   });
@@ -77,7 +79,7 @@ export function EditProfile() {
       try {
         const { data, error } = await supabase
           .from('producers')
-          .select('name, email, venue_name, venue_address, instagram, bio_markdown')
+          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -90,6 +92,7 @@ export function EditProfile() {
             venue_name: data.venue_name || '',
             venue_address: data.venue_address || '',
             instagram: extractInstagramHandle(data.instagram || ''),
+            website: data.website || '',
             bio_markdown: data.bio_markdown || '',
           });
         }
@@ -116,6 +119,7 @@ export function EditProfile() {
         venue_name: data.venue_name,
         venue_address: data.venue_address,
         instagram: handleToInstagramUrl(data.instagram || ''),
+        website: data.website || null,
         bio_markdown: data.bio_markdown,
         updated_at: new Date().toISOString(),
       };
@@ -233,6 +237,19 @@ export function EditProfile() {
           </div>
           {errors.instagram && (
             <p className="text-sm text-destructive">{errors.instagram.message}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            type="text"
+            placeholder="https://yourwebsite.com"
+            {...register('website')}
+            className={errors.website ? 'border-destructive' : ''}
+          />
+          {errors.website && (
+            <p className="text-sm text-destructive">{errors.website.message}</p>
           )}
         </div>
         <div className="space-y-2">
