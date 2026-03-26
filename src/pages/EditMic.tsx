@@ -931,56 +931,6 @@ export default function EditMic() {
         <section className="space-y-6">
           <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
 
-          {/* Publish Option */}
-          <div className="space-y-3">
-            <Label>When should this mic go live?</Label>
-            <RadioGroup
-              value={watchPublishOption}
-              onValueChange={(value: 'now' | 'later') => setValue('publishOption', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="now" id="publish-now" />
-                <Label htmlFor="publish-now" className="font-normal">Now</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="later" id="publish-later" />
-                <Label htmlFor="publish-later" className="font-normal">Schedule for later</Label>
-              </div>
-            </RadioGroup>
-
-            {watchPublishOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('publishAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('publishAt') ? format(watch('publishAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('publishAt')}
-                      onSelect={(date) => date && setValue('publishAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('publishAtTime')}
-                />
-              </div>
-            )}
-          </div>
-
           {/* Signup Option */}
           <div className="space-y-3">
             <Label>When do sign-ups open?</Label>
