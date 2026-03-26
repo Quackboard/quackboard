@@ -175,6 +175,9 @@ serve(async (req) => {
     const venueInfo = body.event.venue_address
       ? `${body.event.venue_name}, ${body.event.venue_address}`
       : body.event.venue_name;
+    const mapsUrl = body.event.venue_address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(body.event.venue_address)}`
+      : null;
 
     // Parse markdown for producer message if it exists
     let formattedProducerMessage = '';
