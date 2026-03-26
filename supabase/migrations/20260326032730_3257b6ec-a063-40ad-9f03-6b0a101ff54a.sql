@@ -1,0 +1,1 @@
+ALTER TABLE public.producers ADD COLUMN discoverable boolean NOT NULL DEFAULT false;

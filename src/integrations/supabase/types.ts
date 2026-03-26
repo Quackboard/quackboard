@@ -506,6 +506,7 @@ export type Database = {
         Row: {
           bio_markdown: string | null
           created_at: string | null
+          discoverable: boolean
           email: string
           header_image_url: string | null
           id: string
@@ -522,6 +523,7 @@ export type Database = {
         Insert: {
           bio_markdown?: string | null
           created_at?: string | null
+          discoverable?: boolean
           email: string
           header_image_url?: string | null
           id?: string
@@ -538,6 +540,7 @@ export type Database = {
         Update: {
           bio_markdown?: string | null
           created_at?: string | null
+          discoverable?: boolean
           email?: string
           header_image_url?: string | null
           id?: string
