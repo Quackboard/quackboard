@@ -214,6 +214,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
 
   // Mobile: compact collapsible schedule row
   return (
+    <>
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <CollapsibleTrigger asChild>
         <button className={cn(
