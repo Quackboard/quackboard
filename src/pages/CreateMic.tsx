@@ -177,7 +177,6 @@ export default function CreateMic() {
     defaultValues: {
       sections: [{ label: '', slots: 10 }],
       allowMultipleSlots: false,
-      publishOption: 'now',
       signupOption: 'live',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
