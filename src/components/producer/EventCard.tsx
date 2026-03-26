@@ -266,7 +266,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
               {bookedCount > 0 && (
                 <button
                   onClick={() => setCancelOpen(true)}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors mt-1"
+                  className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors mt-2 underline underline-offset-2"
                 >
                   Cancel my spot
                 </button>
