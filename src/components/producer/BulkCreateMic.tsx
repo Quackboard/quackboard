@@ -271,7 +271,7 @@ export default function BulkCreateMic() {
         venue_address: data.venueAddress,
         sections_config: [{ label: '$5 for 5 min', slots: data.slotsPerMic }],
         allow_multiple_slots: data.allowMultipleSlots,
-        status: data.publishOption === 'now' ? 'published' : 'draft',
+        status: 'published' as const,
         publish_at: publishAt,
         signup_opens_at: signupOpensAt,
         series_id: seriesId,
