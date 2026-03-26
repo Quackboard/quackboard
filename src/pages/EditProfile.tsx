@@ -250,14 +250,15 @@ export function EditProfile() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">Mic Name</Label>
           <Input
             id="name"
             type="text"
-            placeholder="Your Name"
+            placeholder="Your mic name"
             {...register('name')}
             className={errors.name ? 'border-destructive' : ''}
           />
+          <p className="text-xs text-muted-foreground">This will be the title of your public page</p>
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
@@ -315,9 +316,7 @@ export function EditProfile() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bio_markdown">
-            Bio <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
+          <Label htmlFor="bio_markdown">Display Text for Public Page</Label>
           <Controller
             name="bio_markdown"
             control={control}
@@ -326,7 +325,7 @@ export function EditProfile() {
                 value={field.value || ''}
                 onChange={field.onChange}
                 placeholder="Tell us about yourself..."
-                showLink={false}
+                showLink={true}
               />
             )}
           />

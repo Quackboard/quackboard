@@ -171,13 +171,14 @@ export default function Onboarding() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">Mic Name</Label>
           <Input
             id="name"
-            placeholder="Your name"
+            placeholder="Your mic name"
             {...register('name')}
             className={errors.name ? 'border-destructive' : ''}
           />
+          <p className="text-xs text-muted-foreground">This will be the title of your public page</p>
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
@@ -236,9 +237,7 @@ export default function Onboarding() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="bio">
-            Bio <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
+          <Label htmlFor="bio">Display Text for Public Page</Label>
           <Controller
             name="bio"
             control={control}
@@ -247,7 +246,7 @@ export default function Onboarding() {
                 value={field.value || ''}
                 onChange={field.onChange}
                 placeholder="Tell comics about yourself and your shows..."
-                showLink={false}
+                showLink={true}
               />
             )}
           />
