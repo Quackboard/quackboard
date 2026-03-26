@@ -189,15 +189,8 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 eventTime={eventTime}
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
+                onCancelSpot={() => setCancelOpen(true)}
               />
-              {bookedCount > 0 && (
-                <button
-                  onClick={() => setCancelOpen(true)}
-                  className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors mt-2 underline underline-offset-2"
-                >
-                  Cancel my spot
-                </button>
-              )}
             </>
           )}
         </CardContent>
@@ -225,15 +218,6 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
             <span className="text-sm font-medium text-foreground">{eventTime}</span>
           </div>
           <div className="flex items-center gap-3">
-            {expanded && bookedCount > 0 && (
-              <span
-                role="button"
-                onClick={(e) => { e.stopPropagation(); setCancelOpen(true); }}
-                className="text-xs font-medium text-destructive underline underline-offset-2"
-              >
-                Cancel
-              </span>
-            )}
             <span className="text-xs text-muted-foreground">
               {Math.max(0, displayAvailable)}/{displayTotal} available
             </span>
@@ -271,6 +255,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 eventTime={eventTime}
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
+                onCancelSpot={() => setCancelOpen(true)}
               />
             </>
           )}
