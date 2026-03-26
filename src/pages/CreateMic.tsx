@@ -69,46 +69,7 @@ const formSchema = z.object({
   venueAddress: z.string().min(1, 'Venue address is required'),
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
   allowMultipleSlots: z.boolean(),
-  publishOption: z.enum(['now', 'later']),
-  publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
-  publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
-  signupDaysBefore: z.number().min(0).optional(),
-  signupOpensAtTime: z.string().optional(),
-  producerMessage: z.string().refine(val => (val.trim() ? val.trim().split(/\s+/).length : 0) <= 500, 'Message limit reached (500 words)').optional(),
-  emailFrequency: z.enum(['none', 'immediate', 'daily']).optional(),
-}).refine((data) => {
-  if (!data.startTime || !data.endTime) return true;
-  return data.startTime < data.endTime;
-}, {
-  message: 'End time must be after start time',
-  path: ['endTime'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAt) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish date',
-  path: ['publishAt'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAtTime) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish time',
-  path: ['publishAtTime'],
-}).refine((data) => {
-  if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-    const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-    return publishDateTime > new Date();
-  }
-  return true;
-}, {
-  message: 'Publish time must be in the future',
-  path: ['publishAt'],
-}).refine((data) => {
   if (data.signupOption === 'later') {
     if (data.signupDaysBefore === undefined || data.signupDaysBefore === null) return false;
   }

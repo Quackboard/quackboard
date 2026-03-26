@@ -199,7 +199,6 @@ export default function EditMic() {
     defaultValues: {
       sections: [{ label: '', slots: 10 }],
       allowMultipleSlots: false,
-      publishOption: 'now',
       signupOption: 'live',
       emailFrequency: 'none',
     },
