@@ -251,12 +251,8 @@ export default function BulkCreateMic() {
       const data = form.getValues();
       const seriesId = crypto.randomUUID();
 
-      // Handle publish_at
-      let publishAt: string | null = null;
-      if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-        const localDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        publishAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // publish_at is no longer written from the frontend
+      const publishAt: string | null = null;
 
       // Handle signup_opens_at
       let signupOpensAt: string | null = null;
