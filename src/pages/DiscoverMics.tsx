@@ -112,9 +112,10 @@ export default function DiscoverMics() {
     if (!events) return [];
 
     return events.filter(ev => {
-      // Producer allowlist for platform mics
-      if (ev.is_info_only === false && !DISCOVER_PRODUCER_IDS.includes(ev.producer_id)) {
-        return false;
+      // Only show platform mics from discoverable producers
+      if (ev.is_info_only === false) {
+        const producer = producerMap.get(ev.producer_id);
+        if (!producer?.discoverable) return false;
       }
 
       // Time of day filter
