@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
-import { addDays } from 'date-fns';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
@@ -127,12 +126,7 @@ export default function ProducerPage() {
   }, [eventIds.join(','), refetchBookings]);
 
   // Only show current/future events on public page
-  const sevenDaysFromNow = addDays(new Date(), 7);
-  const currentEvents = (events || []).filter(e => {
-    if (isEventPast(e)) return false;
-    const eventDate = new Date(`${e.date}T${e.start_time}`);
-    return eventDate <= sevenDaysFromNow;
-  });
+  const currentEvents = (events || []).filter(e => !isEventPast(e));
   const eventDates = currentEvents.length > 0
     ? [...new Set(currentEvents.map(e => e.date))].sort()
     : [];
