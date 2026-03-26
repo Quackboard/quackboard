@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
+import { addDays } from 'date-fns';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
