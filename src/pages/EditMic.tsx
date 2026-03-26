@@ -226,17 +226,6 @@ export default function EditMic() {
     if (event && producer && !isEventPast) {
       const sections = parseSections(event.sections_config);
 
-      // Parse publish_at to local timezone
-      let publishOption: 'now' | 'later' = 'now';
-      let publishAtDate: Date | undefined;
-      let publishAtTime: string | undefined;
-      if (event.publish_at) {
-        const localPublishAt = toZonedTime(parseISO(event.publish_at), timezone);
-        publishOption = 'later';
-        publishAtDate = localPublishAt;
-        publishAtTime = format(localPublishAt, 'HH:mm');
-      }
-
       // Parse signup_opens_at to relative offset
       let signupOption: 'live' | 'later' = 'live';
       let signupDaysBefore: number | undefined;
