@@ -76,7 +76,7 @@ export default function DiscoverMics() {
       if (producerIds.length === 0) return [];
       const { data, error } = await supabase
         .from('producers')
-        .select('id, name, slug')
+        .select('id, name, slug, discoverable')
         .in('id', producerIds);
       if (error) throw error;
       return data;
