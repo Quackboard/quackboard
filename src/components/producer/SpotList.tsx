@@ -200,7 +200,7 @@ export function SpotList({
                                 <span className="text-sm text-foreground font-medium">
                                   {booking.guest_name}
                                 </span>
-                                <X className="h-3 w-3 text-destructive opacity-0 group-hover/name:opacity-100 group-active/name:opacity-100 transition-opacity" />
+                                <X className="h-3 w-3 text-muted-foreground/40 group-hover/name:text-destructive group-hover/name:opacity-100 transition-all" />
                               </button>
                             ) : (
                               <Button
@@ -303,7 +303,7 @@ export function SpotList({
                             <span className="text-sm text-foreground font-medium">
                               {slot.booking.guest_name}
                             </span>
-                            <X className="h-3 w-3 text-destructive opacity-0 group-hover/name:opacity-100 group-active/name:opacity-100 transition-opacity" />
+                            <X className="h-3 w-3 text-muted-foreground/40 group-hover/name:text-destructive group-hover/name:opacity-100 transition-all" />
                           </button>
                       ) : (
                         <Button
