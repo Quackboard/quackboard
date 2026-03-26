@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Event, Booking, Section } from '@/types/database';
 import { CardContent } from '@/components/ui/card';
 import { Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { CancelSpotModal } from './CancelSpotModal';
 import { SpotList } from './SpotList';
 import { parseISO, isAfter, format, differenceInMilliseconds, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -125,6 +126,7 @@ function useAutoOpenTimer(event: Event) {
 
 export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const isMobile = useIsMobile();
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
@@ -151,6 +153,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
   // Desktop: fully expanded card (unchanged)
   if (!isMobile) {
     return (
+      <>
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
         <CardContent className="pt-4 space-y-2">
           <div className="flex items-center gap-2 text-foreground">
@@ -187,15 +190,31 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
               />
+              {bookedCount > 0 && (
+                <button
+                  onClick={() => setCancelOpen(true)}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors mt-1"
+                >
+                  Cancel my spot
+                </button>
+              )}
             </>
           )}
         </CardContent>
       </div>
+      <CancelSpotModal
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        eventId={event.id}
+        onCancelled={onBookingSuccess}
+      />
+      </>
     );
   }
 
   // Mobile: compact collapsible schedule row
   return (
+    <>
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <CollapsibleTrigger asChild>
         <button className={cn(
@@ -235,17 +254,34 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           )}
           
           {signupStatus.isOpen && sections.length > 0 && (
-            <SpotList 
-              sectionsConfig={sections} 
-              bookings={bookings} 
-              eventId={event.id}
-              eventTime={eventTime}
-              allowMultipleSpots={event.allow_multiple_slots ?? false}
-              onBookingSuccess={onBookingSuccess}
-            />
+            <>
+              <SpotList 
+                sectionsConfig={sections} 
+                bookings={bookings} 
+                eventId={event.id}
+                eventTime={eventTime}
+                allowMultipleSpots={event.allow_multiple_slots ?? false}
+                onBookingSuccess={onBookingSuccess}
+              />
+              {bookedCount > 0 && (
+                <button
+                  onClick={() => setCancelOpen(true)}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors mt-1"
+                >
+                  Cancel my spot
+                </button>
+              )}
+            </>
           )}
         </div>
       </CollapsibleContent>
     </Collapsible>
+    <CancelSpotModal
+      open={cancelOpen}
+      onOpenChange={setCancelOpen}
+      eventId={event.id}
+      onCancelled={onBookingSuccess}
+    />
+    </>
   );
 }

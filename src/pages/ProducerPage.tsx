@@ -216,9 +216,8 @@ export default function ProducerPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-center rounded-md border border-border bg-muted/50 px-4 py-3 text-sm text-foreground text-center">
-              Need to cancel? Look for the cancellation link in your confirmation email (subject: "Booking Confirmed").
-            </div>
+
+
           </>
         )}
 
