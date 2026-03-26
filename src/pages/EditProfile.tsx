@@ -97,6 +97,7 @@ export function EditProfile() {
             instagram: extractInstagramHandle(data.instagram || ''),
             website: data.website || '',
             bio_markdown: data.bio_markdown || '',
+            event_window_days: data.event_window_days ?? 7,
           });
         }
       } catch (error: any) {
