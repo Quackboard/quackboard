@@ -289,10 +289,16 @@ export function SpotList({
                       <span className="w-6 text-sm font-mono text-muted-foreground">
                         {displayNum}.
                       </span>
-                      {slot.booking ? (
-                        <span className="text-sm text-foreground font-medium">
-                          {slot.booking.guest_name}
-                        </span>
+                        {slot.booking ? (
+                          <button
+                            onClick={() => onCancelSpot?.()}
+                            className="group/name flex items-center gap-1.5 cursor-pointer rounded px-1 -mx-1 transition-colors hover:bg-destructive/10 active:bg-destructive/10"
+                          >
+                            <span className="text-sm text-foreground font-medium">
+                              {slot.booking.guest_name}
+                            </span>
+                            <X className="h-3 w-3 text-destructive opacity-0 group-hover/name:opacity-100 group-active/name:opacity-100 transition-opacity" />
+                          </button>
                       ) : (
                         <Button
                           variant="outline"
