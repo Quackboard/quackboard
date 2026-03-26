@@ -67,14 +67,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
       return { label: 'Draft', className: 'text-muted-foreground' };
     }
     if (event.status === 'published') {
-      // If publish_at is in the future, show scheduled
-      if (event.publish_at && isAfter(parseISO(event.publish_at), now)) {
-        return { 
-          label: `Scheduled — goes live ${formatDateTime(event.publish_at)}`, 
-          className: 'text-muted-foreground' 
-        };
-      }
-      // Otherwise, if published, show Live
       return { label: 'Live', className: 'text-green-500' };
     }
     return { label: event.status, className: 'text-muted-foreground' };
