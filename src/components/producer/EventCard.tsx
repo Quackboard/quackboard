@@ -126,6 +126,7 @@ function useAutoOpenTimer(event: Event) {
 
 export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const isMobile = useIsMobile();
   const sections = parseSectionsConfig(event.sections_config);
   const showVenue = event.venue_name !== producerVenueName;
