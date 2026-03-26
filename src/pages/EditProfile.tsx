@@ -82,7 +82,7 @@ export function EditProfile() {
       try {
         const { data, error } = await supabase
           .from('producers')
-          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown')
+          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown, event_window_days')
           .eq('id', user.id)
           .maybeSingle();
 
