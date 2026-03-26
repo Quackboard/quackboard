@@ -92,6 +92,7 @@ export function EditProfile() {
             venue_name: data.venue_name || '',
             venue_address: data.venue_address || '',
             instagram: extractInstagramHandle(data.instagram || ''),
+            website: data.website || '',
             bio_markdown: data.bio_markdown || '',
           });
         }
