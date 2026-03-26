@@ -29,6 +29,8 @@ const onboardingSchema = z.object({
     .refine(val => !RESERVED_SLUGS.includes(val), 'This URL is reserved. Try another.'),
   venue_name: z.string().trim().min(1, 'Venue name is required').max(200),
   venue_address: z.string().trim().min(1, 'Venue address is required').max(500),
+  instagram: z.string().trim().max(50).optional(),
+  website: z.string().trim().max(500).optional(),
   bio: z.string().max(2000).optional(),
 });
 
