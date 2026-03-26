@@ -18,6 +18,7 @@ const editProfileSchema = z.object({
   venue_name: z.string().trim().max(200).optional(),
   venue_address: z.string().trim().max(500).optional(),
   instagram: z.string().trim().max(50).optional(),
+  website: z.string().trim().max(500).optional(),
   bio_markdown: z.string().max(2000).optional(),
 });
 
