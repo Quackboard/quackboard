@@ -3,9 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn, formatTime } from '@/lib/utils';
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { sendMicGoesLiveEmail } from '@/lib/email';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Section {
@@ -59,7 +56,7 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const isMobile = useIsMobile();
   const sections = parseSections(event.sections_config);
   const activeBookings = event.bookings.filter(b => !b.cancelled_at);
-  const emailSentRef = useRef(false);
+  
 
   // Status logic - status is declared when creating the mic
   const getStatus = () => {
@@ -75,41 +72,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const status = getStatus();
   const isLive = status.label === 'Live';
 
-  // Send email when event transitions to "Live" status
-  useEffect(() => {
-    if (!isLive || emailSentRef.current) return;
-
-    const sendEmail = async () => {
-      // Check for pending scheduled message (only send once)
-      const { data: scheduledMessages } = await supabase
-        .from('scheduled_messages')
-        .select('id, producer_id')
-        .eq('event_id', event.id)
-        .eq('status', 'pending')
-        .limit(1);
-
-      if (scheduledMessages && scheduledMessages.length > 0) {
-        try {
-          await sendMicGoesLiveEmail({
-            eventId: event.id,
-            producerId: scheduledMessages[0].producer_id || '',
-          });
-          
-          // Mark scheduled message as sent
-          await supabase
-            .from('scheduled_messages')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('id', scheduledMessages[0].id);
-          
-          emailSentRef.current = true;
-        } catch (error) {
-          console.error('Error sending mic goes live email:', error);
-        }
-      }
-    };
-
-    sendEmail();
-  }, [isLive, event.id]);
 
   // Signup status logic
   const getSignupStatus = () => {

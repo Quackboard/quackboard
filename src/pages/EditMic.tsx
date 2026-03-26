@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useFormDraft } from '@/hooks/useFormDraft';
-import { sendMicGoesLiveEmail } from '@/lib/email';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -419,13 +419,6 @@ export default function EditMic() {
 
       if (error) throw error;
 
-      // Send email when publishing for the first time
-      if (status === 'published' && isBeingPublished) {
-        await sendMicGoesLiveEmail({
-          eventId: id!,
-          producerId: user.id,
-        });
-      }
 
       toast({
         title: 'Mic updated!',
