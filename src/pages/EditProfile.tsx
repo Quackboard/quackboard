@@ -58,6 +58,7 @@ export function EditProfile() {
       instagram: '',
       website: '',
       bio_markdown: '',
+      event_window_days: 7,
     },
   });
 
