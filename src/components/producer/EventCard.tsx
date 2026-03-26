@@ -256,7 +256,9 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 eventTime={eventTime}
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
+                onCancelSpot={() => setCancelOpen(true)}
               />
+            </>
             </>
           )}
         </div>
