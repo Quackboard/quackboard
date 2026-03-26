@@ -5,7 +5,6 @@ import { format, parseISO, isAfter } from 'date-fns';
 import { cn, formatTime } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { sendMicGoesLiveEmail } from '@/lib/email';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Section {
