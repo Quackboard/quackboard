@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn, formatTime } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Section {
   label: string;
@@ -129,11 +131,52 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const totalRegularSlots = sections.filter(s => s.type !== 'wildcard').reduce((sum, s) => sum + s.slots, 0);
   const totalShowSpots = totalRegularSlots + (wildcardSection?.slots || 0);
 
+  if (isPast) {
+    return (
+      <Collapsible>
+        <Card className="border-border opacity-60">
+          <CardContent className="py-3">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between text-left">
+                <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                  <span className="text-sm text-muted-foreground">
+                    {format(parseISO(event.date), 'MMM d')}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {formatTime(event.start_time)} - {formatTime(event.end_time)}
+                  </span>
+                  <span className="text-sm font-medium text-foreground truncate">{event.title}</span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-2 transition-transform [[data-state=open]_&]:rotate-180" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-2">
+              {sectionStats.length > 0 && (
+                <div className="text-sm text-muted-foreground space-y-0.5">
+                  {sectionStats.map((s, i) => (
+                    <div key={i}>
+                      {s.label} — {s.booked}/{s.total} spots filled
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-3 text-xs">
+                <span className={status.className}>{status.label}</span>
+              </div>
+              <div className={isMobile ? "mt-2" : "mt-2"}>
+                <Button variant="outline" size="sm" className={isMobile ? "w-full h-10" : ""} asChild>
+                  <Link to={`/events/${event.id}/duplicate`}>Duplicate</Link>
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
+    );
+  }
+
   return (
-    <Card className={cn(
-      "border-border",
-      isPast && "opacity-50"
-    )}>
+    <Card className="border-border">
       <CardContent className="py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           {/* Left: Event Info */}
