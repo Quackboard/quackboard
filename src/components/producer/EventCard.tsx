@@ -226,7 +226,6 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
               : <ChevronDown className="h-4 w-4 text-muted-foreground" />
             }
           </div>
-          </div>
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent className="rounded-b-lg border border-t-0 bg-card px-3 pb-3">
