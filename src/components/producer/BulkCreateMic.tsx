@@ -144,7 +144,6 @@ export default function BulkCreateMic() {
   const watchDurationMinutes = watch('durationMinutes');
   const watchFrequency = watch('frequency');
   const watchEndDate = watch('endDate');
-  const watchPublishOption = watch('publishOption');
   const watchSignupOption = watch('signupOption');
 
   // Update venue defaults when producer data loads
