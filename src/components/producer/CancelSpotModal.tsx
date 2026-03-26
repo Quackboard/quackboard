@@ -109,6 +109,9 @@ export function CancelSpotModal({ open, onOpenChange, eventId, onCancelled }: Ca
             <Button type="submit" variant="destructive" className="w-full" disabled={loading || !email.trim()}>
               {loading ? 'Cancelling…' : 'Cancel My Spot'}
             </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              This can't be undone, but you can sign up again.
+            </p>
           </form>
         ) : (
           <div className="space-y-3">
