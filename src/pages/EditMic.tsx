@@ -83,9 +83,6 @@ const formSchema = z.object({
   venueAddress: z.string().min(1, 'Venue address is required'),
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
   allowMultipleSlots: z.boolean(),
-  publishOption: z.enum(['now', 'later']),
-  publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
-  publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
   signupDaysBefore: z.number().min(0).optional(),
   signupOpensAtTime: z.string().optional(),
@@ -145,8 +142,7 @@ export default function EditMic() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sectionErrors, setSectionErrors] = useState<Record<number, string>>({});
 
-  // Track original publish/signup values for conditional validation
-  const [originalPublishAt, setOriginalPublishAt] = useState<string | null>(null);
+  // Track original signup value for conditional validation
   const [originalSignupOpensAt, setOriginalSignupOpensAt] = useState<string | null>(null);
 
   // Fetch event with bookings
@@ -203,7 +199,6 @@ export default function EditMic() {
     defaultValues: {
       sections: [{ label: '', slots: 10 }],
       allowMultipleSlots: false,
-      publishOption: 'now',
       signupOption: 'live',
       emailFrequency: 'none',
     },
@@ -230,17 +225,6 @@ export default function EditMic() {
   useEffect(() => {
     if (event && producer && !isEventPast) {
       const sections = parseSections(event.sections_config);
-
-      // Parse publish_at to local timezone
-      let publishOption: 'now' | 'later' = 'now';
-      let publishAtDate: Date | undefined;
-      let publishAtTime: string | undefined;
-      if (event.publish_at) {
-        const localPublishAt = toZonedTime(parseISO(event.publish_at), timezone);
-        publishOption = 'later';
-        publishAtDate = localPublishAt;
-        publishAtTime = format(localPublishAt, 'HH:mm');
-      }
 
       // Parse signup_opens_at to relative offset
       let signupOption: 'live' | 'later' = 'live';
@@ -284,9 +268,6 @@ export default function EditMic() {
           venueAddress: event.venue_address,
           sections: formSections,
           allowMultipleSlots: event.allow_multiple_slots || false,
-          publishOption,
-          publishAt: publishAtDate,
-          publishAtTime,
           signupOption,
           signupDaysBefore,
           signupOpensAtTime,
@@ -300,7 +281,6 @@ export default function EditMic() {
       }
 
       // Store originals for conditional validation
-      setOriginalPublishAt(event.publish_at);
       setOriginalSignupOpensAt(event.signup_opens_at);
     }
   }, [event, producer, timezone, reset, draftKey, isEventPast]);
@@ -310,7 +290,6 @@ export default function EditMic() {
     name: 'sections',
   });
 
-  const watchPublishOption = watch('publishOption');
   const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
   const watchSections = watch('sections');
@@ -356,23 +335,7 @@ export default function EditMic() {
       return 'End time must be after start time';
     }
 
-    const now = new Date();
-
-    // Check publish_at - only if changed
-    if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-      const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-      const utcPublish = fromZonedTime(publishDateTime, timezone);
-
-      // Only validate future if it's a new value or changed
-      const originalWasScheduled = !!originalPublishAt;
-      const isChanged = !originalWasScheduled || utcPublish.toISOString() !== originalPublishAt;
-
-      if (isChanged && utcPublish <= now) {
-        return 'Publish time must be in the future';
-      }
-    }
-
-    // Check signup_opens_at - validate 0 days before means time must be before start
+    // signup_opens_at validation
     if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
       if (data.signupOpensAtTime >= data.startTime) {
         return 'Sign-ups must open before the mic starts';
@@ -417,12 +380,8 @@ export default function EditMic() {
         return { label: s.label, slots: s.slots };
       });
 
-      // Handle publish_at
-      let publishAt: string | null = null;
-      if (status === 'published' && data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-        const localDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        publishAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // publish_at is no longer written from the frontend
+      const publishAt: string | null = null;
 
       // Handle signup_opens_at - compute from relative offset
       let signupOpensAt: string | null = null;
@@ -436,9 +395,7 @@ export default function EditMic() {
       }
 
       const previousStatus = event?.status;
-      const previousPublishAt = event?.publish_at;
       const isBeingPublished = previousStatus !== 'published' && status === 'published';
-      const publishAtChanged = previousPublishAt !== publishAt;
 
       const { error } = await supabase
         .from('events')
@@ -462,66 +419,12 @@ export default function EditMic() {
 
       if (error) throw error;
 
-      // Handle email notification based on publish option
-      if (status === 'published') {
-        if (isBeingPublished) {
-          // Event is being published for the first time
-          if (data.publishOption === 'now') {
-            // Send email immediately
-            await sendMicGoesLiveEmail({
-              eventId: id!,
-              producerId: user.id,
-            });
-          } else if (data.publishOption === 'later' && publishAt) {
-            // Schedule email to be sent when mic goes live (at publish_at time)
-            const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-              producer_id: user.id,
-              event_id: id!,
-              subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
-              body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
-              send_at: publishAt,
-              status: 'pending',
-            });
-
-            if (scheduleError) {
-              console.error('Error scheduling mic goes live email:', scheduleError);
-            }
-          }
-        } else if (publishAtChanged && data.publishOption === 'later' && publishAt) {
-          // Event was already published but publish_at changed - update scheduled message
-          // First, delete any existing scheduled messages for this event
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('event_id', id!)
-            .eq('status', 'pending');
-
-          // Create new scheduled message with updated time
-          const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-            producer_id: user.id,
-            event_id: id!,
-            subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
-            body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
-            send_at: publishAt,
-            status: 'pending',
-          });
-
-          if (scheduleError) {
-            console.error('Error updating scheduled mic goes live email:', scheduleError);
-          }
-        } else if (publishAtChanged && data.publishOption === 'now') {
-          // Changed from scheduled to now - send immediately and delete scheduled message
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('event_id', id!)
-            .eq('status', 'pending');
-
-          await sendMicGoesLiveEmail({
-            eventId: id!,
-            producerId: user.id,
-          });
-        }
+      // Send email when publishing for the first time
+      if (status === 'published' && isBeingPublished) {
+        await sendMicGoesLiveEmail({
+          eventId: id!,
+          producerId: user.id,
+        });
       }
 
       toast({
@@ -1027,56 +930,6 @@ export default function EditMic() {
         {/* Scheduling */}
         <section className="space-y-6">
           <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
-
-          {/* Publish Option */}
-          <div className="space-y-3">
-            <Label>When should this mic go live?</Label>
-            <RadioGroup
-              value={watchPublishOption}
-              onValueChange={(value: 'now' | 'later') => setValue('publishOption', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="now" id="publish-now" />
-                <Label htmlFor="publish-now" className="font-normal">Now</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="later" id="publish-later" />
-                <Label htmlFor="publish-later" className="font-normal">Schedule for later</Label>
-              </div>
-            </RadioGroup>
-
-            {watchPublishOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('publishAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('publishAt') ? format(watch('publishAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('publishAt')}
-                      onSelect={(date) => date && setValue('publishAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('publishAtTime')}
-                />
-              </div>
-            )}
-          </div>
 
           {/* Signup Option */}
           <div className="space-y-3">

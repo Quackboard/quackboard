@@ -55,9 +55,6 @@ const formSchema = z.object({
 
   // Scheduling options
   allowMultipleSlots: z.boolean(),
-  publishOption: z.enum(['now', 'later']),
-  publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
-  publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
@@ -66,31 +63,6 @@ const formSchema = z.object({
 }, {
   message: 'End date must be on or after start date',
   path: ['endDate'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAt) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish date',
-  path: ['publishAt'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAtTime) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish time',
-  path: ['publishAtTime'],
-}).refine((data) => {
-  if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-    const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-    return publishDateTime > new Date();
-  }
-  return true;
-}, {
-  message: 'Publish time must be in the future',
-  path: ['publishAt'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
     if (!data.signupOpensAt) return false;
@@ -151,7 +123,6 @@ export default function BulkCreateMic() {
       durationMinutes: 60,
       frequency: 'hourly',
       allowMultipleSlots: false,
-      publishOption: 'now',
       signupOption: 'live',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
@@ -173,7 +144,6 @@ export default function BulkCreateMic() {
   const watchDurationMinutes = watch('durationMinutes');
   const watchFrequency = watch('frequency');
   const watchEndDate = watch('endDate');
-  const watchPublishOption = watch('publishOption');
   const watchSignupOption = watch('signupOption');
 
   // Update venue defaults when producer data loads
@@ -281,12 +251,8 @@ export default function BulkCreateMic() {
       const data = form.getValues();
       const seriesId = crypto.randomUUID();
 
-      // Handle publish_at
-      let publishAt: string | null = null;
-      if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-        const localDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        publishAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // publish_at is no longer written from the frontend
+      const publishAt: string | null = null;
 
       // Handle signup_opens_at
       let signupOpensAt: string | null = null;
@@ -305,7 +271,7 @@ export default function BulkCreateMic() {
         venue_address: data.venueAddress,
         sections_config: [{ label: '$5 for 5 min', slots: data.slotsPerMic }],
         allow_multiple_slots: data.allowMultipleSlots,
-        status: data.publishOption === 'now' ? 'published' : 'draft',
+        status: 'published' as const,
         publish_at: publishAt,
         signup_opens_at: signupOpensAt,
         series_id: seriesId,
@@ -545,59 +511,6 @@ export default function BulkCreateMic() {
         {/* Scheduling Options */}
         <section className="space-y-6">
           <h2 className="text-lg font-medium text-foreground">Scheduling</h2>
-
-          {/* Publish Option */}
-          <div className="space-y-3">
-            <Label>When should these mics go live?</Label>
-            <RadioGroup
-              value={watchPublishOption}
-              onValueChange={(value: 'now' | 'later') => setValue('publishOption', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="now" id="bulk-publish-now" />
-                <Label htmlFor="bulk-publish-now" className="font-normal">Now</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="later" id="bulk-publish-later" />
-                <Label htmlFor="bulk-publish-later" className="font-normal">Schedule for later</Label>
-              </div>
-            </RadioGroup>
-
-            {watchPublishOption === 'later' && (
-              <div className="grid grid-cols-2 gap-3 pl-6">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'justify-start text-left font-normal',
-                        !watch('publishAt') && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {watch('publishAt') ? format(watch('publishAt')!, 'PP') : 'Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={watch('publishAt')}
-                      onSelect={(date) => date && setValue('publishAt', date)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  type="time"
-                  {...register('publishAtTime')}
-                />
-                {errors.publishAt && (
-                  <p className="text-sm text-destructive col-span-2">{errors.publishAt.message}</p>
-                )}
-              </div>
-            )}
-          </div>
 
           {/* Signup Option */}
           <div className="space-y-3">

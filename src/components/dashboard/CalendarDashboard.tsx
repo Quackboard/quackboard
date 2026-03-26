@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isAfter } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, CalendarOff, MapPin, Clock, Edit, Copy, List, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,12 +83,7 @@ export function CalendarDashboard({ events, viewType }: CalendarDashboardProps) 
   const getEventStatus = (event: EventWithBookings): string => {
     if (event.status === 'draft') return 'Draft';
     if (hasEventEnded(event)) return 'Past';
-    if (event.status === 'published') {
-      if (event.publish_at && isAfter(parseISO(event.publish_at), new Date())) {
-        return 'Coming Live';
-      }
-      return 'Live';
-    }
+    if (event.status === 'published') return 'Live';
     return event.status;
   };
 
