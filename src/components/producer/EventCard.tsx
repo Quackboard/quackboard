@@ -272,14 +272,6 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 allowMultipleSpots={event.allow_multiple_slots ?? false}
                 onBookingSuccess={onBookingSuccess}
               />
-              {bookedCount > 0 && (
-                <button
-                  onClick={() => setCancelOpen(true)}
-                  className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors mt-2 underline underline-offset-2"
-                >
-                  Cancel my spot
-                </button>
-              )}
             </>
           )}
         </div>
