@@ -290,7 +290,7 @@ export default function EditMic() {
     name: 'sections',
   });
 
-  const watchPublishOption = watch('publishOption');
+  const watchSignupOption = watch('signupOption');
   const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
   const watchSections = watch('sections');
