@@ -240,6 +240,19 @@ export function EditProfile() {
           )}
         </div>
         <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            type="text"
+            placeholder="https://yourwebsite.com"
+            {...register('website')}
+            className={errors.website ? 'border-destructive' : ''}
+          />
+          {errors.website && (
+            <p className="text-sm text-destructive">{errors.website.message}</p>
+          )}
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="bio_markdown">Display Text for Public Page</Label>
           <Controller
             name="bio_markdown"

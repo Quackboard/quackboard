@@ -518,6 +518,7 @@ export type Database = {
           updated_at: string | null
           venue_address: string | null
           venue_name: string | null
+          website: string | null
         }
         Insert: {
           bio_markdown?: string | null
@@ -534,6 +535,7 @@ export type Database = {
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
+          website?: string | null
         }
         Update: {
           bio_markdown?: string | null
@@ -550,6 +552,7 @@ export type Database = {
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
+          website?: string | null
         }
         Relationships: []
       }

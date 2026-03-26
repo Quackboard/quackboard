@@ -1,8 +1,14 @@
 import { Producer } from '@/types/database';
 import ReactMarkdown from 'react-markdown';
+import { Instagram, Globe } from 'lucide-react';
 
 interface ProducerHeaderProps {
   producer: Producer;
+}
+
+function ensureHttps(url: string): string {
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://${url}`;
 }
 
 export function ProducerHeader({ producer }: ProducerHeaderProps) {
@@ -25,6 +31,32 @@ export function ProducerHeader({ producer }: ProducerHeaderProps) {
         >
           📍 {producer.venue_address}
         </a>
+      )}
+      {(producer.instagram || producer.website) && (
+        <div className="mt-3 flex items-center gap-4">
+          {producer.instagram && (
+            <a
+              href={ensureHttps(producer.instagram)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <Instagram className="h-4 w-4" />
+              Instagram
+            </a>
+          )}
+          {producer.website && (
+            <a
+              href={ensureHttps(producer.website)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <Globe className="h-4 w-4" />
+              Website
+            </a>
+          )}
+        </div>
       )}
       {producer.bio_markdown && (
         <div className="mt-4 text-sm text-muted-foreground prose prose-sm prose-invert max-w-none prose-p:my-2 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-em:text-muted-foreground">
