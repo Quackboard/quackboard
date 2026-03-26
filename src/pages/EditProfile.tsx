@@ -171,7 +171,7 @@ export function EditProfile() {
           </Button>
           <h1 className="text-2xl font-semibold text-foreground">Edit Public Page</h1>
         </div>
-        <p className="text-muted-foreground mt-2">Update your public page.</p>
+        <p className="text-muted-foreground mt-2">Update your public page and manage page settings.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
