@@ -57,7 +57,7 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const isMobile = useIsMobile();
   const sections = parseSections(event.sections_config);
   const activeBookings = event.bookings.filter(b => !b.cancelled_at);
-  const emailSentRef = useRef(false);
+  
 
   // Status logic - status is declared when creating the mic
   const getStatus = () => {
