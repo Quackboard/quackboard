@@ -303,22 +303,10 @@ export default function CreateMic() {
         // createdEvents is ordered by date ascending so [0] is guaranteed to be the earliest mic
         if (status === 'published') {
           const firstEventId = createdEvents[0].id;
-          if (data.publishOption === 'now') {
-            await sendMicGoesLiveEmail({
-              eventId: firstEventId,
-              producerId: user.id,
-            });
-          } else if (data.publishOption === 'later' && publishAt) {
-            const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-              producer_id: user.id,
-              event_id: firstEventId,
-              subject: `Your mic series "${data.title || 'mic'}" is now live!`,
-              body_markdown: `Your recurring mic series starting with "${data.title || format(recurringDates[0], 'MMM d')}" is now live/scheduled.`,
-              send_at: publishAt,
-              status: 'pending',
-            });
-            if (scheduleError) console.error('Error scheduling recurring mic email:', scheduleError);
-          }
+          await sendMicGoesLiveEmail({
+            eventId: firstEventId,
+            producerId: user.id,
+          });
         }
 
         toast({
