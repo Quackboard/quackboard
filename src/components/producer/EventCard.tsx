@@ -258,7 +258,6 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
                 onCancelSpot={() => setCancelOpen(true)}
               />
             </>
-            </>
           )}
         </div>
       </CollapsibleContent>
