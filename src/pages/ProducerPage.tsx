@@ -127,7 +127,12 @@ export default function ProducerPage() {
   }, [eventIds.join(','), refetchBookings]);
 
   // Only show current/future events on public page
-  const currentEvents = (events || []).filter(e => !isEventPast(e));
+  const sevenDaysFromNow = addDays(new Date(), 7);
+  const currentEvents = (events || []).filter(e => {
+    if (isEventPast(e)) return false;
+    const eventDate = new Date(`${e.date}T${e.start_time}`);
+    return eventDate <= sevenDaysFromNow;
+  });
   const eventDates = currentEvents.length > 0
     ? [...new Set(currentEvents.map(e => e.date))].sort()
     : [];
