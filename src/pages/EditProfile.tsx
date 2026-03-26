@@ -54,6 +54,7 @@ export function EditProfile() {
       venue_name: '',
       venue_address: '',
       instagram: '',
+      website: '',
       bio_markdown: '',
     },
   });
