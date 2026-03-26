@@ -687,11 +687,11 @@ export default function CreateMic() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="live" id="signup-live" />
-                    <Label htmlFor="signup-live" className="font-normal">When mic goes live</Label>
+                    <Label htmlFor="signup-live" className="font-normal">Immediately when published</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="later" id="signup-later" />
-                    <Label htmlFor="signup-later" className="font-normal">Schedule for later</Label>
+                    <Label htmlFor="signup-later" className="font-normal">On a specific date and time</Label>
                   </div>
                 </RadioGroup>
 
