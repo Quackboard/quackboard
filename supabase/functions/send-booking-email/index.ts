@@ -236,7 +236,7 @@ serve(async (req) => {
                             <h2 style="margin: 0 0 14px 0; color: #111827; font-size: 20px; font-weight: 600; line-height: 1.3;">${body.event.title}</h2>
                             <table cellpadding="0" cellspacing="0" border="0" width="100%">
                               <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📅</span><span>${eventDate} at ${eventTime}</span></td></tr>
-                              <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span><span>${venueInfo}</span></td></tr>
+                              <tr><td style="padding-bottom: 8px; color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">📍</span>${mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="color: #34a08c; text-decoration: underline;">${venueInfo}</a>` : `<span>${venueInfo}</span>`}</td></tr>
                               <tr><td style="color: #6b7280; font-size: 14px; line-height: 1.6;"><span style="display: inline-block; margin-right: 6px;">🎯</span><span><strong>${body.sectionLabel}</strong> · Spot #${body.slotPosition}</span></td></tr>
                             </table>
                           </td>

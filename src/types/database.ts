@@ -4,6 +4,7 @@ export interface Producer {
   name: string;
   slug: string | null;
   venue_name: string | null;
+  venue_address: string | null;
   bio_markdown: string | null;
 }
 
