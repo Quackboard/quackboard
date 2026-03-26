@@ -119,6 +119,7 @@ export function EditProfile() {
         venue_name: data.venue_name,
         venue_address: data.venue_address,
         instagram: handleToInstagramUrl(data.instagram || ''),
+        website: data.website || null,
         bio_markdown: data.bio_markdown,
         updated_at: new Date().toISOString(),
       };
