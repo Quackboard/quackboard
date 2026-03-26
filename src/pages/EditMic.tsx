@@ -336,23 +336,7 @@ export default function EditMic() {
       return 'End time must be after start time';
     }
 
-    const now = new Date();
-
-    // Check publish_at - only if changed
-    if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-      const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-      const utcPublish = fromZonedTime(publishDateTime, timezone);
-
-      // Only validate future if it's a new value or changed
-      const originalWasScheduled = !!originalPublishAt;
-      const isChanged = !originalWasScheduled || utcPublish.toISOString() !== originalPublishAt;
-
-      if (isChanged && utcPublish <= now) {
-        return 'Publish time must be in the future';
-      }
-    }
-
-    // Check signup_opens_at - validate 0 days before means time must be before start
+    // signup_opens_at validation
     if (data.signupOption === 'later' && data.signupDaysBefore === 0 && data.signupOpensAtTime && data.startTime) {
       if (data.signupOpensAtTime >= data.startTime) {
         return 'Sign-ups must open before the mic starts';
