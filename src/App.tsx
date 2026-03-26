@@ -25,6 +25,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import EmailPreview from "./pages/EmailPreview";
 import DiscoverMics from "./pages/DiscoverMics";
+import Admin from "./pages/Admin";
 import { FeedbackButton } from "./components/FeedbackButton";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/email-preview" element={<EmailPreview />} />
             <Route path="/browse" element={<DiscoverMics />} />
+            <Route path="/admin" element={<Admin />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
