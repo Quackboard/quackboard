@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { SignUpModal } from './SignUpModal';
 import { format, parseISO, isAfter, differenceInMilliseconds, differenceInSeconds } from 'date-fns';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Section {
   label: string;
