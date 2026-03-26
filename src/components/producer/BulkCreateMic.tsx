@@ -55,9 +55,6 @@ const formSchema = z.object({
 
   // Scheduling options
   allowMultipleSlots: z.boolean(),
-  publishOption: z.enum(['now', 'later']),
-  publishAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
-  publishAtTime: z.string().optional(),
   signupOption: z.enum(['live', 'later']),
   signupOpensAt: z.date({ invalid_type_error: 'Please select a valid date' }).optional(),
   signupOpensAtTime: z.string().optional(),
@@ -66,31 +63,6 @@ const formSchema = z.object({
 }, {
   message: 'End date must be on or after start date',
   path: ['endDate'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAt) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish date',
-  path: ['publishAt'],
-}).refine((data) => {
-  if (data.publishOption === 'later') {
-    if (!data.publishAtTime) return false;
-  }
-  return true;
-}, {
-  message: 'Please select a publish time',
-  path: ['publishAtTime'],
-}).refine((data) => {
-  if (data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-    const publishDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-    return publishDateTime > new Date();
-  }
-  return true;
-}, {
-  message: 'Publish time must be in the future',
-  path: ['publishAt'],
 }).refine((data) => {
   if (data.signupOption === 'later') {
     if (!data.signupOpensAt) return false;
