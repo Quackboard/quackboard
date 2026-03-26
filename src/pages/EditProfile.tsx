@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const editProfileSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
