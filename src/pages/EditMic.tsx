@@ -142,8 +142,7 @@ export default function EditMic() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sectionErrors, setSectionErrors] = useState<Record<number, string>>({});
 
-  // Track original publish/signup values for conditional validation
-  const [originalPublishAt, setOriginalPublishAt] = useState<string | null>(null);
+  // Track original signup value for conditional validation
   const [originalSignupOpensAt, setOriginalSignupOpensAt] = useState<string | null>(null);
 
   // Fetch event with bookings
