@@ -120,13 +120,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
         className: 'text-muted-foreground' 
       };
     }
-    // If signup_opens_at is null but publish_at is in the future, sign-ups open when mic goes live
-    if (!event.signup_opens_at && event.publish_at && isAfter(parseISO(event.publish_at), now)) {
-      return { 
-        label: `Opens ${formatDateTime(event.publish_at)}`, 
-        className: 'text-muted-foreground' 
-      };
-    }
     // Otherwise sign-ups are open
     return { label: 'Open', className: 'text-foreground' };
   };
