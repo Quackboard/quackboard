@@ -521,11 +521,11 @@ export default function BulkCreateMic() {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="live" id="bulk-signup-live" />
-                <Label htmlFor="bulk-signup-live" className="font-normal">When mic goes live</Label>
+                <Label htmlFor="bulk-signup-live" className="font-normal">Immediately when published</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="later" id="bulk-signup-later" />
-                <Label htmlFor="bulk-signup-later" className="font-normal">Schedule for later</Label>
+                <Label htmlFor="bulk-signup-later" className="font-normal">On a specific date and time</Label>
               </div>
             </RadioGroup>
 
