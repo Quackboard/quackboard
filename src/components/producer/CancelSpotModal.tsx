@@ -84,9 +84,9 @@ export function CancelSpotModal({ open, onOpenChange, eventId, onCancelled }: Ca
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Cancel My Spot</DialogTitle>
+          <DialogTitle>Cancel Your Spot</DialogTitle>
           <DialogDescription>
-            Enter the email you used when signing up to cancel your spot.
+            We'll use your email to confirm it's you.
           </DialogDescription>
         </DialogHeader>
 
