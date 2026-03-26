@@ -40,7 +40,8 @@ export function SpotList({
   eventId, 
   eventTime,
   allowMultipleSpots,
-  onBookingSuccess 
+  onBookingSuccess,
+  onCancelSpot,
 }: SpotListProps) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const [modalState, setModalState] = useState<ModalState>({
