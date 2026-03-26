@@ -136,6 +136,8 @@ export default function Onboarding() {
         slug: data.slug,
         venue_name: data.venue_name,
         venue_address: data.venue_address,
+        instagram: data.instagram ? `instagram.com/${data.instagram.replace(/^@/, '').trim()}` : null,
+        website: data.website || null,
         bio_markdown: data.bio || null,
       })
       .eq('id', user.id);
