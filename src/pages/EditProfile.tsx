@@ -275,6 +275,29 @@ export function EditProfile() {
             <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
           )}
         </div>
+        <div className="space-y-4 pt-4 border-t border-border">
+          <h2 className="text-lg font-semibold text-foreground">Page Settings</h2>
+          <div className="space-y-2">
+            <Label htmlFor="event_window_days">Show events for the next</Label>
+            <Controller
+              name="event_window_days"
+              control={control}
+              render={({ field }) => (
+                <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                  <SelectTrigger id="event_window_days">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </Button>

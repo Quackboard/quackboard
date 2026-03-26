@@ -1,0 +1,1 @@
+ALTER TABLE public.producers ADD COLUMN IF NOT EXISTS event_window_days integer NOT NULL DEFAULT 7;

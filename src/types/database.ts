@@ -8,6 +8,7 @@ export interface Producer {
   bio_markdown: string | null;
   instagram: string | null;
   website: string | null;
+  event_window_days: number;
 }
 
 export interface Section {
