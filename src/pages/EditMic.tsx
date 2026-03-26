@@ -395,9 +395,7 @@ export default function EditMic() {
       }
 
       const previousStatus = event?.status;
-      const previousPublishAt = event?.publish_at;
       const isBeingPublished = previousStatus !== 'published' && status === 'published';
-      const publishAtChanged = previousPublishAt !== publishAt;
 
       const { error } = await supabase
         .from('events')
