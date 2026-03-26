@@ -381,12 +381,8 @@ export default function EditMic() {
         return { label: s.label, slots: s.slots };
       });
 
-      // Handle publish_at
-      let publishAt: string | null = null;
-      if (status === 'published' && data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-        const localDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        publishAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // publish_at is no longer written from the frontend
+      const publishAt: string | null = null;
 
       // Handle signup_opens_at - compute from relative offset
       let signupOpensAt: string | null = null;
