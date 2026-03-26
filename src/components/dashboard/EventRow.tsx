@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn, formatTime } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Section {
   label: string;
