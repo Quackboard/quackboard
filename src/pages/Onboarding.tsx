@@ -237,9 +237,7 @@ export default function Onboarding() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="bio">
-            Bio <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
+          <Label htmlFor="bio">Display Text for Public Page</Label>
           <Controller
             name="bio"
             control={control}
@@ -248,7 +246,7 @@ export default function Onboarding() {
                 value={field.value || ''}
                 onChange={field.onChange}
                 placeholder="Tell comics about yourself and your shows..."
-                showLink={false}
+                showLink={true}
               />
             )}
           />

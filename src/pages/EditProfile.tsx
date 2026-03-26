@@ -316,9 +316,7 @@ export function EditProfile() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bio_markdown">
-            Bio <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
+          <Label htmlFor="bio_markdown">Display Text for Public Page</Label>
           <Controller
             name="bio_markdown"
             control={control}
@@ -327,7 +325,7 @@ export function EditProfile() {
                 value={field.value || ''}
                 onChange={field.onChange}
                 placeholder="Tell us about yourself..."
-                showLink={false}
+                showLink={true}
               />
             )}
           />
