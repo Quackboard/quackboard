@@ -281,7 +281,6 @@ export default function EditMic() {
       }
 
       // Store originals for conditional validation
-      setOriginalPublishAt(event.publish_at);
       setOriginalSignupOpensAt(event.signup_opens_at);
     }
   }, [event, producer, timezone, reset, draftKey, isEventPast]);
