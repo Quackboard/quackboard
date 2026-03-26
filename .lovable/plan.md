@@ -1,44 +1,38 @@
 
 
-## Plan: In-App Cancel My Spot (Option B) + Remove Cancel-in-Email Message
+## Plan: Tap-on-Name to Cancel
 
-### Overview
-Add a single "Cancel My Spot" button at the bottom of each event card. Clicking it opens a modal asking for the comic's email. A new edge function looks up their active booking(s) by event + email. If multiple bookings exist, the modal lists them so the comic chooses which to cancel. Remove the cancellation-instructions banner from the bottom of the public page.
+Remove the standalone "Cancel my spot" button entirely. Instead, make each booked comic's name tappable/clickable directly in the spot list. Tapping a name opens the existing CancelSpotModal.
+
+### How it works
+- Each booked name row in SpotList becomes interactive -- on tap, it opens the cancel modal
+- A subtle visual hint shows it's tappable: on hover (desktop) or on tap (mobile), the row highlights and shows an "x" or "Cancel" label that slides/fades in next to the name
+- The CancelSpotModal still handles email verification, so random users can't cancel someone else's spot
 
 ### Changes
 
-**1. New edge function: `supabase/functions/cancel-booking-by-email/index.ts`**
-- Accepts `{ eventId, email }`
-- In-memory rate limiting: track requests per IP, max 5/minute; return 429 with `code: "rate_limited"` if exceeded
-- Uses service role key to query `bookings` where `event_id = eventId`, `guest_email = email` (case-insensitive), `cancelled_at IS NULL`
-- If no matches: return `{ success: false, code: "not_found" }`
-- If one match: cancel it (set `cancelled_at`), trigger cancellation email (same pattern as existing `cancel-booking`), return `{ success: true, cancelled: [{ id, guest_name, slot_position }] }`
-- If multiple matches: return `{ success: true, code: "multiple", bookings: [{ id, guest_name, slot_position }] }` so the UI can let the user pick
-- Accept optional `bookingId` param: when provided, cancel only that specific booking (for the multi-booking selection flow)
+**1. `src/components/producer/SpotList.tsx`**
+- Accept new props: `onCancelSpot: (bookingId: string) => void`
+- For each booked slot row, wrap the name in a group that:
+  - On hover/tap shows a small red "x" icon or "cancel" text that fades in to the right of the name
+  - Uses `cursor-pointer` and a subtle hover background (`hover:bg-destructive/5 rounded`)
+  - On click, calls `onCancelSpot(booking.id)` (but since we use email verification, we just open the modal)
+- Apply this to both regular and wildcard booked rows
 
-**2. New component: `src/components/producer/CancelSpotModal.tsx`**
-- Dialog with email input and "Cancel My Spot" destructive button
-- On submit, calls `cancel-booking-by-email` with `eventId` + email
-- If `code: "multiple"`, shows a list of bookings with radio/button selection, then re-calls with `bookingId`
-- Success toast: "Your spot has been cancelled"
-- Error states: "No booking found for this email", rate limit message, generic error
-- On success, calls `onBookingSuccess` to refresh the spot list
+**2. `src/components/producer/EventCard.tsx`**
+- Remove the standalone "Cancel my spot" button from both desktop and mobile views
+- Remove the "Cancel" text from the mobile collapsible header
+- Pass `onCancelSpot={() => setCancelOpen(true)}` to SpotList
+- Keep CancelSpotModal wired up as-is
 
-**3. Update `src/components/producer/EventCard.tsx`**
-- Add a "Cancel My Spot" text button below the SpotList (inside the signupStatus.isOpen block)
-- Clicking opens the CancelSpotModal
-- Appears in both mobile and desktop views
-
-**4. Update `src/pages/ProducerPage.tsx`**
-- Remove the cancellation-instructions `<div>` ("Need to cancel? Look for the cancellation link...")
+### Visual behavior
+- **Default state**: names look normal (no cancel indicator visible)
+- **Hover (desktop) / Tap (mobile)**: row gets a subtle red-tinted background, a small "x" icon fades in next to the name
+- **Click/tap the row**: opens the CancelSpotModal with email verification
 
 ### What stays the same
-- Existing `/cancel/:token` email link flow -- unchanged and still works
-- `cancel-booking` edge function -- unchanged
-- SpotList rendering, wildcard logic, slot numbering -- unchanged
-- Database schema -- no changes needed
-- Cancellation emails still sent to the comic on cancel
-
-### Technical Detail: Rate Limiting
-The edge function uses a `Map<string, number[]>` in memory to track request timestamps per IP. On each request, expired entries (>60s) are pruned. If 5+ requests exist within the window, a 429 is returned. This is per-instance and resets on cold start, which is acceptable for this use case.
+- CancelSpotModal flow (email lookup, multi-booking selection)
+- Edge function, rate limiting, email notifications
+- Slot numbering, wildcard logic, SpotList structure
+- "Grab Spot" buttons for empty slots
 
