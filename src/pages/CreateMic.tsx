@@ -341,31 +341,12 @@ export default function CreateMic() {
       if (error) throw error;
       if (!createdEvent) throw new Error('Failed to create event');
 
-      // Handle email notification based on publish option
+      // Send email immediately when publishing
       if (status === 'published') {
-        if (data.publishOption === 'now') {
-          // Send email immediately
-          await sendMicGoesLiveEmail({
-            eventId: createdEvent.id,
-            producerId: user.id,
-          });
-        } else if (data.publishOption === 'later' && publishAt) {
-          // Schedule email to be sent when mic goes live (at publish_at time)
-          // Store in scheduled_messages table
-          const { error: scheduleError } = await supabase.from('scheduled_messages').insert({
-            producer_id: user.id,
-            event_id: createdEvent.id,
-            subject: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live!`,
-            body_markdown: `Your mic "${data.title || `Mic on ${format(data.date, 'MMM d')}`}" is now live and accepting sign-ups.`,
-            send_at: publishAt,
-            status: 'pending',
-          });
-
-          if (scheduleError) {
-            console.error('Error scheduling mic goes live email:', scheduleError);
-            // Don't throw - scheduling email failure shouldn't break mic creation
-          }
-        }
+        await sendMicGoesLiveEmail({
+          eventId: createdEvent.id,
+          producerId: user.id,
+        });
       }
 
       toast({
