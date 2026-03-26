@@ -242,12 +242,8 @@ export default function CreateMic() {
         return { label: s.label, slots: s.slots };
       });
 
-      // Handle publish_at
-      let publishAt: string | null = null;
-      if (status === 'published' && data.publishOption === 'later' && data.publishAt && data.publishAtTime) {
-        const localDateTime = combineDateAndTime(data.publishAt, data.publishAtTime);
-        publishAt = fromZonedTime(localDateTime, timezone).toISOString();
-      }
+      // publish_at is no longer written from the frontend
+      const publishAt: string | null = null;
 
       // Helper to compute signup_opens_at per event date
       const computeSignupOpensAt = (eventDateStr: string): string | null => {
