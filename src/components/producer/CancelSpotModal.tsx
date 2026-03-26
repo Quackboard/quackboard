@@ -84,9 +84,9 @@ export function CancelSpotModal({ open, onOpenChange, eventId, onCancelled }: Ca
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Cancel My Spot</DialogTitle>
+          <DialogTitle>Cancel Your Spot</DialogTitle>
           <DialogDescription>
-            Enter the email you used when signing up to cancel your spot.
+            We'll use your email to confirm it's you.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,6 +109,9 @@ export function CancelSpotModal({ open, onOpenChange, eventId, onCancelled }: Ca
             <Button type="submit" variant="destructive" className="w-full" disabled={loading || !email.trim()}>
               {loading ? 'Cancelling…' : 'Cancel My Spot'}
             </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              This can't be undone, but you can sign up again.
+            </p>
           </form>
         ) : (
           <div className="space-y-3">
