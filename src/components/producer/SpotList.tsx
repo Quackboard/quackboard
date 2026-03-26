@@ -25,6 +25,7 @@ interface SpotListProps {
   eventTime: string;
   allowMultipleSpots: boolean;
   onBookingSuccess: () => void;
+  onCancelSpot?: () => void;
 }
 
 interface ModalState {
