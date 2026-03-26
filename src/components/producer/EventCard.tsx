@@ -153,6 +153,7 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
   // Desktop: fully expanded card (unchanged)
   if (!isMobile) {
     return (
+      <>
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
         <CardContent className="pt-4 space-y-2">
           <div className="flex items-center gap-2 text-foreground">
@@ -201,6 +202,13 @@ export function EventCard({ event, bookings, producerVenueName, onBookingSuccess
           )}
         </CardContent>
       </div>
+      <CancelSpotModal
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        eventId={event.id}
+        onCancelled={onBookingSuccess}
+      />
+      </>
     );
   }
 
