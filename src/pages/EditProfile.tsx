@@ -8,19 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { toast } from 'sonner';
-import { Plus, Check, X, Edit, Trash, ExternalLink, Loader2, ArrowLeft } from 'lucide-react';
-
-const isValidUrl = (url: string) => {
-  try {
-    new URL(url);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 const editProfileSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -29,13 +19,27 @@ const editProfileSchema = z.object({
   venue_address: z.string().trim().max(500).optional(),
   instagram: z.string().trim().max(50).optional(),
   bio_markdown: z.string().max(2000).optional(),
-  social_links: z.array(z.object({
-    id: z.string(),
-    url: z.string().url('Please enter a valid URL (e.g., https://example.com)'),
-  })).optional(),
 });
 
 type EditProfileFormData = z.infer<typeof editProfileSchema>;
+
+// Extract handle from stored instagram value (could be full URL or just handle)
+function extractInstagramHandle(value: string): string {
+  if (!value) return '';
+  // If it's a full URL like instagram.com/handle or https://instagram.com/handle
+  const match = value.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/([^/?#]+)/);
+  if (match) return match[1];
+  // Otherwise treat as raw handle, strip @ if present
+  return value.replace(/^@/, '');
+}
+
+// Convert handle to stored format
+function handleToInstagramUrl(handle: string): string {
+  if (!handle) return '';
+  const clean = handle.replace(/^@/, '').trim();
+  if (!clean) return '';
+  return `instagram.com/${clean}`;
+}
 
 export function EditProfile() {
   const { user } = useAuth();
@@ -50,7 +54,6 @@ export function EditProfile() {
       venue_address: '',
       instagram: '',
       bio_markdown: '',
-      social_links: [],
     },
   });
 
@@ -62,13 +65,8 @@ export function EditProfile() {
     reset,
   } = form;
 
-  const [socialLinks, setSocialLinks] = useState<Array<{ id: string; url: string; editing: boolean; error?: string }>>([]);
-  const [newSocialLink, setNewSocialLink] = useState('');
-  const [newSocialLinkError, setNewSocialLinkError] = useState<string>('');
-  const [showNewSocialLinkInput, setShowNewSocialLinkInput] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch producer data on mount
   useEffect(() => {
     const fetchProducerData = async () => {
       if (!user?.id) {
@@ -79,7 +77,7 @@ export function EditProfile() {
       try {
         const { data, error } = await supabase
           .from('producers')
-          .select('name, email, venue_name, venue_address, instagram, bio_markdown, social_links')
+          .select('name, email, venue_name, venue_address, instagram, bio_markdown')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -91,19 +89,9 @@ export function EditProfile() {
             email: data.email || '',
             venue_name: data.venue_name || '',
             venue_address: data.venue_address || '',
-            instagram: data.instagram || '',
+            instagram: extractInstagramHandle(data.instagram || ''),
             bio_markdown: data.bio_markdown || '',
           });
-
-          if (data.social_links) {
-            setSocialLinks(
-              Object.entries(data.social_links).map(([key, value]) => ({
-                id: key,
-                url: value as string,
-                editing: false,
-              }))
-            );
-          }
         }
       } catch (error: any) {
         toast.error(`Error loading profile: ${error.message}`);
@@ -116,73 +104,9 @@ export function EditProfile() {
     fetchProducerData();
   }, [user?.id, reset]);
 
-  const handleAddSocialLink = () => {
-    const trimmedUrl = newSocialLink.trim();
-    if (!trimmedUrl) {
-      setNewSocialLinkError('Please enter a URL');
-      return;
-    }
-    if (!isValidUrl(trimmedUrl)) {
-      setNewSocialLinkError('Please enter a valid URL (e.g., https://example.com)');
-      return;
-    }
-    setSocialLinks((prev) => [
-      ...prev,
-      { id: String(Date.now()), url: trimmedUrl, editing: false },
-    ]);
-    setNewSocialLink('');
-    setNewSocialLinkError('');
-    setShowNewSocialLinkInput(false);
-  };
-
-  const handleEditSocialLink = (id: string) => {
-    setSocialLinks((prev) =>
-      prev.map((link) => (link.id === id ? { ...link, editing: true, error: undefined } : link))
-    );
-  };
-
-  const handleSaveSocialLink = (id: string) => {
-    setSocialLinks((prev) =>
-      prev.map((link) => {
-        if (link.id === id) {
-          const trimmedUrl = link.url.trim();
-          if (!trimmedUrl) {
-            return { ...link, editing: true, error: 'Please enter a URL' };
-          }
-          if (!isValidUrl(trimmedUrl)) {
-            return { ...link, editing: true, error: 'Please enter a valid URL (e.g., https://example.com)' };
-          }
-          return { ...link, url: trimmedUrl, editing: false, error: undefined };
-        }
-        return link;
-      })
-    );
-  };
-
-  const handleDeleteSocialLink = (id: string) => {
-    setSocialLinks((prev) => prev.filter((link) => link.id !== id));
-  };
-
-
   const onSubmit = async (data: EditProfileFormData) => {
     if (!user) {
       toast.error('You must be logged in to edit your profile.');
-      return;
-    }
-
-    // Validate all social links before submitting
-    const invalidLinks = socialLinks.filter(link => !isValidUrl(link.url.trim()));
-    if (invalidLinks.length > 0) {
-      // Set errors for invalid links
-      setSocialLinks((prev) =>
-        prev.map((link) => {
-          if (!isValidUrl(link.url.trim())) {
-            return { ...link, editing: true, error: 'Please enter a valid URL (e.g., https://example.com)' };
-          }
-          return link;
-        })
-      );
-      toast.error('Please fix invalid social links before saving.');
       return;
     }
 
@@ -191,17 +115,10 @@ export function EditProfile() {
         name: data.name,
         venue_name: data.venue_name,
         venue_address: data.venue_address,
-        instagram: data.instagram,
+        instagram: handleToInstagramUrl(data.instagram || ''),
         bio_markdown: data.bio_markdown,
-        social_links: socialLinks.reduce((acc, link) => {
-          acc[link.id] = link.url;
-          return acc;
-        }, {}),
         updated_at: new Date().toISOString(),
       };
-
-      console.log('Updates being sent to Supabase:', updates);
-      console.log('Social Links array state:', socialLinks);
 
       const { error } = await supabase
         .from('producers')
@@ -243,9 +160,9 @@ export function EditProfile() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-semibold text-foreground">Edit Profile</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Edit Public Page</h1>
         </div>
-        <p className="text-muted-foreground mt-2">Update your public producer information.</p>
+        <p className="text-muted-foreground mt-2">Update your public page.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -301,16 +218,19 @@ export function EditProfile() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="instagram">
-            Instagram
-          </Label>
-          <Input
-            id="instagram"
-            type="text"
-            placeholder="@yourhandle"
-            {...register('instagram')}
-            className={errors.instagram ? 'border-destructive' : ''}
-          />
+          <Label htmlFor="instagram">Instagram</Label>
+          <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+              instagram.com/
+            </span>
+            <Input
+              id="instagram"
+              type="text"
+              placeholder="yourhandle"
+              {...register('instagram')}
+              className={`border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.instagram ? 'text-destructive' : ''}`}
+            />
+          </div>
           {errors.instagram && (
             <p className="text-sm text-destructive">{errors.instagram.message}</p>
           )}
@@ -332,173 +252,6 @@ export function EditProfile() {
           {errors.bio_markdown && (
             <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
           )}
-        </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <Label>Social Links</Label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowNewSocialLinkInput(true)}
-              disabled={showNewSocialLinkInput}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {socialLinks.map((link) => (
-              <div key={link.id} className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  {link.editing ? (
-                    <Input
-                      type="url"
-                      value={link.url}
-                      onChange={(e) => {
-                        const newUrl = e.target.value;
-                        setSocialLinks((prev) =>
-                          prev.map((l) => {
-                            if (l.id === link.id) {
-                              const trimmed = newUrl.trim();
-                              let error: string | undefined = undefined;
-                              if (trimmed && !isValidUrl(trimmed)) {
-                                error = 'Please enter a valid URL (e.g., https://example.com)';
-                              }
-                              return { ...l, url: newUrl, error };
-                            }
-                            return l;
-                          })
-                        );
-                      }}
-                      onBlur={() => {
-                        setSocialLinks((prev) =>
-                          prev.map((l) => {
-                            if (l.id === link.id) {
-                              const trimmed = l.url.trim();
-                              let error: string | undefined = undefined;
-                              if (!trimmed) {
-                                error = 'Please enter a URL';
-                              } else if (!isValidUrl(trimmed)) {
-                                error = 'Please enter a valid URL (e.g., https://example.com)';
-                              }
-                              return { ...l, error };
-                            }
-                            return l;
-                          })
-                        );
-                      }}
-                      className={`flex-grow ${link.error ? 'border-destructive' : ''}`}
-                      placeholder="https://example.com"
-                    />
-                  ) : (
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-grow text-blue-600 hover:underline truncate whitespace-nowrap"
-                    >
-                      {link.url}
-                    </a>
-                  )}
-                  {link.editing ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleSaveSocialLink(link.id)}
-                      disabled={!isValidUrl(link.url.trim())}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditSocialLink(link.id)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteSocialLink(link.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                  {!link.editing && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.open(link.url, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                {link.editing && link.error && (
-                  <p className="text-sm text-destructive mt-1">{link.error}</p>
-                )}
-              </div>
-            ))}
-            {showNewSocialLinkInput && (
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="url"
-                    value={newSocialLink}
-                    onChange={(e) => {
-                      const newUrl = e.target.value;
-                      setNewSocialLink(newUrl);
-                      // Clear error when user starts typing
-                      if (newSocialLinkError) {
-                        setNewSocialLinkError('');
-                      }
-                    }}
-                    onBlur={() => {
-                      const trimmed = newSocialLink.trim();
-                      if (!trimmed) {
-                        setNewSocialLinkError('Please enter a URL');
-                      } else if (!isValidUrl(trimmed)) {
-                        setNewSocialLinkError('Please enter a valid URL (e.g., https://example.com)');
-                      } else {
-                        setNewSocialLinkError('');
-                      }
-                    }}
-                    placeholder="https://yourlink.com"
-                    className={`flex-grow ${newSocialLinkError ? 'border-destructive' : ''}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleAddSocialLink}
-                    disabled={!isValidUrl(newSocialLink.trim())}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setNewSocialLink('');
-                      setNewSocialLinkError('');
-                      setShowNewSocialLinkInput(false);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                {newSocialLinkError && (
-                  <p className="text-sm text-destructive mt-1">{newSocialLinkError}</p>
-                )}
-              </div>
-            )}
-          </div>
         </div>
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}

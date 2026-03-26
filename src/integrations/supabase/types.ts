@@ -514,7 +514,6 @@ export type Database = {
           name: string | null
           profile_image_url: string | null
           slug: string | null
-          social_links: Json | null
           timezone: string | null
           updated_at: string | null
           venue_address: string | null
@@ -531,7 +530,6 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           slug?: string | null
-          social_links?: Json | null
           timezone?: string | null
           updated_at?: string | null
           venue_address?: string | null
@@ -548,7 +546,6 @@ export type Database = {
           name?: string | null
           profile_image_url?: string | null
           slug?: string | null
-          social_links?: Json | null
           timezone?: string | null
           updated_at?: string | null
           venue_address?: string | null
