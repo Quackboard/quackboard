@@ -1,0 +1,1 @@
+ALTER TABLE public.producers DROP COLUMN IF EXISTS social_links;
