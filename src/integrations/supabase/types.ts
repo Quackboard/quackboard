@@ -508,6 +508,7 @@ export type Database = {
           created_at: string | null
           discoverable: boolean
           email: string
+          event_window_days: number
           header_image_url: string | null
           id: string
           instagram: string | null
@@ -525,6 +526,7 @@ export type Database = {
           created_at?: string | null
           discoverable?: boolean
           email: string
+          event_window_days?: number
           header_image_url?: string | null
           id?: string
           instagram?: string | null
@@ -542,6 +544,7 @@ export type Database = {
           created_at?: string | null
           discoverable?: boolean
           email?: string
+          event_window_days?: number
           header_image_url?: string | null
           id?: string
           instagram?: string | null

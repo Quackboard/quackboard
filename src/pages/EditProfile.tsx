@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const editProfileSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -20,6 +21,7 @@ const editProfileSchema = z.object({
   instagram: z.string().trim().max(50).optional(),
   website: z.string().trim().max(500).optional(),
   bio_markdown: z.string().max(2000).optional(),
+  event_window_days: z.coerce.number().refine(v => [7, 14, 30].includes(v), { message: 'Must be 7, 14, or 30' }),
 });
 
 type EditProfileFormData = z.infer<typeof editProfileSchema>;
@@ -56,6 +58,7 @@ export function EditProfile() {
       instagram: '',
       website: '',
       bio_markdown: '',
+      event_window_days: 7,
     },
   });
 
@@ -79,7 +82,7 @@ export function EditProfile() {
       try {
         const { data, error } = await supabase
           .from('producers')
-          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown')
+          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown, event_window_days')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -94,6 +97,7 @@ export function EditProfile() {
             instagram: extractInstagramHandle(data.instagram || ''),
             website: data.website || '',
             bio_markdown: data.bio_markdown || '',
+            event_window_days: data.event_window_days ?? 7,
           });
         }
       } catch (error: any) {
@@ -121,6 +125,7 @@ export function EditProfile() {
         instagram: handleToInstagramUrl(data.instagram || ''),
         website: data.website || null,
         bio_markdown: data.bio_markdown,
+        event_window_days: data.event_window_days,
         updated_at: new Date().toISOString(),
       };
 
@@ -166,7 +171,7 @@ export function EditProfile() {
           </Button>
           <h1 className="text-2xl font-semibold text-foreground">Edit Public Page</h1>
         </div>
-        <p className="text-muted-foreground mt-2">Update your public page.</p>
+        <p className="text-muted-foreground mt-2">Update your public page and manage page settings.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -270,6 +275,29 @@ export function EditProfile() {
             <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
           )}
         </div>
+        <div className="space-y-4 pt-4 border-t border-border">
+          <h2 className="text-lg font-semibold text-foreground">Page Settings</h2>
+          <div className="space-y-2">
+            <Label htmlFor="event_window_days">Show events for the next</Label>
+            <Controller
+              name="event_window_days"
+              control={control}
+              render={({ field }) => (
+                <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                  <SelectTrigger id="event_window_days">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </Button>

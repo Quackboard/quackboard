@@ -125,8 +125,15 @@ export default function ProducerPage() {
     };
   }, [eventIds.join(','), refetchBookings]);
 
-  // Only show current/future events on public page
-  const currentEvents = (events || []).filter(e => !isEventPast(e));
+  // Only show events within the producer's chosen window
+  const windowDays = producer?.event_window_days ?? 7;
+  const windowEnd = new Date();
+  windowEnd.setDate(windowEnd.getDate() + windowDays);
+  const currentEvents = (events || []).filter(e => {
+    if (isEventPast(e)) return false;
+    const eventDate = new Date(e.date);
+    return eventDate <= windowEnd;
+  });
   const eventDates = currentEvents.length > 0
     ? [...new Set(currentEvents.map(e => e.date))].sort()
     : [];
