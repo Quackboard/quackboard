@@ -74,41 +74,6 @@ export function EventRow({ event, isPast = false }: EventRowProps) {
   const status = getStatus();
   const isLive = status.label === 'Live';
 
-  // Send email when event transitions to "Live" status
-  useEffect(() => {
-    if (!isLive || emailSentRef.current) return;
-
-    const sendEmail = async () => {
-      // Check for pending scheduled message (only send once)
-      const { data: scheduledMessages } = await supabase
-        .from('scheduled_messages')
-        .select('id, producer_id')
-        .eq('event_id', event.id)
-        .eq('status', 'pending')
-        .limit(1);
-
-      if (scheduledMessages && scheduledMessages.length > 0) {
-        try {
-          await sendMicGoesLiveEmail({
-            eventId: event.id,
-            producerId: scheduledMessages[0].producer_id || '',
-          });
-          
-          // Mark scheduled message as sent
-          await supabase
-            .from('scheduled_messages')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('id', scheduledMessages[0].id);
-          
-          emailSentRef.current = true;
-        } catch (error) {
-          console.error('Error sending mic goes live email:', error);
-        }
-      }
-    };
-
-    sendEmail();
-  }, [isLive, event.id]);
 
   // Signup status logic
   const getSignupStatus = () => {
