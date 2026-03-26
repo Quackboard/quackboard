@@ -123,7 +123,6 @@ export default function BulkCreateMic() {
       durationMinutes: 60,
       frequency: 'hourly',
       allowMultipleSlots: false,
-      publishOption: 'now',
       signupOption: 'live',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
