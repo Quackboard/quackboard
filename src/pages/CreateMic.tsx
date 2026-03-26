@@ -219,7 +219,6 @@ export default function CreateMic() {
     name: 'sections',
   });
 
-  const watchPublishOption = watch('publishOption');
   const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
 
