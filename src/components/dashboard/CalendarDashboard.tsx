@@ -83,12 +83,7 @@ export function CalendarDashboard({ events, viewType }: CalendarDashboardProps) 
   const getEventStatus = (event: EventWithBookings): string => {
     if (event.status === 'draft') return 'Draft';
     if (hasEventEnded(event)) return 'Past';
-    if (event.status === 'published') {
-      if (event.publish_at && isAfter(parseISO(event.publish_at), new Date())) {
-        return 'Coming Live';
-      }
-      return 'Live';
-    }
+    if (event.status === 'published') return 'Live';
     return event.status;
   };
 
