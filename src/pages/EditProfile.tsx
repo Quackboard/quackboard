@@ -20,6 +20,7 @@ const editProfileSchema = z.object({
   instagram: z.string().trim().max(50).optional(),
   website: z.string().trim().max(500).optional(),
   bio_markdown: z.string().max(2000).optional(),
+  event_window_days: z.coerce.number().refine(v => [7, 14, 30].includes(v), { message: 'Must be 7, 14, or 30' }),
 });
 
 type EditProfileFormData = z.infer<typeof editProfileSchema>;
