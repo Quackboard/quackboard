@@ -270,13 +270,13 @@ export default function Signup() {
 
                 <div className="space-y-2">
                   <Label htmlFor="dialog-confirm">Confirm Password</Label>
-                  <Input
+                  <PasswordInput
                     id="dialog-confirm"
-                    type="password"
                     placeholder="Re-enter your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={errors.confirmPassword ? 'border-destructive' : ''}
+                  />
                   />
                   {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>

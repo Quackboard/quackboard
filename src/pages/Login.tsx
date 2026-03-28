@@ -132,9 +132,8 @@ export default function Login() {
 
           <div className="space-y-2">
             <Label htmlFor="login-password">Password</Label>
-            <Input
+            <PasswordInput
               id="login-password"
-              type="password"
               placeholder="••••••••"
               {...passwordForm.register('password')}
               className={passwordForm.formState.errors.password ? 'border-destructive' : ''}
