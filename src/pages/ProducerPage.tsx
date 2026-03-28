@@ -131,16 +131,17 @@ export default function ProducerPage() {
   }, [eventIds.join(','), refetchBookings]);
 
   // Only show events within the producer's chosen window
-  const windowDays = producer?.event_window_days ?? 7;
-  const windowEnd = new Date();
-  windowEnd.setDate(windowEnd.getDate() + windowDays);
   const producerTz = producer?.timezone || 'America/Los_Angeles';
   const nowInTz = toZonedTime(new Date(), producerTz);
-  const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
+  const windowDays = producer?.event_window_days ?? 7;
+  const windowEnd = new Date(nowInTz);
+  windowEnd.setDate(windowEnd.getDate() + windowDays);
 
   const currentEvents = (events || []).filter(e => {
     if (isEventPast(e, producerTz)) return false;
-    const eventDate = new Date(e.date);
+    // Parse event date as local numbers to avoid UTC off-by-one
+    const [y, m, d] = e.date.split('-').map(Number);
+    const eventDate = new Date(y, m - 1, d);
     return eventDate <= windowEnd;
   });
   const eventDates = currentEvents.length > 0
