@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
+import { toZonedTime } from 'date-fns-tz';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
@@ -10,10 +11,14 @@ import { EventCard } from '@/components/producer/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isUUID } from '@/lib/slug';
 
-function isEventPast(event: Event): boolean {
-  const now = new Date();
-  const eventEnd = new Date(`${event.date}T${event.end_time}`);
-  return now > eventEnd;
+function isEventPast(event: Event, timezone: string): boolean {
+  // Get current time in the producer's timezone
+  const nowInTz = toZonedTime(new Date(), timezone);
+  // Parse event end as a local time in the producer's timezone
+  const [year, month, day] = event.date.split('-').map(Number);
+  const [hours, minutes] = event.end_time.split(':').map(Number);
+  const eventEnd = new Date(year, month - 1, day, hours, minutes);
+  return nowInTz > eventEnd;
 }
 
 export default function ProducerPage() {
@@ -129,8 +134,12 @@ export default function ProducerPage() {
   const windowDays = producer?.event_window_days ?? 7;
   const windowEnd = new Date();
   windowEnd.setDate(windowEnd.getDate() + windowDays);
+  const producerTz = producer?.timezone || 'America/Los_Angeles';
+  const nowInTz = toZonedTime(new Date(), producerTz);
+  const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
+
   const currentEvents = (events || []).filter(e => {
-    if (isEventPast(e)) return false;
+    if (isEventPast(e, producerTz)) return false;
     const eventDate = new Date(e.date);
     return eventDate <= windowEnd;
   });
