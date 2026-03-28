@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -10,31 +7,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Lock } from 'lucide-react';
-
-const signupSchema = z.object({
-  accessCode: z.string().min(1, 'Access code is required'),
-  email: z.string().trim().email('Enter a valid email'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-type SignupFormData = z.infer<typeof signupSchema>;
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 export default function Signup() {
+  const [accessCode, setAccessCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmationState, setConfirmationState] = useState<null | 'password' | 'magiclink'>(null);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const form = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { accessCode: '', email: '', password: '', confirmPassword: '' },
-  });
 
   useEffect(() => {
     if (!loading && user) {
@@ -42,109 +36,109 @@ export default function Signup() {
     }
   }, [user, loading, navigate]);
 
-  const validateAccessCode = async (code: string): Promise<boolean> => {
-    const { data: isValid, error } = await supabase.rpc('validate_beta_code', { code_input: code });
-    if (error) throw new Error('Failed to validate access code');
-    if (!isValid) {
-      toast({
-        title: 'Invalid access code',
-        description: 'Please check your code and try again.',
-        variant: 'destructive',
-      });
-      return false;
+  const validateStep1 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!accessCode.trim()) newErrors.accessCode = 'Access code is required';
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      newErrors.email = 'Enter a valid email';
     }
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const onSubmitPassword = async (data: SignupFormData) => {
-    setIsSubmitting(true);
+  const validateStep2 = () => {
+    const newErrors: Record<string, string> = {};
+    if (password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    if (!confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleGetStarted = async () => {
+    if (!validateStep1()) return;
+    setIsValidating(true);
     try {
-      if (!(await validateAccessCode(data.accessCode))) {
-        setIsSubmitting(false);
+      const { data: isValid, error } = await supabase.rpc('validate_beta_code', { code_input: accessCode });
+      if (error) throw new Error('Failed to validate access code');
+      if (!isValid) {
+        toast({ title: 'Invalid access code', description: 'Please check your code and try again.', variant: 'destructive' });
+        setIsValidating(false);
         return;
       }
+      setErrors({});
+      setPassword('');
+      setConfirmPassword('');
+      setDialogOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Something went wrong', variant: 'destructive' });
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
+  const handleCreateAccount = async () => {
+    if (!validateStep2()) return;
+    setIsSubmitting(true);
+    try {
       const { data: signUpData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-
       if (error) {
         if (error.status === 429) {
           toast({ title: 'Too many attempts', description: 'Try again later.', variant: 'destructive' });
         } else {
           toast({ title: 'Error', description: error.message, variant: 'destructive' });
         }
-        setIsSubmitting(false);
         return;
       }
-
-      // Detect duplicate email (Supabase returns fake user with empty identities)
-      if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
-        toast({
-          title: 'Account already exists',
-          description: 'An account with this email already exists. Try signing in.',
-          variant: 'destructive',
-        });
+      if (signUpData.user?.identities?.length === 0) {
+        toast({ title: 'Account already exists', description: 'An account with this email already exists. Try signing in.', variant: 'destructive' });
         navigate('/login');
         return;
       }
-
       setConfirmationState('password');
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Something went wrong', variant: 'destructive' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Something went wrong', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onSendMagicLink = async () => {
-    // Only validate accessCode and email for magic link
-    const accessCode = form.getValues('accessCode');
-    const email = form.getValues('email');
-
-    if (!accessCode) {
-      form.setError('accessCode', { message: 'Access code is required' });
-      return;
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      form.setError('email', { message: 'Enter a valid email' });
-      return;
-    }
-
+  const handleSendMagicLink = async () => {
     setIsSendingMagicLink(true);
     try {
-      if (!(await validateAccessCode(accessCode))) {
-        setIsSendingMagicLink(false);
-        return;
-      }
-
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-
       if (error) {
         if (error.status === 429) {
           toast({ title: 'Too many attempts', description: 'Try again later.', variant: 'destructive' });
         } else {
           toast({ title: 'Error', description: error.message, variant: 'destructive' });
         }
-        setIsSendingMagicLink(false);
         return;
       }
-
       setConfirmationState('magiclink');
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Something went wrong', variant: 'destructive' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Something went wrong', variant: 'destructive' });
     } finally {
       setIsSendingMagicLink(false);
     }
+  };
+
+  const handleDialogClose = () => {
+    if (confirmationState) {
+      setConfirmationState(null);
+    }
+    setDialogOpen(false);
+    setPassword('');
+    setConfirmPassword('');
+    setErrors({});
   };
 
   if (loading) {
@@ -164,155 +158,168 @@ export default function Signup() {
             <span className="text-2xl font-bold font-outfit text-foreground">Quackboard</span>
           </Link>
           <h2 className="text-2xl font-semibold text-foreground">Create your account</h2>
-          <p className="text-muted-foreground mt-2">
-            Start managing your open mics in minutes
-          </p>
+          <p className="text-muted-foreground mt-2">Start managing your open mics in minutes</p>
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
             <Lock className="h-3 w-3" />
             Beta Access Required
           </div>
         </div>
 
-        {confirmationState ? (
-          <div className="text-center p-6 border border-border rounded-lg bg-muted/50">
-            <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-medium text-foreground">Check your email</h2>
-            <p className="text-muted-foreground mt-2">
-              {confirmationState === 'password'
-                ? 'We sent a confirmation link to your email. Click it to activate your account.'
-                : 'We sent a signup link to your email address.'}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="accessCode">Access Code</Label>
+            <Input
+              id="accessCode"
+              type="text"
+              placeholder="Enter your beta access code"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              className={errors.accessCode ? 'border-destructive' : ''}
+            />
+            {errors.accessCode && <p className="text-sm text-destructive">{errors.accessCode}</p>}
+            <p className="text-sm text-muted-foreground">
+              Don't have a code?{' '}
+              <a
+                href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-medium hover:underline"
+              >
+                Request access
+              </a>
             </p>
-            <Button
-              variant="ghost"
-              className="mt-4"
-              onClick={() => setConfirmationState(null)}
-            >
-              Try again
-            </Button>
           </div>
-        ) : (
-          <>
-            <form onSubmit={form.handleSubmit(onSubmitPassword)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="accessCode">Access Code</Label>
-                <Input
-                  id="accessCode"
-                  type="text"
-                  placeholder="Enter your beta access code"
-                  {...form.register('accessCode')}
-                  className={form.formState.errors.accessCode ? 'border-destructive' : ''}
-                />
-                {form.formState.errors.accessCode && (
-                  <p className="text-sm text-destructive">{form.formState.errors.accessCode.message}</p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Don't have a code?{' '}
-                  <a
-                    href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Request access
-                  </a>
-                </p>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  {...form.register('email')}
-                  className={form.formState.errors.email ? 'border-destructive' : ''}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-                )}
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={errors.email ? 'border-destructive' : ''}
+            />
+            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="At least 8 characters"
-                  {...form.register('password')}
-                  className={form.formState.errors.password ? 'border-destructive' : ''}
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
-                )}
-              </div>
+          <Button className="w-full" onClick={handleGetStarted} disabled={isValidating}>
+            {isValidating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Validating...
+              </>
+            ) : (
+              'Get Started'
+            )}
+          </Button>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Re-enter your password"
-                  {...form.register('confirmPassword')}
-                  className={form.formState.errors.confirmPassword ? 'border-destructive' : ''}
-                />
-                {form.formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{form.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isSubmitting || isSendingMagicLink}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  'Get Started'
-                )}
-              </Button>
-            </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">or</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              disabled={isSubmitting || isSendingMagicLink}
-              onClick={onSendMagicLink}
-            >
-              {isSendingMagicLink ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                'Send magic link'
-              )}
-            </Button>
-
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              By signing up, you agree to our{' '}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Terms of Service</a>{' '}and{' '}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Privacy Policy</a>.
-            </p>
-          </>
-        )}
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          By signing up, you agree to our{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Terms of Service</a>{' '}and{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Privacy Policy</a>.
+        </p>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">
-            Sign in
-          </Link>
+          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
         </p>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) handleDialogClose(); }}>
+        <DialogContent className="sm:max-w-sm">
+          {confirmationState ? (
+            <>
+              <DialogHeader>
+                <div className="flex justify-center mb-2">
+                  <Mail className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <DialogTitle className="text-center">Check your email</DialogTitle>
+                <DialogDescription className="text-center">
+                  {confirmationState === 'password'
+                    ? 'We sent a confirmation link to your email. Click it to activate your account.'
+                    : 'We sent a signup link to your email address.'}
+                </DialogDescription>
+              </DialogHeader>
+              <Button variant="ghost" className="w-full mt-2" onClick={handleDialogClose}>
+                Try again
+              </Button>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Set your password</DialogTitle>
+                <DialogDescription>Choose a password for {email}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dialog-password">Password</Label>
+                  <Input
+                    id="dialog-password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={errors.password ? 'border-destructive' : ''}
+                  />
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dialog-confirm">Confirm Password</Label>
+                  <Input
+                    id="dialog-confirm"
+                    type="password"
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={errors.confirmPassword ? 'border-destructive' : ''}
+                  />
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+                </div>
+
+                <Button className="w-full" onClick={handleCreateAccount} disabled={isSubmitting || isSendingMagicLink}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
+              </div>
+
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleSendMagicLink}
+                disabled={isSubmitting || isSendingMagicLink}
+              >
+                {isSendingMagicLink ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Send magic link'
+                )}
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
