@@ -264,7 +264,6 @@ export default function Signup() {
                     onChange={(e) => setPassword(e.target.value)}
                     className={errors.password ? 'border-destructive' : ''}
                   />
-                  />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
 
