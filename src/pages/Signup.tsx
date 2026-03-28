@@ -257,13 +257,13 @@ export default function Signup() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="dialog-password">Password</Label>
-                  <Input
+                  <PasswordInput
                     id="dialog-password"
-                    type="password"
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={errors.password ? 'border-destructive' : ''}
+                  />
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
