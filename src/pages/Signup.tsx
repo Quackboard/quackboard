@@ -276,7 +276,6 @@ export default function Signup() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={errors.confirmPassword ? 'border-destructive' : ''}
                   />
-                  />
                   {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
 
