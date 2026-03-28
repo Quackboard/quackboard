@@ -11,6 +11,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail } from 'lucide-react';
+import LogoFull from '@/assets/logo-full.png';
 
 const passwordSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
@@ -107,7 +108,9 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Quackboard</h1>
+          <Link to="/" className="inline-block mb-4 hover:opacity-80 transition-opacity" style={{ background: 'transparent' }}>
+            <img src={LogoFull} alt="Quackboard" className="h-16 w-auto mx-auto" style={{ background: 'transparent' }} />
+          </Link>
           <h2 className="text-2xl font-semibold text-foreground">Welcome back</h2>
           <p className="text-muted-foreground mt-2">
             Sign in to your account
