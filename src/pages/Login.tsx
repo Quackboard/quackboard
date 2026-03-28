@@ -109,7 +109,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-4 hover:opacity-80 transition-opacity" style={{ background: 'transparent' }}>
-            <img src={LogoFull} alt="Quackboard" className="h-16 w-auto mx-auto" style={{ background: 'transparent' }} />
+            <img src={LogoFull} alt="Quackboard" className="h-32 w-auto mx-auto" style={{ background: 'transparent' }} />
           </Link>
           <h2 className="text-2xl font-semibold text-foreground">Welcome back</h2>
           <p className="text-muted-foreground mt-2">
