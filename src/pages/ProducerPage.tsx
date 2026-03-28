@@ -11,14 +11,23 @@ import { EventCard } from '@/components/producer/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isUUID } from '@/lib/slug';
 
+function getTodayInTimezone(timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+
+  return `${year}-${month}-${day}`;
+}
+
 function isEventPast(event: Event, timezone: string): boolean {
-  // Get current time in the producer's timezone
-  const nowInTz = toZonedTime(new Date(), timezone);
-  // Parse event end as a local time in the producer's timezone
-  const [year, month, day] = event.date.split('-').map(Number);
-  const [hours, minutes] = event.end_time.split(':').map(Number);
-  const eventEnd = new Date(year, month - 1, day, hours, minutes);
-  return nowInTz > eventEnd;
+  return event.date < getTodayInTimezone(timezone);
 }
 
 export default function ProducerPage() {
