@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Lock } from 'lucide-react';
@@ -256,9 +257,8 @@ export default function Signup() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="dialog-password">Password</Label>
-                  <Input
+                  <PasswordInput
                     id="dialog-password"
-                    type="password"
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -269,9 +269,8 @@ export default function Signup() {
 
                 <div className="space-y-2">
                   <Label htmlFor="dialog-confirm">Confirm Password</Label>
-                  <Input
+                  <PasswordInput
                     id="dialog-confirm"
-                    type="password"
                     placeholder="Re-enter your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
