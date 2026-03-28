@@ -11,21 +11,32 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail } from 'lucide-react';
 
-const emailSchema = z.object({
+const passwordSchema = z.object({
   email: z.string().trim().email('Enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
 });
 
-type EmailFormData = z.infer<typeof emailSchema>;
+const magicLinkSchema = z.object({
+  magicEmail: z.string().trim().email('Enter a valid email'),
+});
+
+type PasswordFormData = z.infer<typeof passwordSchema>;
+type MagicLinkFormData = z.infer<typeof magicLinkSchema>;
 
 export default function Login() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [isSubmittingMagicLink, setIsSubmittingMagicLink] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const form = useForm<EmailFormData>({
-    resolver: zodResolver(emailSchema),
+  const passwordForm = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+  });
+
+  const magicLinkForm = useForm<MagicLinkFormData>({
+    resolver: zodResolver(magicLinkSchema),
   });
 
   useEffect(() => {
@@ -34,17 +45,34 @@ export default function Login() {
     }
   }, [user, loading, navigate]);
 
-  const onSubmit = async (data: EmailFormData) => {
-    setIsSubmitting(true);
+  const onPasswordSubmit = async (data: PasswordFormData) => {
+    setIsSubmittingPassword(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    setIsSubmittingPassword(false);
+
+    if (error) {
+      toast({
+        title: 'Sign in failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const onMagicLinkSubmit = async (data: MagicLinkFormData) => {
+    setIsSubmittingMagicLink(true);
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: data.email,
+      email: data.magicEmail,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
-    setIsSubmitting(false);
+    setIsSubmittingMagicLink(false);
 
     if (error) {
       if (error.status === 429) {
@@ -63,7 +91,7 @@ export default function Login() {
       return;
     }
 
-    setEmailSent(true);
+    setMagicLinkSent(true);
   };
 
   if (loading) {
@@ -81,11 +109,66 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-foreground mb-2">Quackboard</h1>
           <h2 className="text-2xl font-semibold text-foreground">Welcome back</h2>
           <p className="text-muted-foreground mt-2">
-            Enter your email to sign in to your account
+            Sign in to your account
           </p>
         </div>
 
-        {emailSent ? (
+        {/* Email & Password */}
+        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="login-email">Email</Label>
+            <Input
+              id="login-email"
+              type="email"
+              placeholder="you@example.com"
+              {...passwordForm.register('email')}
+              className={passwordForm.formState.errors.email ? 'border-destructive' : ''}
+            />
+            {passwordForm.formState.errors.email && (
+              <p className="text-sm text-destructive">{passwordForm.formState.errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="login-password">Password</Label>
+            <Input
+              id="login-password"
+              type="password"
+              placeholder="••••••••"
+              {...passwordForm.register('password')}
+              className={passwordForm.formState.errors.password ? 'border-destructive' : ''}
+            />
+            {passwordForm.formState.errors.password && (
+              <p className="text-sm text-destructive">{passwordForm.formState.errors.password.message}</p>
+            )}
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isSubmittingPassword}>
+            {isSubmittingPassword ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </Button>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-sm text-muted-foreground">or</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        {/* Magic Link */}
+        {magicLinkSent ? (
           <div className="text-center p-6 border border-border rounded-lg bg-muted/50">
             <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-lg font-medium text-foreground">Check your email</h2>
@@ -95,35 +178,35 @@ export default function Login() {
             <Button
               variant="ghost"
               className="mt-4"
-              onClick={() => setEmailSent(false)}
+              onClick={() => setMagicLinkSent(false)}
             >
               Try again
             </Button>
           </div>
         ) : (
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="magic-email">Email</Label>
               <Input
-                id="email"
+                id="magic-email"
                 type="email"
                 placeholder="you@example.com"
-                {...form.register('email')}
-                className={form.formState.errors.email ? 'border-destructive' : ''}
+                {...magicLinkForm.register('magicEmail')}
+                className={magicLinkForm.formState.errors.magicEmail ? 'border-destructive' : ''}
               />
-              {form.formState.errors.email && (
-                <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+              {magicLinkForm.formState.errors.magicEmail && (
+                <p className="text-sm text-destructive">{magicLinkForm.formState.errors.magicEmail.message}</p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" variant="outline" className="w-full" disabled={isSubmittingMagicLink}>
+              {isSubmittingMagicLink ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Sending...
                 </>
               ) : (
-                'Continue with Email'
+                'Send magic link'
               )}
             </Button>
           </form>
