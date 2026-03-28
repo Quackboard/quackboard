@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
-import { toZonedTime } from 'date-fns-tz';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Producer, Event, Booking } from '@/types/database';
@@ -11,23 +10,10 @@ import { EventCard } from '@/components/producer/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isUUID } from '@/lib/slug';
 
-function getTodayInTimezone(timezone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-
-  const year = parts.find((part) => part.type === 'year')?.value;
-  const month = parts.find((part) => part.type === 'month')?.value;
-  const day = parts.find((part) => part.type === 'day')?.value;
-
-  return `${year}-${month}-${day}`;
-}
-
-function isEventPast(event: Event, timezone: string): boolean {
-  return event.date < getTodayInTimezone(timezone);
+function isEventPast(event: Event): boolean {
+  const now = new Date();
+  const eventEnd = new Date(`${event.date}T${event.end_time}`);
+  return now > eventEnd;
 }
 
 export default function ProducerPage() {
@@ -140,17 +126,12 @@ export default function ProducerPage() {
   }, [eventIds.join(','), refetchBookings]);
 
   // Only show events within the producer's chosen window
-  const producerTz = producer?.timezone || 'America/Los_Angeles';
-  const todayStr = getTodayInTimezone(producerTz);
-  const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
   const windowDays = producer?.event_window_days ?? 7;
-  const windowEnd = new Date(todayYear, todayMonth - 1, todayDay);
+  const windowEnd = new Date();
   windowEnd.setDate(windowEnd.getDate() + windowDays);
-
   const currentEvents = (events || []).filter(e => {
-    if (isEventPast(e, producerTz)) return false;
-    const [y, m, d] = e.date.split('-').map(Number);
-    const eventDate = new Date(y, m - 1, d);
+    if (isEventPast(e)) return false;
+    const eventDate = new Date(e.date);
     return eventDate <= windowEnd;
   });
   const eventDates = currentEvents.length > 0

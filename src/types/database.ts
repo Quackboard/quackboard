@@ -9,7 +9,6 @@ export interface Producer {
   instagram: string | null;
   website: string | null;
   event_window_days: number;
-  timezone: string | null;
 }
 
 export interface Section {
