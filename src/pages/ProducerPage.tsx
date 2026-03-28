@@ -141,14 +141,14 @@ export default function ProducerPage() {
 
   // Only show events within the producer's chosen window
   const producerTz = producer?.timezone || 'America/Los_Angeles';
-  const nowInTz = toZonedTime(new Date(), producerTz);
+  const todayStr = getTodayInTimezone(producerTz);
+  const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
   const windowDays = producer?.event_window_days ?? 7;
-  const windowEnd = new Date(nowInTz);
+  const windowEnd = new Date(todayYear, todayMonth - 1, todayDay);
   windowEnd.setDate(windowEnd.getDate() + windowDays);
 
   const currentEvents = (events || []).filter(e => {
     if (isEventPast(e, producerTz)) return false;
-    // Parse event date as local numbers to avoid UTC off-by-one
     const [y, m, d] = e.date.split('-').map(Number);
     const eventDate = new Date(y, m - 1, d);
     return eventDate <= windowEnd;
