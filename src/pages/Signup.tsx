@@ -8,6 +8,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Lock } from 'lucide-react';
+import LogoFull from '@/assets/logo-full.png';
 import {
   Dialog,
   DialogContent,
