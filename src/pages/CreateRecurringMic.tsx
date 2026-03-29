@@ -372,7 +372,7 @@ export default function CreateRecurringMic() {
           return {
             producer_id: user.id,
             title: data.title,
-            description: data.description || null,
+            producer_message: data.producerMessage || null,
             venue_name: data.venueName,
             venue_address: data.venueAddress,
             start_time: data.startTime,
