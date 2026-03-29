@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
-import { CalendarIcon, Plus, Trash2, Loader2, ArrowLeft, Zap } from 'lucide-react';
+import { format, addDays, startOfDay, getDay, getDate, setDate, setDay, isBefore, isAfter, startOfMonth, addMonths, lastDayOfMonth } from 'date-fns';
+import { CalendarIcon, Plus, Trash2, Loader2, ArrowLeft, Zap, ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,9 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const OCCURRENCE_LABELS = ['1st', '2nd', '3rd', '4th', 'Last'];
+const DATE_NUMBERS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 const sectionSchema = z.object({
   label: z.string(),
@@ -61,25 +65,133 @@ const formSchema = z.object({
   endTime: z.string().min(1, 'End time is required'),
   sections: z.array(sectionSchema).min(1, 'At least one section required'),
   allowMultipleSlots: z.boolean(),
-  signupOpensHoursBefore: z.number().min(0).optional(),
   recurrenceEndDate: z.date().optional(),
   isActive: z.boolean(),
-  // Recurrence rule fields
-  frequency: z.enum(['weekly', 'biweekly', 'monthly']),
-  interval: z.number().min(1),
-  days: z.array(z.number()).min(1, 'Select at least one day'),
-  // Signup anchor
-  signupAnchorDay: z.number().min(0).max(6).optional(),
-  signupAnchorTime: z.string().optional(),
+  // Frequency
+  frequency: z.enum(['every_week', 'every_other_week', 'monthly_by_date', 'monthly_by_day', 'hourly']),
+  // Weekly/biweekly/hourly day picks
+  days: z.array(z.number()).optional(),
+  // Monthly by date
+  monthlyDate: z.number().min(1).max(31).optional(),
+  // Monthly by day
+  monthlyOccurrence: z.enum(['1', '2', '3', '4', 'last']).optional(),
+  monthlyDayOfWeek: z.number().min(0).max(6).optional(),
+  // Hourly fields
+  hourlyStartTime: z.string().optional(),
+  hourlyEndTime: z.string().optional(),
+  hourlyDurationMinutes: z.number().min(1).optional(),
+  // Signup anchor mode
+  signupMode: z.enum(['rolling', 'fixed']),
+  signupRollingHours: z.number().min(0).optional(),
+  signupFixedDay: z.number().min(0).max(6).optional(),
+  signupFixedTime: z.string().optional(),
 }).refine((data) => {
   if (!data.startTime || !data.endTime) return true;
   return data.startTime < data.endTime;
 }, {
   message: 'End time must be after start time',
   path: ['endTime'],
+}).refine((data) => {
+  if (['every_week', 'every_other_week', 'hourly'].includes(data.frequency)) {
+    return data.days && data.days.length > 0;
+  }
+  return true;
+}, {
+  message: 'Select at least one day',
+  path: ['days'],
+}).refine((data) => {
+  if (data.frequency === 'monthly_by_date') {
+    return data.monthlyDate !== undefined;
+  }
+  return true;
+}, {
+  message: 'Select a date',
+  path: ['monthlyDate'],
+}).refine((data) => {
+  if (data.frequency === 'monthly_by_day') {
+    return data.monthlyOccurrence !== undefined && data.monthlyDayOfWeek !== undefined;
+  }
+  return true;
+}, {
+  message: 'Select occurrence and day',
+  path: ['monthlyDayOfWeek'],
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+// ── Date generation helpers ──
+
+function generateWeeklyDates(days: number[], startDate: Date, endDate: Date, everyOther: boolean): Date[] {
+  const dates: Date[] = [];
+  let current = startOfDay(startDate);
+  let weekCount = 0;
+  const firstDayOfRange = current;
+
+  while (isBefore(current, endDate) || current.getTime() === endDate.getTime()) {
+    const dayOfWeek = getDay(current);
+    if (days.includes(dayOfWeek)) {
+      // For every_other_week, calculate which week we're in relative to start
+      if (everyOther) {
+        const diffDays = Math.floor((current.getTime() - firstDayOfRange.getTime()) / (1000 * 60 * 60 * 24));
+        const weekNum = Math.floor(diffDays / 7);
+        if (weekNum % 2 === 0) {
+          dates.push(new Date(current));
+        }
+      } else {
+        dates.push(new Date(current));
+      }
+    }
+    current = addDays(current, 1);
+  }
+  return dates;
+}
+
+function generateMonthlyByDateDates(dateNum: number, startDate: Date, endDate: Date): Date[] {
+  const dates: Date[] = [];
+  let current = startOfMonth(startDate);
+  for (let i = 0; i < 3; i++) {
+    const month = addMonths(current, i);
+    const lastDay = getDate(lastDayOfMonth(month));
+    const targetDate = dateNum > lastDay ? lastDay : dateNum;
+    const d = setDate(month, targetDate);
+    if ((isAfter(d, startDate) || d.getTime() === startDate.getTime()) && isBefore(d, endDate)) {
+      dates.push(d);
+    }
+  }
+  return dates;
+}
+
+function getNthDayOfMonth(year: number, month: number, dayOfWeek: number, occurrence: string): Date | null {
+  const firstOfMonth = new Date(year, month, 1);
+  let first = setDay(firstOfMonth, dayOfWeek, { weekStartsOn: 0 });
+  if (isBefore(first, firstOfMonth)) first = addDays(first, 7);
+
+  if (occurrence === 'last') {
+    const last = lastDayOfMonth(firstOfMonth);
+    let d = first;
+    while (addDays(d, 7).getTime() <= last.getTime()) d = addDays(d, 7);
+    return d;
+  }
+  const n = parseInt(occurrence) - 1;
+  const result = addDays(first, n * 7);
+  if (result.getMonth() !== month) return null;
+  return result;
+}
+
+function generateMonthlyByDayDates(occurrence: string, dayOfWeek: number, startDate: Date, endDate: Date): Date[] {
+  const dates: Date[] = [];
+  const startMonth = startDate.getMonth();
+  const startYear = startDate.getFullYear();
+  for (let i = 0; i < 3; i++) {
+    const m = (startMonth + i) % 12;
+    const y = startYear + Math.floor((startMonth + i) / 12);
+    const d = getNthDayOfMonth(y, m, dayOfWeek, occurrence);
+    if (d && (isAfter(d, startDate) || d.getTime() === startDate.getTime()) && isBefore(d, endDate)) {
+      dates.push(d);
+    }
+  }
+  return dates;
+}
 
 export default function CreateRecurringMic() {
   const { user } = useAuth();
@@ -89,6 +201,7 @@ export default function CreateRecurringMic() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const { data: producer } = useQuery({
     queryKey: ['producer-profile', user?.id],
@@ -115,13 +228,19 @@ export default function CreateRecurringMic() {
       endTime: '',
       sections: [{ label: '', slots: 10 }],
       allowMultipleSlots: false,
-      signupOpensHoursBefore: 48,
       isActive: true,
-      frequency: 'weekly',
-      interval: 1,
+      frequency: 'every_week',
       days: [],
-      signupAnchorDay: undefined,
-      signupAnchorTime: '',
+      monthlyDate: undefined,
+      monthlyOccurrence: undefined,
+      monthlyDayOfWeek: undefined,
+      hourlyStartTime: '',
+      hourlyEndTime: '',
+      hourlyDurationMinutes: 60,
+      signupMode: 'rolling',
+      signupRollingHours: 48,
+      signupFixedDay: undefined,
+      signupFixedTime: '',
     },
   });
 
@@ -148,8 +267,10 @@ export default function CreateRecurringMic() {
     name: 'sections',
   });
 
-  const watchDays = watch('days');
+  const watchDays = watch('days') || [];
   const watchRecurrenceEndDate = watch('recurrenceEndDate');
+  const watchFrequency = watch('frequency');
+  const watchSignupMode = watch('signupMode');
 
   const onSubmit = async (data: FormData) => {
     if (!user) return;
@@ -169,13 +290,24 @@ export default function CreateRecurringMic() {
         return { label: s.label, slots: s.slots };
       });
 
-      const recurrenceRule = {
+      const recurrenceRule: Record<string, any> = {
         frequency: data.frequency,
-        interval: data.interval,
-        days: data.days,
+        days: data.days || [],
       };
+      if (data.frequency === 'monthly_by_date') {
+        recurrenceRule.monthly_date = data.monthlyDate;
+      }
+      if (data.frequency === 'monthly_by_day') {
+        recurrenceRule.monthly_occurrence = data.monthlyOccurrence;
+        recurrenceRule.monthly_day_of_week = data.monthlyDayOfWeek;
+      }
+      if (data.frequency === 'hourly') {
+        recurrenceRule.hourly_start_time = data.hourlyStartTime;
+        recurrenceRule.hourly_end_time = data.hourlyEndTime;
+        recurrenceRule.hourly_duration_minutes = data.hourlyDurationMinutes;
+      }
 
-      // Build the insert payload - using type assertion because types.ts is stale
+      // Build template insert payload
       const insertPayload: Record<string, any> = {
         producer_id: user.id,
         title: data.title,
@@ -186,21 +318,83 @@ export default function CreateRecurringMic() {
         end_time: data.endTime,
         sections_config: sectionsConfig,
         allow_multiple_slots: data.allowMultipleSlots,
-        signup_opens_hours_before: data.signupOpensHoursBefore ?? 48,
+        signup_opens_hours_before: data.signupMode === 'rolling' ? (data.signupRollingHours ?? 48) : null,
         recurrence_end_date: data.recurrenceEndDate ? format(data.recurrenceEndDate, 'yyyy-MM-dd') : null,
         is_active: data.isActive,
         recurrence_rule: recurrenceRule,
-        signup_anchor_day: data.signupAnchorDay ?? null,
-        signup_anchor_time: data.signupAnchorTime || null,
+        signup_anchor_day: data.signupMode === 'fixed' ? (data.signupFixedDay ?? null) : null,
+        signup_anchor_time: data.signupMode === 'fixed' ? (data.signupFixedTime || null) : null,
       };
 
-      const { error } = await (supabase.from('event_templates') as any).insert(insertPayload);
+      const { data: templateData, error: templateError } = await (supabase.from('event_templates') as any)
+        .insert(insertPayload)
+        .select('id, series_id')
+        .single();
 
-      if (error) throw error;
+      if (templateError) throw templateError;
+
+      // ── Generate events for the next 30 days ──
+      const today = startOfDay(new Date());
+      const thirtyDaysOut = addDays(today, 30);
+      let eventDates: Date[] = [];
+
+      switch (data.frequency) {
+        case 'every_week':
+          eventDates = generateWeeklyDates(data.days || [], today, thirtyDaysOut, false);
+          break;
+        case 'every_other_week':
+          eventDates = generateWeeklyDates(data.days || [], today, thirtyDaysOut, true);
+          break;
+        case 'monthly_by_date':
+          eventDates = generateMonthlyByDateDates(data.monthlyDate!, today, thirtyDaysOut);
+          break;
+        case 'monthly_by_day':
+          eventDates = generateMonthlyByDayDates(data.monthlyOccurrence!, data.monthlyDayOfWeek!, today, thirtyDaysOut);
+          break;
+        case 'hourly':
+          // For hourly, generate one event per matching day (the hourly slots are within a single event)
+          eventDates = generateWeeklyDates(data.days || [], today, thirtyDaysOut, false);
+          break;
+      }
+
+      if (eventDates.length > 0) {
+        const eventsToInsert = eventDates.map(d => {
+          const eventDate = format(d, 'yyyy-MM-dd');
+
+          // Calculate signup_opens_at based on mode
+          let signupOpensAt: string | null = null;
+          if (data.signupMode === 'rolling' && data.signupRollingHours) {
+            const eventDateTime = new Date(`${eventDate}T${data.startTime}`);
+            signupOpensAt = new Date(eventDateTime.getTime() - data.signupRollingHours * 60 * 60 * 1000).toISOString();
+          }
+          // For fixed mode, signup_opens_at would need more complex weekly logic — stored on template for now
+
+          return {
+            producer_id: user.id,
+            title: data.title,
+            description: data.description || null,
+            venue_name: data.venueName,
+            venue_address: data.venueAddress,
+            start_time: data.startTime,
+            end_time: data.endTime,
+            date: eventDate,
+            sections_config: sectionsConfig,
+            allow_multiple_slots: data.allowMultipleSlots,
+            status: 'published',
+            is_info_only: false,
+            template_id: templateData.id,
+            series_id: templateData.series_id,
+            signup_opens_at: signupOpensAt,
+          };
+        });
+
+        const { error: eventsError } = await supabase.from('events').insert(eventsToInsert);
+        if (eventsError) throw eventsError;
+      }
 
       toast({
-        title: 'Recurring mic template created!',
-        description: 'Your recurring mic has been saved.',
+        title: 'Recurring mic created!',
+        description: `Template saved and ${eventDates.length} show${eventDates.length !== 1 ? 's' : ''} created for the next 30 days.`,
       });
 
       setShowSuccess(true);
@@ -229,7 +423,7 @@ export default function CreateRecurringMic() {
         <div className="text-center space-y-6">
           <div className="text-4xl">🎤</div>
           <h1 className="text-2xl font-semibold text-foreground">Recurring mic created!</h1>
-          <p className="text-muted-foreground">Your template has been saved and events will be generated from it.</p>
+          <p className="text-muted-foreground">Your template has been saved and shows have been created for the next 30 days.</p>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
             <Button variant="outline" onClick={() => navigate('/create')}>Create Another</Button>
@@ -396,49 +590,193 @@ export default function CreateRecurringMic() {
           </div>
         </section>
 
-        {/* Recurrence Rule */}
+        {/* Recurrence Schedule */}
         <section className="space-y-4">
           <h2 className="text-lg font-medium text-foreground">Recurrence Schedule</h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Frequency *</Label>
-              <Select value={watch('frequency')} onValueChange={(val) => setValue('frequency', val as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="biweekly">Biweekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="interval">Every N occurrences</Label>
-              <Input id="interval" type="number" min={1} {...register('interval', { valueAsNumber: true })} />
-            </div>
+          <div className="space-y-2">
+            <Label>Frequency *</Label>
+            <Select value={watchFrequency} onValueChange={(val) => setValue('frequency', val as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="every_week">Every week</SelectItem>
+                <SelectItem value="every_other_week">Every other week</SelectItem>
+                <SelectItem value="monthly_by_date">Monthly by date</SelectItem>
+                <SelectItem value="monthly_by_day">Monthly by day</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Days of the week *</Label>
-            <div className="flex flex-wrap gap-3">
-              {DAY_NAMES.map((day, i) => (
-                <label key={i} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={watchDays.includes(i)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setValue('days', [...watchDays, i].sort());
-                      } else {
-                        setValue('days', watchDays.filter(d => d !== i));
-                      }
-                    }}
-                  />
-                  {day.slice(0, 3)}
-                </label>
-              ))}
+          {/* Day picker for weekly / every other week */}
+          {(watchFrequency === 'every_week' || watchFrequency === 'every_other_week') && (
+            <div className="space-y-2">
+              <Label>Days *</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAY_NAMES.map((day, i) => {
+                  const selected = watchDays.includes(i);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        if (selected) {
+                          setValue('days', watchDays.filter(d => d !== i));
+                        } else {
+                          setValue('days', [...watchDays, i].sort());
+                        }
+                      }}
+                      className={cn(
+                        'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                        selected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-foreground border-border hover:bg-accent'
+                      )}
+                    >
+                      {DAY_SHORT[i]}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-sm text-muted-foreground">Select all days this mic runs.</p>
+              {errors.days && <p className="text-sm text-destructive">{errors.days.message}</p>}
             </div>
-            {errors.days && <p className="text-sm text-destructive">{errors.days.message}</p>}
-          </div>
+          )}
+
+          {/* Monthly by date */}
+          {watchFrequency === 'monthly_by_date' && (
+            <div className="space-y-2">
+              <Label>Day of the month *</Label>
+              <Select
+                value={watch('monthlyDate')?.toString() ?? ''}
+                onValueChange={(val) => setValue('monthlyDate', parseInt(val))}
+              >
+                <SelectTrigger><SelectValue placeholder="Select date" /></SelectTrigger>
+                <SelectContent>
+                  {DATE_NUMBERS.map(n => (
+                    <SelectItem key={n} value={n.toString()}>
+                      {n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="last">Last day</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Example: "Every 1st of the month."</p>
+              {errors.monthlyDate && <p className="text-sm text-destructive">{errors.monthlyDate.message}</p>}
+            </div>
+          )}
+
+          {/* Monthly by day */}
+          {watchFrequency === 'monthly_by_day' && (
+            <div className="space-y-2">
+              <Label>Occurrence and day *</Label>
+              <div className="flex gap-3">
+                <Select
+                  value={watch('monthlyOccurrence') ?? ''}
+                  onValueChange={(val) => setValue('monthlyOccurrence', val as any)}
+                >
+                  <SelectTrigger className="w-28"><SelectValue placeholder="Which" /></SelectTrigger>
+                  <SelectContent>
+                    {OCCURRENCE_LABELS.map((label, i) => (
+                      <SelectItem key={label} value={i < 4 ? (i + 1).toString() : 'last'}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={watch('monthlyDayOfWeek')?.toString() ?? ''}
+                  onValueChange={(val) => setValue('monthlyDayOfWeek', parseInt(val))}
+                >
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Day" /></SelectTrigger>
+                  <SelectContent>
+                    {DAY_NAMES.map((day, i) => (
+                      <SelectItem key={i} value={i.toString()}>{day}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-sm text-muted-foreground">Example: "Every 2nd Tuesday."</p>
+              {errors.monthlyDayOfWeek && <p className="text-sm text-destructive">{errors.monthlyDayOfWeek.message}</p>}
+            </div>
+          )}
+
+          {/* Advanced — Hourly */}
+          <Collapsible open={showAdvanced || watchFrequency === 'hourly'} onOpenChange={setShowAdvanced}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                <ChevronDown className={cn('h-4 w-4 transition-transform', (showAdvanced || watchFrequency === 'hourly') && 'rotate-180')} />
+                Advanced
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setValue('frequency', watchFrequency === 'hourly' ? 'every_week' : 'hourly')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                    watchFrequency === 'hourly'
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-foreground border-border hover:bg-accent'
+                  )}
+                >
+                  Hourly
+                </button>
+              </div>
+
+              {watchFrequency === 'hourly' && (
+                <div className="space-y-4 pl-2 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label>Days *</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {DAY_NAMES.map((day, i) => {
+                        const selected = watchDays.includes(i);
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              if (selected) {
+                                setValue('days', watchDays.filter(d => d !== i));
+                              } else {
+                                setValue('days', [...watchDays, i].sort());
+                              }
+                            }}
+                            className={cn(
+                              'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                              selected
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background text-foreground border-border hover:bg-accent'
+                            )}
+                          >
+                            {DAY_SHORT[i]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Select all days this mic runs.</p>
+                    {errors.days && <p className="text-sm text-destructive">{errors.days.message}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>Window start</Label>
+                      <Input type="time" {...register('hourlyStartTime')} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Window end</Label>
+                      <Input type="time" {...register('hourlyEndTime')} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Every (min)</Label>
+                      <Input type="number" min={1} {...register('hourlyDurationMinutes', { valueAsNumber: true })} />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Example: "Every Monday through Friday from 6pm to 10pm, every 60 minutes."
+                  </p>
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
 
           <div className="space-y-2">
             <Label>Recurrence End Date (optional)</Label>
@@ -463,30 +801,64 @@ export default function CreateRecurringMic() {
         <section className="space-y-4">
           <h2 className="text-lg font-medium text-foreground">Signup Scheduling</h2>
 
-          <div className="space-y-2">
-            <Label htmlFor="signupOpensHoursBefore">Sign-ups open hours before event</Label>
-            <Input id="signupOpensHoursBefore" type="number" min={0} {...register('signupOpensHoursBefore', { valueAsNumber: true })} />
-            <p className="text-sm text-muted-foreground">How many hours before the event sign-ups open (default 48)</p>
-          </div>
+          <div className="space-y-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="signupMode"
+                value="rolling"
+                checked={watchSignupMode === 'rolling'}
+                onChange={() => setValue('signupMode', 'rolling')}
+                className="mt-1"
+              />
+              <div className="space-y-2 flex-1">
+                <span className="text-sm font-medium text-foreground">Rolling</span>
+                <p className="text-sm text-muted-foreground">Sign-ups open a set number of hours before each show.</p>
+                {watchSignupMode === 'rolling' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Sign-ups open</span>
+                    <Input type="number" min={0} className="w-20" {...register('signupRollingHours', { valueAsNumber: true })} />
+                    <span className="text-sm text-muted-foreground">hours before each show.</span>
+                  </div>
+                )}
+              </div>
+            </label>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Signup anchor day (optional)</Label>
-              <Select value={watch('signupAnchorDay')?.toString() ?? ''} onValueChange={(val) => setValue('signupAnchorDay', val ? parseInt(val) : undefined)}>
-                <SelectTrigger><SelectValue placeholder="Select day" /></SelectTrigger>
-                <SelectContent>
-                  {DAY_NAMES.map((day, i) => (
-                    <SelectItem key={i} value={i.toString()}>{day}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">The specific day of week sign-ups open</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="signupAnchorTime">Signup anchor time (optional)</Label>
-              <Input id="signupAnchorTime" type="time" {...register('signupAnchorTime')} />
-              <p className="text-sm text-muted-foreground">The specific time sign-ups open on anchor day</p>
-            </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="signupMode"
+                value="fixed"
+                checked={watchSignupMode === 'fixed'}
+                onChange={() => setValue('signupMode', 'fixed')}
+                className="mt-1"
+              />
+              <div className="space-y-2 flex-1">
+                <span className="text-sm font-medium text-foreground">Fixed</span>
+                <p className="text-sm text-muted-foreground">Sign-ups open on a specific day and time each week.</p>
+                {watchSignupMode === 'fixed' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Sign-ups open every</span>
+                      <Select
+                        value={watch('signupFixedDay')?.toString() ?? ''}
+                        onValueChange={(val) => setValue('signupFixedDay', parseInt(val))}
+                      >
+                        <SelectTrigger className="w-32"><SelectValue placeholder="Day" /></SelectTrigger>
+                        <SelectContent>
+                          {DAY_NAMES.map((day, i) => (
+                            <SelectItem key={i} value={i.toString()}>{day}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-muted-foreground">at</span>
+                      <Input type="time" className="w-32" {...register('signupFixedTime')} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Sign-ups will open for that week's show only, not all future shows.</p>
+                  </div>
+                )}
+              </div>
+            </label>
           </div>
         </section>
 
@@ -502,11 +874,16 @@ export default function CreateRecurringMic() {
         </section>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Template'}
-          </Button>
+        <div className="space-y-3 pt-4">
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Recurring Mic'}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            We'll create your shows for the next 30 days. Come back in a month to add more.
+          </p>
         </div>
       </form>
 
