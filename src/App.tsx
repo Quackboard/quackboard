@@ -13,6 +13,8 @@ import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import CreateMic from "./pages/CreateMic";
+import CreateSingleMic from "./pages/CreateSingleMic";
+import CreateRecurringMic from "./pages/CreateRecurringMic";
 import EditMic from "./pages/EditMic";
 import DuplicateMic from "./pages/DuplicateMic";
 import EventLineup from "./pages/EventLineup";
