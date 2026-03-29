@@ -230,6 +230,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           producer_id: string | null
+          producer_message: string | null
           publish_at: string | null
           recurrence_end_date: string | null
           recurrence_rule: Json | null
@@ -251,6 +252,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           producer_id?: string | null
+          producer_message?: string | null
           publish_at?: string | null
           recurrence_end_date?: string | null
           recurrence_rule?: Json | null
@@ -272,6 +274,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           producer_id?: string | null
+          producer_message?: string | null
           publish_at?: string | null
           recurrence_end_date?: string | null
           recurrence_rule?: Json | null

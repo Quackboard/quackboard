@@ -58,7 +58,7 @@ const sectionSchema = z.object({
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
+  producerMessage: z.string().optional(),
   venueName: z.string().min(1, 'Venue name is required'),
   venueAddress: z.string().min(1, 'Venue address is required'),
   startTime: z.string().min(1, 'Start time is required'),
@@ -221,7 +221,7 @@ export default function CreateRecurringMic() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      description: '',
+      producerMessage: '',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
       startTime: '',
@@ -311,7 +311,7 @@ export default function CreateRecurringMic() {
       const insertPayload: Record<string, any> = {
         producer_id: user.id,
         title: data.title,
-        description: data.description || null,
+        producer_message: data.producerMessage || null,
         venue_name: data.venueName,
         venue_address: data.venueAddress,
         start_time: data.startTime,
@@ -372,7 +372,7 @@ export default function CreateRecurringMic() {
           return {
             producer_id: user.id,
             title: data.title,
-            description: data.description || null,
+            producer_message: data.producerMessage || null,
             venue_name: data.venueName,
             venue_address: data.venueAddress,
             start_time: data.startTime,
@@ -454,14 +454,15 @@ export default function CreateRecurringMic() {
           </div>
 
           <div className="space-y-2">
-            <Label>Description (optional)</Label>
+            <Label>Additional Info (optional)</Label>
             <Controller
-              name="description"
+              name="producerMessage"
               control={control}
               render={({ field }) => (
-                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Details about this recurring mic..." />
+                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Details shown to comics after they sign up..." />
               )}
             />
+            <p className="text-sm text-muted-foreground">This message will be shown to comics after they book a spot.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
