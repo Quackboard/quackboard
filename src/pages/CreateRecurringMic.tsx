@@ -454,14 +454,15 @@ export default function CreateRecurringMic() {
           </div>
 
           <div className="space-y-2">
-            <Label>Description (optional)</Label>
+            <Label>Additional Info (optional)</Label>
             <Controller
-              name="description"
+              name="producerMessage"
               control={control}
               render={({ field }) => (
-                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Details about this recurring mic..." />
+                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Details shown to comics after they sign up..." />
               )}
             />
+            <p className="text-sm text-muted-foreground">This message will be shown to comics after they book a spot.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
