@@ -58,7 +58,7 @@ const sectionSchema = z.object({
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
+  producerMessage: z.string().optional(),
   venueName: z.string().min(1, 'Venue name is required'),
   venueAddress: z.string().min(1, 'Venue address is required'),
   startTime: z.string().min(1, 'Start time is required'),
