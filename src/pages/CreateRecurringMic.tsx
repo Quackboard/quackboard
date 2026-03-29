@@ -221,7 +221,7 @@ export default function CreateRecurringMic() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      description: '',
+      producerMessage: '',
       venueName: producer?.venue_name || '',
       venueAddress: producer?.venue_address || '',
       startTime: '',
