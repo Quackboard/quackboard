@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_name: string
+          bio_markdown: string | null
+          created_at: string | null
+          discoverable: boolean | null
+          event_window_days: number | null
+          header_image_url: string | null
+          id: string
+          instagram: string | null
+          plan_tier: string | null
+          profile_image_url: string | null
+          slug: string
+          updated_at: string | null
+          venue_address: string | null
+          venue_name: string | null
+          website: string | null
+        }
+        Insert: {
+          account_name: string
+          bio_markdown?: string | null
+          created_at?: string | null
+          discoverable?: boolean | null
+          event_window_days?: number | null
+          header_image_url?: string | null
+          id?: string
+          instagram?: string | null
+          plan_tier?: string | null
+          profile_image_url?: string | null
+          slug: string
+          updated_at?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+          website?: string | null
+        }
+        Update: {
+          account_name?: string
+          bio_markdown?: string | null
+          created_at?: string | null
+          discoverable?: boolean | null
+          event_window_days?: number | null
+          header_image_url?: string | null
+          id?: string
+          instagram?: string | null
+          plan_tier?: string | null
+          profile_image_url?: string | null
+          slug?: string
+          updated_at?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      accounts_users: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_users_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_access_codes: {
         Row: {
           code: string
@@ -148,11 +231,12 @@ export type Database = {
           is_active: boolean | null
           producer_id: string | null
           publish_at: string | null
-          recurrence_day: number | null
           recurrence_end_date: string | null
-          recurrence_pattern: string
+          recurrence_rule: Json | null
           sections_config: Json
           series_id: string
+          signup_anchor_day: number | null
+          signup_anchor_time: string | null
           signup_opens_hours_before: number | null
           start_time: string
           title: string
@@ -168,11 +252,12 @@ export type Database = {
           is_active?: boolean | null
           producer_id?: string | null
           publish_at?: string | null
-          recurrence_day?: number | null
           recurrence_end_date?: string | null
-          recurrence_pattern: string
+          recurrence_rule?: Json | null
           sections_config?: Json
           series_id?: string
+          signup_anchor_day?: number | null
+          signup_anchor_time?: string | null
           signup_opens_hours_before?: number | null
           start_time: string
           title: string
@@ -188,11 +273,12 @@ export type Database = {
           is_active?: boolean | null
           producer_id?: string | null
           publish_at?: string | null
-          recurrence_day?: number | null
           recurrence_end_date?: string | null
-          recurrence_pattern?: string
+          recurrence_rule?: Json | null
           sections_config?: Json
           series_id?: string
+          signup_anchor_day?: number | null
+          signup_anchor_time?: string | null
           signup_opens_hours_before?: number | null
           start_time?: string
           title?: string

@@ -13,6 +13,8 @@ import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import CreateMic from "./pages/CreateMic";
+import CreateSingleMic from "./pages/CreateSingleMic";
+import CreateRecurringMic from "./pages/CreateRecurringMic";
 import EditMic from "./pages/EditMic";
 import DuplicateMic from "./pages/DuplicateMic";
 import EventLineup from "./pages/EventLineup";
@@ -47,6 +49,8 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateMic /></ProtectedRoute>} />
+            <Route path="/create/singlemic" element={<ProtectedRoute><CreateSingleMic /></ProtectedRoute>} />
+            <Route path="/create/recurringmic" element={<ProtectedRoute><CreateRecurringMic /></ProtectedRoute>} />
             <Route path="/events/:id/edit" element={<ProtectedRoute><EditMic /></ProtectedRoute>} />
             <Route path="/events/:id/duplicate" element={<ProtectedRoute><DuplicateMic /></ProtectedRoute>} />
             <Route path="/events/:id/lineup" element={<ProtectedRoute><EventLineup /></ProtectedRoute>} />
