@@ -263,23 +263,12 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <a
-            href={producerPageUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex text-sm text-muted-foreground hover:text-foreground items-center gap-1"
-          >
-            View My Page
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <Button asChild size="sm" className="w-full sm:w-auto">
-            <Link to="/create">
-              <Plus className="h-4 w-4 mr-1" />
-              Create Mic
-            </Link>
-          </Button>
-        </div>
+        <Button asChild size="sm" className="w-full sm:w-auto">
+          <Link to="/create">
+            <Plus className="h-4 w-4 mr-1" />
+            Create Mic
+          </Link>
+        </Button>
       </div>
 
       {/* Your Mics Section */}
