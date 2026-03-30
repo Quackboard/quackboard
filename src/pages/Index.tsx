@@ -44,12 +44,6 @@ export default function Index() {
           <span className="text-xl font-bold text-foreground">Quackboard</span>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
-              <Link to="/browse">
-                <Search className="h-4 w-4 mr-1" />
-                Browse Mics
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild>
               <Link to="/login">Log in</Link>
             </Button>
             <Button asChild>
