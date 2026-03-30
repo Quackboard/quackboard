@@ -6,14 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
+import { UpcomingEventCard } from '@/components/dashboard/UpcomingEventCard';
 import { CalendarDashboard } from '@/components/dashboard/CalendarDashboard';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EmbedSection } from '@/components/embed/EmbedSection';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { format, parseISO } from 'date-fns';
 
 interface EventWithBookings {
   id: string;
@@ -30,16 +32,19 @@ interface EventWithBookings {
   bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
+interface EventAvailability {
+  event_id: string;
+  total_slots: number;
+  booked_count: number;
+}
+
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { slug, isLoading: slugLoading } = useProducerSlug();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  // State for toggling between the main 'list' view and 'calendar' layout
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  // Specific view perspective for the calendar: performance date vs creation date
   const [calendarViewType, setCalendarViewType] = useState<'event_date' | 'created_date'>('event_date');
-  // Specific view perspective for the list: upcoming or past events
   const [listViewType, setListViewType] = useState<'upcoming' | 'past'>('upcoming');
   const isMobile = useIsMobile();
 
@@ -49,77 +54,136 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('events')
         .select(`
-          id,
-          title,
-          date,
-          created_at,
-          start_time,
-          end_time,
-          venue_name,
-          sections_config,
-          status,
-          publish_at,
-          signup_opens_at,
+          id, title, date, created_at, start_time, end_time, venue_name,
+          sections_config, status, publish_at, signup_opens_at,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
         .order('date', { ascending: true });
-
       if (error) throw error;
       return data as EventWithBookings[];
     },
     enabled: !!user?.id && viewMode === 'calendar',
   });
 
-  // Use local date, not UTC, to match how event dates are stored
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const nowTime = now.toTimeString().slice(0, 5);
 
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ['producer-events', user?.id, listViewType],
+  // Upcoming events query
+  const { data: upcomingEvents, isLoading: upcomingLoading } = useQuery({
+    queryKey: ['producer-events-upcoming', user?.id],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('events')
         .select(`
-          id,
-          title,
-          date,
-          created_at,
-          start_time,
-          end_time,
-          venue_name,
-          sections_config,
-          status,
-          publish_at,
-          signup_opens_at,
+          id, title, date, created_at, start_time, end_time, venue_name,
+          sections_config, status, publish_at, signup_opens_at,
           bookings (id, slot_position, cancelled_at)
         `)
-        .eq('producer_id', user!.id);
-
-      // Use date+end_time combined to correctly classify events:
-      // An event that ends at 14:00 today is already past, not upcoming
-      const nowISO = new Date().toISOString();
-      const nowTime = new Date().toTimeString().slice(0, 5); // HH:mm
-      if (listViewType === 'upcoming') {
-        // Upcoming: future dates OR today with end_time after now
-        query = query
-          .or(`date.gt.${today},and(date.eq.${today},end_time.gte.${nowTime})`)
-          .order('date', { ascending: true });
-      } else {
-        // Past: past dates OR today with end_time before now
-        query = query
-          .or(`date.lt.${today},and(date.eq.${today},end_time.lt.${nowTime})`)
-          .order('date', { ascending: false });
-      }
-
-      const { data, error } = await query;
+        .eq('producer_id', user!.id)
+        .or(`date.gt.${today},and(date.eq.${today},end_time.gte.${nowTime})`)
+        .order('date', { ascending: true });
       if (error) throw error;
       return data as EventWithBookings[];
     },
-    enabled: !!user?.id && viewMode === 'list',
+    enabled: !!user?.id && viewMode === 'list' && listViewType === 'upcoming',
   });
 
+  // Past events query
+  const { data: pastEvents, isLoading: pastLoading } = useQuery({
+    queryKey: ['producer-events-past', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          id, title, date, created_at, start_time, end_time, venue_name,
+          sections_config, status, publish_at, signup_opens_at,
+          bookings (id, slot_position, cancelled_at)
+        `)
+        .eq('producer_id', user!.id)
+        .or(`date.lt.${today},and(date.eq.${today},end_time.lt.${nowTime})`)
+        .order('date', { ascending: false });
+      if (error) throw error;
+      return data as EventWithBookings[];
+    },
+    enabled: !!user?.id && viewMode === 'list' && listViewType === 'past',
+  });
 
+  // Fetch availability from the view for upcoming events
+  const upcomingEventIds = upcomingEvents?.map(e => e.id) ?? [];
+  const { data: availabilityData } = useQuery({
+    queryKey: ['event-availability', upcomingEventIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_availability')
+        .select('event_id, total_slots, booked_count')
+        .in('event_id', upcomingEventIds);
+      if (error) throw error;
+      return data as EventAvailability[];
+    },
+    enabled: upcomingEventIds.length > 0,
+  });
+
+  const availabilityMap = useMemo(() => {
+    const map = new Map<string, { total_slots: number; booked_count: number }>();
+    availabilityData?.forEach(a => {
+      map.set(a.event_id, { total_slots: a.total_slots, booked_count: a.booked_count });
+    });
+    return map;
+  }, [availabilityData]);
+
+  // Categorize upcoming events into three sections
+  const { happeningNow, openingSoon, grouped } = useMemo(() => {
+    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], grouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
+
+    const currentTime = new Date();
+    const currentTimeStr = currentTime.toTimeString().slice(0, 5);
+    const todayStr = `${currentTime.getFullYear()}-${String(currentTime.getMonth() + 1).padStart(2, '0')}-${String(currentTime.getDate()).padStart(2, '0')}`;
+    const in24h = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
+
+    const happeningNowArr: EventWithBookings[] = [];
+    const openingSoonArr: EventWithBookings[] = [];
+    const remainingArr: EventWithBookings[] = [];
+
+    for (const event of upcomingEvents) {
+      const isToday = event.date === todayStr;
+      const isNowRunning = isToday && event.start_time <= currentTimeStr && event.end_time > currentTimeStr;
+
+      if (isNowRunning) {
+        happeningNowArr.push(event);
+        continue;
+      }
+
+      // Check opening soon: signup_opens_at within 24h but not yet open
+      if (event.signup_opens_at) {
+        const opensAt = parseISO(event.signup_opens_at);
+        if (opensAt > currentTime && opensAt <= in24h) {
+          openingSoonArr.push(event);
+          // Also show in upcoming section below
+        }
+      }
+
+      remainingArr.push(event);
+    }
+
+    // Group remaining by day
+    const dayMap = new Map<string, EventWithBookings[]>();
+    for (const event of remainingArr) {
+      const key = event.date;
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push(event);
+    }
+
+    const groupedArr = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, events]) => ({
+        dateLabel: format(parseISO(date), 'EEEE, MMMM d'),
+        events: events.sort((a, b) => a.start_time.localeCompare(b.start_time)),
+      }));
+
+    return { happeningNow: happeningNowArr, openingSoon: openingSoonArr, grouped: groupedArr };
+  }, [upcomingEvents]);
 
   const displaySlug = slug || user?.id;
   const producerPageUrl = `/producer/${displaySlug}`;
@@ -135,6 +199,9 @@ export default function Dashboard() {
       toast({ title: 'Failed to copy link', variant: 'destructive' });
     }
   };
+
+  const eventsLoading = listViewType === 'upcoming' ? upcomingLoading : pastLoading;
+  const events = listViewType === 'past' ? pastEvents : null;
 
   return (
     <ProducerLayout>
@@ -178,7 +245,6 @@ export default function Dashboard() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Sub-navigation for list: Upcoming vs Past */}
             {viewMode === 'list' && (
               <Tabs value={listViewType} onValueChange={(value) => setListViewType(value as 'upcoming' | 'past')}>
                 <TabsList className="w-full sm:w-auto">
@@ -188,7 +254,6 @@ export default function Dashboard() {
               </Tabs>
             )}
 
-            {/* Sub-navigation: Only show 'Event Date' vs 'Created' toggle when in Calendar mode to avoid UI clutter */}
             {viewMode === 'calendar' && (
               <Tabs value={calendarViewType} onValueChange={(value) => setCalendarViewType(value as 'event_date' | 'created_date')}>
                 <TabsList className="w-full sm:w-auto">
@@ -208,33 +273,101 @@ export default function Dashboard() {
         )}
 
         {/* Events Display */}
-        {!(eventsLoading || (viewMode === 'calendar' && allEventsLoading)) && (events || allEvents) && (
+        {!eventsLoading && viewMode === 'list' && (
           <div>
-            {viewMode === 'list' ? (
-              <div className="space-y-3">
-                {(events?.length ?? 0) === 0 ? (
+            {listViewType === 'upcoming' ? (
+              /* ===== UPCOMING TAB — three sections ===== */
+              <div className="space-y-8">
+                {/* Happening Now */}
+                {happeningNow.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-[hsl(var(--status-live))] uppercase tracking-wide mb-3">
+                      Happening Now
+                    </h3>
+                    <div className="space-y-3">
+                      {happeningNow.map(event => (
+                        <UpcomingEventCard
+                          key={event.id}
+                          event={event}
+                          availability={availabilityMap.get(event.id) ?? null}
+                          isHappeningNow
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Opening Soon */}
+                {openingSoon.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-[hsl(var(--status-draft))] uppercase tracking-wide mb-3">
+                      Opening Soon
+                    </h3>
+                    <div className="space-y-3">
+                      {openingSoon.map(event => (
+                        <UpcomingEventCard
+                          key={event.id}
+                          event={event}
+                          availability={availabilityMap.get(event.id) ?? null}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upcoming grouped by day */}
+                {grouped.length > 0 ? (
+                  grouped.map(group => (
+                    <div key={group.dateLabel}>
+                      <h3 className="text-sm font-bold text-foreground mb-3">{group.dateLabel}</h3>
+                      <div className="space-y-3">
+                        {group.events.map(event => (
+                          <UpcomingEventCard
+                            key={event.id}
+                            event={event}
+                            availability={availabilityMap.get(event.id) ?? null}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : happeningNow.length === 0 && openingSoon.length === 0 ? (
                   <div className="text-center py-16">
-                    <p className="text-muted-foreground mb-4">
-                      {listViewType === 'upcoming' ? 'No upcoming mics' : 'No past mics'}
-                    </p>
-                    {listViewType === 'upcoming' && (
-                      <Button asChild>
-                        <Link to="/create">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Create a mic
-                        </Link>
-                      </Button>
-                    )}
+                    <p className="text-muted-foreground mb-4">No upcoming mics</p>
+                    <Button asChild>
+                      <Link to="/create">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create a mic
+                      </Link>
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              /* ===== PAST TAB — unchanged ===== */
+              <div className="space-y-3">
+                {(pastEvents?.length ?? 0) === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-muted-foreground mb-4">No past mics</p>
                   </div>
                 ) : (
-                  (events || []).map(event => (
-                    <EventRow key={event.id} event={event} isPast={listViewType === 'past'} />
+                  (pastEvents || []).map(event => (
+                    <EventRow key={event.id} event={event} isPast />
                   ))
                 )}
               </div>
-            ) : (
-              <CalendarDashboard events={allEvents || []} viewType={calendarViewType} />
             )}
+          </div>
+        )}
+
+        {/* Calendar view */}
+        {!allEventsLoading && viewMode === 'calendar' && allEvents && (
+          <CalendarDashboard events={allEvents} viewType={calendarViewType} />
+        )}
+
+        {(viewMode === 'calendar' && allEventsLoading) && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
       </section>
