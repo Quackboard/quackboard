@@ -116,9 +116,14 @@ export function UpcomingEventCard({ event, availability, isHappeningNow }: Upcom
           </div>
 
           {/* Right: Lineup button */}
-          <Button variant="outline" size="sm" className="shrink-0" asChild>
-            <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/events/${event.id}/edit`}>Edit</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
