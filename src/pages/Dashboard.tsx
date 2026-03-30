@@ -4,7 +4,7 @@ import { supabase, SUPABASE_URL_PUBLIC } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
+import { Loader2, Plus, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
 import { UpcomingEventCard } from '@/components/dashboard/UpcomingEventCard';
 import { RecurringSeriesCard } from '@/components/dashboard/RecurringSeriesCard';
