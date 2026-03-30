@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
 import { UpcomingEventCard } from '@/components/dashboard/UpcomingEventCard';
+import { RecurringSeriesCard } from '@/components/dashboard/RecurringSeriesCard';
 import { CalendarDashboard } from '@/components/dashboard/CalendarDashboard';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
 import { useState, useMemo } from 'react';
@@ -29,6 +30,7 @@ interface EventWithBookings {
   status: string;
   publish_at: string | null;
   signup_opens_at: string | null;
+  series_id: string | null;
   bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
@@ -36,6 +38,15 @@ interface EventAvailability {
   event_id: string;
   total_slots: number;
   booked_count: number;
+}
+
+interface TemplateRow {
+  id: string;
+  title: string;
+  series_id: string;
+  start_time: string;
+  end_time: string;
+  recurrence_rule: { days?: number[] } | null;
 }
 
 export default function Dashboard() {
@@ -55,7 +66,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at,
+          sections_config, status, publish_at, signup_opens_at, series_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -78,7 +89,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at,
+          sections_config, status, publish_at, signup_opens_at, series_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -98,7 +109,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at,
+          sections_config, status, publish_at, signup_opens_at, series_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -108,6 +119,20 @@ export default function Dashboard() {
       return data as EventWithBookings[];
     },
     enabled: !!user?.id && viewMode === 'list' && listViewType === 'past',
+  });
+
+  // Event templates query for series metadata
+  const { data: templates } = useQuery({
+    queryKey: ['producer-event-templates', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_templates')
+        .select('id, title, series_id, start_time, end_time, recurrence_rule')
+        .eq('producer_id', user!.id);
+      if (error) throw error;
+      return data as TemplateRow[];
+    },
+    enabled: !!user?.id && viewMode === 'list' && listViewType === 'upcoming',
   });
 
   // Fetch availability from the view for upcoming events
@@ -133,9 +158,16 @@ export default function Dashboard() {
     return map;
   }, [availabilityData]);
 
-  // Categorize upcoming events into three sections
-  const { happeningNow, openingSoon, grouped } = useMemo(() => {
-    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], grouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
+  // Build template map by series_id
+  const templateMap = useMemo(() => {
+    const map = new Map<string, TemplateRow>();
+    templates?.forEach(t => map.set(t.series_id, t));
+    return map;
+  }, [templates]);
+
+  // Categorize upcoming events
+  const { happeningNow, openingSoon, recurringGroups, singleGrouped } = useMemo(() => {
+    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], recurringGroups: [] as { seriesId: string; template: TemplateRow; events: EventWithBookings[] }[], singleGrouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
 
     const currentTime = new Date();
     const currentTimeStr = currentTime.toTimeString().slice(0, 5);
@@ -160,30 +192,53 @@ export default function Dashboard() {
         const opensAt = parseISO(event.signup_opens_at);
         if (opensAt > currentTime && opensAt <= in24h) {
           openingSoonArr.push(event);
-          // Also show in upcoming section below
         }
       }
 
       remainingArr.push(event);
     }
 
-    // Group remaining by day
-    const dayMap = new Map<string, EventWithBookings[]>();
+    // Split remaining into recurring and single
+    const recurringMap = new Map<string, EventWithBookings[]>();
+    const singleArr: EventWithBookings[] = [];
+
     for (const event of remainingArr) {
-      const key = event.date;
-      if (!dayMap.has(key)) dayMap.set(key, []);
-      dayMap.get(key)!.push(event);
+      if (event.series_id) {
+        if (!recurringMap.has(event.series_id)) recurringMap.set(event.series_id, []);
+        recurringMap.get(event.series_id)!.push(event);
+      } else {
+        singleArr.push(event);
+      }
     }
 
-    const groupedArr = Array.from(dayMap.entries())
+    // Build recurring groups with template info
+    const recurringGroupsArr = Array.from(recurringMap.entries())
+      .map(([seriesId, events]) => {
+        const template = templateMap.get(seriesId);
+        return {
+          seriesId,
+          template: template ?? { id: '', title: events[0]?.title ?? 'Untitled', series_id: seriesId, start_time: events[0]?.start_time ?? '', end_time: events[0]?.end_time ?? '', recurrence_rule: null },
+          events: events.sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)),
+        };
+      })
+      .sort((a, b) => a.template.title.localeCompare(b.template.title));
+
+    // Group single by date
+    const dayMap = new Map<string, EventWithBookings[]>();
+    for (const event of singleArr) {
+      if (!dayMap.has(event.date)) dayMap.set(event.date, []);
+      dayMap.get(event.date)!.push(event);
+    }
+
+    const singleGroupedArr = Array.from(dayMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, events]) => ({
         dateLabel: format(parseISO(date), 'EEEE, MMMM d'),
         events: events.sort((a, b) => a.start_time.localeCompare(b.start_time)),
       }));
 
-    return { happeningNow: happeningNowArr, openingSoon: openingSoonArr, grouped: groupedArr };
-  }, [upcomingEvents]);
+    return { happeningNow: happeningNowArr, openingSoon: openingSoonArr, recurringGroups: recurringGroupsArr, singleGrouped: singleGroupedArr };
+  }, [upcomingEvents, templateMap]);
 
   const displaySlug = slug || user?.id;
   const producerPageUrl = `/producer/${displaySlug}`;
@@ -201,7 +256,7 @@ export default function Dashboard() {
   };
 
   const eventsLoading = listViewType === 'upcoming' ? upcomingLoading : pastLoading;
-  const events = listViewType === 'past' ? pastEvents : null;
+  const hasNoUpcomingEvents = happeningNow.length === 0 && openingSoon.length === 0 && recurringGroups.length === 0 && singleGrouped.length === 0;
 
   return (
     <ProducerLayout>
@@ -276,7 +331,7 @@ export default function Dashboard() {
         {!eventsLoading && viewMode === 'list' && (
           <div>
             {listViewType === 'upcoming' ? (
-              /* ===== UPCOMING TAB — three sections ===== */
+              /* ===== UPCOMING TAB ===== */
               <div className="space-y-8">
                 {/* Happening Now */}
                 {happeningNow.length > 0 && (
@@ -315,23 +370,50 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Upcoming grouped by day */}
-                {grouped.length > 0 ? (
-                  grouped.map(group => (
-                    <div key={group.dateLabel}>
-                      <h3 className="text-sm font-bold text-foreground mb-3">{group.dateLabel}</h3>
-                      <div className="space-y-3">
-                        {group.events.map(event => (
-                          <UpcomingEventCard
-                            key={event.id}
-                            event={event}
-                            availability={availabilityMap.get(event.id) ?? null}
-                          />
-                        ))}
-                      </div>
+                {/* Recurring Mics */}
+                {recurringGroups.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                      Recurring Mics
+                    </h3>
+                    <div className="space-y-3">
+                      {recurringGroups.map(group => (
+                        <RecurringSeriesCard
+                          key={group.seriesId}
+                          template={group.template}
+                          events={group.events}
+                          availabilityMap={availabilityMap}
+                        />
+                      ))}
                     </div>
-                  ))
-                ) : happeningNow.length === 0 && openingSoon.length === 0 ? (
+                  </div>
+                )}
+
+                {/* Single Mics */}
+                {singleGrouped.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                      Single Mics
+                    </h3>
+                    {singleGrouped.map(group => (
+                      <div key={group.dateLabel} className="mb-4">
+                        <h4 className="text-sm font-bold text-foreground mb-3">{group.dateLabel}</h4>
+                        <div className="space-y-3">
+                          {group.events.map(event => (
+                            <UpcomingEventCard
+                              key={event.id}
+                              event={event}
+                              availability={availabilityMap.get(event.id) ?? null}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty state — only if truly nothing */}
+                {hasNoUpcomingEvents && (
                   <div className="text-center py-16">
                     <p className="text-muted-foreground mb-4">No upcoming mics</p>
                     <Button asChild>
@@ -341,7 +423,7 @@ export default function Dashboard() {
                       </Link>
                     </Button>
                   </div>
-                ) : null}
+                )}
               </div>
             ) : (
               /* ===== PAST TAB — unchanged ===== */
