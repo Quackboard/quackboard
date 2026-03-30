@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatTime } from '@/lib/utils';
-import { differenceInHours, differenceInMinutes, parseISO, format } from 'date-fns';
+import { getSignupStatus } from '@/lib/signup-status';
 
 interface UpcomingEventCardProps {
   event: {
@@ -19,37 +19,6 @@ interface UpcomingEventCardProps {
     booked_count: number;
   } | null;
   isHappeningNow?: boolean;
-}
-
-function getSignupStatus(signupOpensAt: string | null) {
-  if (!signupOpensAt) {
-    return { type: 'open' as const, label: 'Sign-ups open' };
-  }
-
-  const now = new Date();
-  const opensAt = parseISO(signupOpensAt);
-
-  if (now >= opensAt) {
-    return { type: 'open' as const, label: 'Sign-ups open' };
-  }
-
-  const hoursUntil = differenceInHours(opensAt, now);
-  const minutesUntil = differenceInMinutes(opensAt, now);
-
-  if (hoursUntil < 24) {
-    const displayHours = hoursUntil > 0 ? hoursUntil : 0;
-    const label = displayHours > 0
-      ? `Opens in ${displayHours}h`
-      : `Opens in ${minutesUntil}m`;
-    return { type: 'soon' as const, label };
-  }
-
-  const dayLabel = format(opensAt, 'EEEE');
-  const timeLabel = format(opensAt, 'h:mma').toLowerCase();
-  return {
-    type: 'future' as const,
-    label: `Sign-ups open ${dayLabel} at ${timeLabel}`,
-  };
 }
 
 export function UpcomingEventCard({ event, availability, isHappeningNow }: UpcomingEventCardProps) {
@@ -115,7 +84,7 @@ export function UpcomingEventCard({ event, availability, isHappeningNow }: Upcom
             )}
           </div>
 
-          {/* Right: Lineup button */}
+          {/* Right: Edit + Lineup buttons */}
           <div className="flex gap-2 shrink-0">
             <Button variant="outline" size="sm" asChild>
               <Link to={`/events/${event.id}/edit`}>Edit</Link>
