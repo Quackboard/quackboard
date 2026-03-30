@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Search } from 'lucide-react';
+import { Calendar, Users, Clock, Repeat, Bell, ExternalLink } from 'lucide-react';
 
 const features = [
   {
@@ -44,12 +44,6 @@ export default function Index() {
           <span className="text-xl font-bold text-foreground">Quackboard</span>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
-              <Link to="/browse">
-                <Search className="h-4 w-4 mr-1" />
-                Browse Mics
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild>
               <Link to="/login">Log in</Link>
             </Button>
             <Button asChild>
@@ -83,31 +77,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Browse Mics CTA */}
-        <section className="px-4 py-12 md:py-16">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-8 md:p-10 text-center">
-              <div className="relative z-10 space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-                  <Search className="h-4 w-4" />
-                  For Comics
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Looking for an open mic tonight?
-                </h2>
-                <p className="text-muted-foreground max-w-lg mx-auto">
-                  Browse upcoming open mics in your area. Find spots, sign up, and get on stage.
-                </p>
-                <Button size="lg" asChild className="mt-2">
-                  <Link to="/browse">
-                    <Search className="h-4 w-4 mr-2" />
-                    Browse Open Mics
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Features Grid */}
         <section className="px-4 py-16 bg-muted/30">
@@ -156,8 +125,6 @@ export default function Index() {
         <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground space-y-2">
           <p>© {new Date().getFullYear()} Quackboard. Built for comedy producers.</p>
           <div className="flex items-center justify-center gap-3">
-            <Link to="/browse" className="hover:text-foreground">Browse Mics</Link>
-            <span>·</span>
             <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
             <span>·</span>
             <Link to="/terms" className="hover:text-foreground">Terms of Service</Link>

@@ -229,10 +229,6 @@ export default function ProducerPage() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground">
-            <a href="/browse" className="text-primary font-medium hover:underline">
-              Browse open mics
-            </a>
-            {' · '}
             Run an open mic?{' '}
             <a href="/signup" className="text-primary font-medium hover:underline">
               Get started for free&nbsp;→
