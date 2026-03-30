@@ -1,50 +1,73 @@
+## Plan: Collapsible Series View + CreateMic Copy Update
+
+### Files to touch
 
 
-## Plan: Split Event Creation — Implementation
+| Action | File                                               | Purpose                                                                                                          |
+| ------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Create | `src/components/dashboard/RecurringSeriesCard.tsx` | Collapsible series card with expanded instance rows                                                              |
+| Create | `src/lib/signup-status.ts`                         | Extract shared `getSignupStatus()` from UpcomingEventCard                                                        |
+| Modify | `src/pages/Dashboard.tsx`                          | Add series_id to query/interface, add event_templates query, split remaining events into Recurring/Single groups |
+| Modify | `src/components/dashboard/UpcomingEventCard.tsx`   | Import shared `getSignupStatus` instead of local copy                                                            |
+| Modify | `src/pages/CreateMic.tsx`                          | Update card labels and subtitles                                                                                 |
 
-### Files
 
-| Action | File |
-|--------|------|
-| **Modify** | `src/pages/CreateMic.tsx` — replace with chooser page; old form code commented out as fallback |
-| **Create** | `src/pages/CreateRecurringMic.tsx` — recurring mic form → `event_templates` |
-| **Create** | `src/pages/CreateSingleMic.tsx` — one-off show form → `events` with `series_id: null` |
-| **Modify** | `src/App.tsx` — add `/create/recurringmic` and `/create/singlemic` routes |
+**Not touched**: Past tab, Happening Now, Opening Soon, booking flow, lineup view, CreateRecurringMic.tsx, CreateSingleMic.tsx, edge functions, DB tables.
 
-### CreateMic.tsx (chooser)
+---
 
-- Header with back arrow + "Create Mic" title (same layout)
-- Two cards: "Set up a recurring mic" links to `/create/recurringmic`, "Add a one-off show" links to `/create/singlemic`
-- Entire current form preserved as a block comment at bottom of file
+### Change 1 — Dashboard Upcoming Tab
 
-### CreateSingleMic.tsx
+**Data layer (Dashboard.tsx)**
 
-- Copy of current CreateMic form logic
-- Remove `RecurrenceSelector`, `endDate`, and recurring-dates branch from `onSubmit`
-- Insert into `events` with `series_id: null`
-- Keep: date picker, time fields, title, venue, **sections builder** (verbatim copy of the inline `useFieldArray` loop + wildcard logic from lines 497–659), scheduling, message, email notifications, draft/publish buttons, cancel dialog
+- Add `series_id` (nullable) to `EventWithBookings` interface and to the upcoming events Supabase select
+- Add new query for `event_templates` (id, title, series_id, start_time, end_time, recurrence_rule) filtered by producer_id, enabled when upcoming tab is active
 
-### CreateRecurringMic.tsx
+**Grouping logic (new useMemo)**
+After filtering out Happening Now and Opening Soon from `remainingArr`:
 
-- Form fields: title, description (MarkdownEditor), venue_name, venue_address, start_time, end_time
-- **Sections builder**: exact same inline code from CreateMic (lines 497–659) — `useFieldArray`, wildcard section rendering, add section/wildcard buttons, allow multiple slots toggle. Same `sectionSchema` zod validation.
-- **Recurrence rule builder**: frequency select (weekly/biweekly/monthly), interval number input, day-of-week multi-select checkboxes (Sun=0…Sat=6), time_start (time input), duration_minutes (number input) — stored as `{ frequency, interval, days, time_start, duration_minutes }`
-- **signup_anchor_day**: Select dropdown with day names → integer 0-6
-- **signup_anchor_time**: time input
-- Additional fields: signup_opens_hours_before (number), recurrence_end_date (date picker), is_active (switch, default true), publish_at (optional datetime)
-- Insert into `event_templates` with `producer_id = user.id`
-- Type assertion needed: `(supabase.from('event_templates') as any).insert(...)` because `types.ts` is stale (missing `recurrence_rule`, `signup_anchor_day`, `signup_anchor_time` columns)
-- Success screen similar to CreateMic's
+- **Recurring**: events where `series_id` is not null, grouped by `series_id`. Each group paired with its template metadata.
+- **Single**: events where `series_id` is null, grouped by date with bold date headers (reuses existing `UpcomingEventCard`).
+- Empty state only shows if both groups are empty AND happeningNow/openingSoon are empty. If only one group is empty, its section header is hidden entirely.
 
-### App.tsx
+**RecurringSeriesCard.tsx (new)**
 
-Add two protected routes before the catch-all:
-```
-/create/recurringmic → CreateRecurringMic
-/create/singlemic → CreateSingleMic
-```
+Collapsed state (default):
 
-### Type workaround
+- Chevron left side, rotates on expand (uses Radix Collapsible already in project)
+- Series name bold
+- Subtitle: `Mon, Wed · 8:00 PM – 9:00 PM · 4 upcoming shows` (days from `recurrence_rule.days`, times from template)
+- "Edit Series" button — disabled, wrapped in Tooltip with "Coming soon"
+- Click header toggles expand/collapse
 
-The generated `types.ts` doesn't reflect the new DB columns (`recurrence_rule`, `signup_anchor_day`, `signup_anchor_time`). Since we cannot edit `types.ts` manually, the recurring mic insert will use a type cast on the insert payload. This is temporary until types are regenerated.
+Expanded state:
 
+- `max-h-[400px] overflow-y-auto` container
+- Events grouped by date with sticky date headers (`position: sticky; top: 0; bg-background`)
+- Compact instance rows showing: time range (bold) | spots available or "Full" in red | X/Y filled | signup status pill | Edit button (`/events/${event.id}/edit` — uses event id, not series id) | Lineup button
+
+**Rendering order in Upcoming tab:**
+
+1. Happening Now (unchanged)
+2. Opening Soon (unchanged)
+3. "Recurring Mics" header + series cards (only if recurring events exist)
+4. "Single Mics" header + date-grouped cards (only if single events exist)
+5. Empty state only if all sections are empty
+
+---
+
+### Change 2 — CreateMic.tsx Copy
+
+- "Set up a recurring mic" → "Create a Recurring Mic"
+- "Create a template that generates shows on a repeating schedule" → "Schedule a mic that repeats weekly, biweekly, or monthly"
+- "Add a one-off show" → "Create a Single Mic"
+- "Create a single event on a specific date" → "Add a one-time show on a specific date"
+
+---
+
+### Technical notes
+
+- `getSignupStatus()` extracted to `src/lib/signup-status.ts` so both `UpcomingEventCard` and `RecurringSeriesCard` share it
+- Day abbreviation: `recurrence_rule.days` contains numbers 0-6 (Sun-Sat) → mapped to abbreviated names
+- Adding `series_id` to Dashboard's local `EventWithBookings` is safe — confirmed it's not shared with other files
+- When rendering the days abbreviation in the series card subtitle, if recurrence_rule is null or recurrence_rule.days is missing for any reason, fail gracefully and just omit the days portion of the subtitle rather than crashing. Same for time range — if start_time or end_time is null on the template, omit that portion rather than showing undefined."
