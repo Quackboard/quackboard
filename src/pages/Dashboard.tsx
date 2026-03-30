@@ -7,16 +7,13 @@ import { Link } from 'react-router-dom';
 import { Loader2, Plus, ExternalLink, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
 import { EventRow } from '@/components/dashboard/EventRow';
 import { CalendarDashboard } from '@/components/dashboard/CalendarDashboard';
-import { UpcomingEventCard } from '@/components/dashboard/UpcomingEventCard';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EmbedSection } from '@/components/embed/EmbedSection';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { format, parseISO } from 'date-fns';
-import { formatTime } from '@/lib/utils';
 
 interface EventWithBookings {
   id: string;
@@ -31,12 +28,6 @@ interface EventWithBookings {
   publish_at: string | null;
   signup_opens_at: string | null;
   bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
-}
-
-interface EventAvailability {
-  event_id: string;
-  total_slots: number;
-  booked_count: number;
 }
 
 export default function Dashboard() {
