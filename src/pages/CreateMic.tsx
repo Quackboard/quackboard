@@ -28,9 +28,9 @@ export default function CreateMic() {
         >
           <div className="flex flex-col items-center text-center gap-3">
             <CalendarClock className="h-10 w-10 text-primary" />
-            <h2 className="text-lg font-medium text-foreground">Set up a recurring mic</h2>
+            <h2 className="text-lg font-medium text-foreground">Create a Recurring Mic</h2>
             <p className="text-sm text-muted-foreground">
-              Create a template that generates shows on a repeating schedule
+              Schedule a mic that repeats weekly, biweekly, or monthly
             </p>
           </div>
         </Card>
