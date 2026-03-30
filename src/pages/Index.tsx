@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Search } from 'lucide-react';
+import { Calendar, Users, Clock, Repeat, Bell, ExternalLink } from 'lucide-react';
 
 const features = [
   {
