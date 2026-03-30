@@ -62,7 +62,7 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/email-preview" element={<EmailPreview />} />
-            <Route path="/browse" element={<DiscoverMics />} />
+            
             <Route path="/admin" element={<Admin />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
