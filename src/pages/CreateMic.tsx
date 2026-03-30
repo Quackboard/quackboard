@@ -41,9 +41,9 @@ export default function CreateMic() {
         >
           <div className="flex flex-col items-center text-center gap-3">
             <CalendarPlus className="h-10 w-10 text-primary" />
-            <h2 className="text-lg font-medium text-foreground">Add a one-off show</h2>
+            <h2 className="text-lg font-medium text-foreground">Create a Single Mic</h2>
             <p className="text-sm text-muted-foreground">
-              Create a single event on a specific date
+              Add a one-time show on a specific date
             </p>
           </div>
         </Card>
