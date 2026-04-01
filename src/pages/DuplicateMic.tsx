@@ -64,22 +64,6 @@ export default function DuplicateMic() {
           return;
         }
 
-        // Handle series_id logic
-        let seriesId = original.series_id;
-        
-        if (!seriesId) {
-          // Generate new UUID for series_id
-          seriesId = crypto.randomUUID();
-          
-          // Update original event with new series_id
-          const { error: updateError } = await supabase
-            .from('events')
-            .update({ series_id: seriesId })
-            .eq('id', id);
-          
-          if (updateError) throw updateError;
-        }
-
         // Create new event with copied fields
         const sectionsConfig = parseSections(original.sections_config);
         
@@ -95,7 +79,6 @@ export default function DuplicateMic() {
           sections_config: sectionsConfig,
           allow_multiple_slots: original.allow_multiple_slots,
           status: 'draft' as const,
-          series_id: seriesId,
           // Since date is unchanged from original, copy publish_at and signup_opens_at
           publish_at: original.publish_at,
           signup_opens_at: original.signup_opens_at,
