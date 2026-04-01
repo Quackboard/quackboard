@@ -43,7 +43,6 @@ interface EventAvailability {
 interface TemplateRow {
   id: string;
   title: string;
-  series_id: string;
   start_time: string;
   end_time: string;
   recurrence_rule: { days?: number[] } | null;
