@@ -377,7 +377,7 @@ export default function CreateRecurringMic() {
 
       const { data: templateData, error: templateError } = await (supabase.from('event_templates') as any)
         .insert(insertPayload)
-        .select('id, series_id')
+        .select('id')
         .single();
 
       if (templateError) throw templateError;
