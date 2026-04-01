@@ -367,7 +367,7 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       {recurringGroups.map(group => (
                         <RecurringSeriesCard
-                          key={group.seriesId}
+                          key={group.templateId}
                           template={group.template}
                           events={group.events}
                           availabilityMap={availabilityMap}

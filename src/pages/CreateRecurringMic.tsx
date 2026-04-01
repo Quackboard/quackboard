@@ -403,7 +403,6 @@ export default function CreateRecurringMic() {
           return {
             producer_id: user.id,
             template_id: templateData.id,
-            series_id: templateData.series_id,
             title: data.title,
             description: data.description || null,
             producer_message: data.producerMessage || null,

@@ -79,7 +79,6 @@ export default function DuplicateMic() {
           sections_config: sectionsConfig,
           allow_multiple_slots: original.allow_multiple_slots,
           status: 'draft' as const,
-          series_id: seriesId,
           // Since date is unchanged from original, copy publish_at and signup_opens_at
           publish_at: original.publish_at,
           signup_opens_at: original.signup_opens_at,
