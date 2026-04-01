@@ -166,7 +166,7 @@ export default function Dashboard() {
 
   // Categorize upcoming events
   const { happeningNow, openingSoon, recurringGroups, singleGrouped } = useMemo(() => {
-    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], recurringGroups: [] as { seriesId: string; template: TemplateRow; events: EventWithBookings[] }[], singleGrouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
+    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], recurringGroups: [] as { templateId: string; template: TemplateRow; events: EventWithBookings[] }[], singleGrouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
 
     const currentTime = new Date();
     const currentTimeStr = currentTime.toTimeString().slice(0, 5);
