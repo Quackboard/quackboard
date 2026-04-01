@@ -212,11 +212,11 @@ export default function Dashboard() {
 
     // Build recurring groups with template info
     const recurringGroupsArr = Array.from(recurringMap.entries())
-      .map(([seriesId, events]) => {
-        const template = templateMap.get(seriesId);
+      .map(([templateId, events]) => {
+        const template = templateMap.get(templateId);
         return {
-          seriesId,
-          template: template ?? { id: '', title: events[0]?.title ?? 'Untitled', series_id: seriesId, start_time: events[0]?.start_time ?? '', end_time: events[0]?.end_time ?? '', recurrence_rule: null },
+          templateId,
+          template: template ?? { id: templateId, title: events[0]?.title ?? 'Untitled', start_time: events[0]?.start_time ?? '', end_time: events[0]?.end_time ?? '', recurrence_rule: null },
           events: events.sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)),
         };
       })
