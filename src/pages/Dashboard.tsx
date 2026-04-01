@@ -126,7 +126,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_templates')
-        .select('id, title, series_id, start_time, end_time, recurrence_rule')
+        .select('id, title, start_time, end_time, recurrence_rule')
         .eq('producer_id', user!.id);
       if (error) throw error;
       return data as TemplateRow[];
