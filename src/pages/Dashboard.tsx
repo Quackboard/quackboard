@@ -88,7 +88,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, series_id,
+          sections_config, status, publish_at, signup_opens_at, template_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
