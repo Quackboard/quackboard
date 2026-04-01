@@ -157,10 +157,10 @@ export default function Dashboard() {
     return map;
   }, [availabilityData]);
 
-  // Build template map by series_id
+  // Build template map by template id
   const templateMap = useMemo(() => {
     const map = new Map<string, TemplateRow>();
-    templates?.forEach(t => map.set(t.series_id, t));
+    templates?.forEach(t => map.set(t.id, t));
     return map;
   }, [templates]);
 
