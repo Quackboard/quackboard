@@ -64,22 +64,6 @@ export default function DuplicateMic() {
           return;
         }
 
-        // Handle series_id logic
-        let seriesId = original.series_id;
-        
-        if (!seriesId) {
-          // Generate new UUID for series_id
-          seriesId = crypto.randomUUID();
-          
-          // Update original event with new series_id
-          const { error: updateError } = await supabase
-            .from('events')
-            .update({ series_id: seriesId })
-            .eq('id', id);
-          
-          if (updateError) throw updateError;
-        }
-
         // Create new event with copied fields
         const sectionsConfig = parseSections(original.sections_config);
         
