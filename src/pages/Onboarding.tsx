@@ -164,8 +164,8 @@ export default function Onboarding() {
     // Clear draft before navigating
     clearDraft();
 
-    // Navigate to dashboard (use navigate to preserve auth session)
-    navigate('/dashboard', { replace: true });
+    // Navigate to dashboard
+    window.location.href = '/dashboard';
   };
 
   return (
