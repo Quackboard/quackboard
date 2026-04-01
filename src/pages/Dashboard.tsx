@@ -202,9 +202,9 @@ export default function Dashboard() {
     const singleArr: EventWithBookings[] = [];
 
     for (const event of remainingArr) {
-      if (event.series_id) {
-        if (!recurringMap.has(event.series_id)) recurringMap.set(event.series_id, []);
-        recurringMap.get(event.series_id)!.push(event);
+      if (event.template_id) {
+        if (!recurringMap.has(event.template_id)) recurringMap.set(event.template_id, []);
+        recurringMap.get(event.template_id)!.push(event);
       } else {
         singleArr.push(event);
       }
