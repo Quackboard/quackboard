@@ -30,7 +30,7 @@ export function getSignupStatus(signupOpensAt: string | null): SignupStatus {
     return { type: 'soon', label };
   }
 
-  const dayLabel = format(opensAt, 'EEEE');
+  const dayLabel = format(opensAt, 'EEEE M/d/yyyy');
   const timeLabel = format(opensAt, 'h:mma').toLowerCase();
   return {
     type: 'future',
