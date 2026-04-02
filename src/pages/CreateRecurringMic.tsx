@@ -440,6 +440,7 @@ export default function CreateRecurringMic() {
         description: `Template saved and ${generatedEvents.length} show${generatedEvents.length !== 1 ? 's' : ''} created for the next 30 days.`,
       });
 
+      clearDraft();
       setShowSuccess(true);
     } catch (error: any) {
       toast({
