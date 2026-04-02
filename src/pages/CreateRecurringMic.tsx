@@ -21,6 +21,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
+import { useFormDraft } from '@/hooks/useFormDraft';
+
+const CREATE_RECURRING_MIC_DRAFT_KEY = 'quackboard_create_recurring_mic_draft';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -246,6 +249,12 @@ export default function CreateRecurringMic() {
     formState: { errors, isDirty },
   } = form;
 
+  const { clearDraft } = useFormDraft({
+    form,
+    storageKey: CREATE_RECURRING_MIC_DRAFT_KEY,
+    debounceMs: 2000,
+  });
+
   useEffect(() => {
     if (producer) {
       const currentVenueName = watch('venueName');
@@ -431,6 +440,7 @@ export default function CreateRecurringMic() {
         description: `Template saved and ${generatedEvents.length} show${generatedEvents.length !== 1 ? 's' : ''} created for the next 30 days.`,
       });
 
+      clearDraft();
       setShowSuccess(true);
     } catch (error: any) {
       toast({
@@ -462,7 +472,7 @@ export default function CreateRecurringMic() {
           </p>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
-            <Button variant="outline" onClick={() => navigate('/create')}>Create Another</Button>
+            <Button variant="outline" onClick={() => { clearDraft(); navigate('/create'); }}>Create Another</Button>
           </div>
         </div>
       </ProducerLayout>
@@ -962,7 +972,7 @@ export default function CreateRecurringMic() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/create')}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={() => { clearDraft(); navigate('/create'); }}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
