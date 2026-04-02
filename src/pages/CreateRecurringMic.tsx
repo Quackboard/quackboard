@@ -249,6 +249,12 @@ export default function CreateRecurringMic() {
     formState: { errors, isDirty },
   } = form;
 
+  const { clearDraft } = useFormDraft({
+    form,
+    storageKey: CREATE_RECURRING_MIC_DRAFT_KEY,
+    debounceMs: 2000,
+  });
+
   useEffect(() => {
     if (producer) {
       const currentVenueName = watch('venueName');
