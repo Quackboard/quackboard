@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Instagram, Globe, MapPin } from 'lucide-react';
 
@@ -34,10 +34,7 @@ export default function AccountPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // Reserved slug guard
-  if (slug && RESERVED_SLUGS.has(slug)) {
-    return <NotFound />;
-  }
+  const isReserved = !!slug && RESERVED_SLUGS.has(slug);
 
   // 1. Query accounts table for profile display
   const { data: account, isLoading: accountLoading } = useQuery({
@@ -51,7 +48,7 @@ export default function AccountPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!slug,
+    enabled: !!slug && !isReserved,
   });
 
   // 2. Query producers table for producer_id and event_window_days
@@ -66,7 +63,7 @@ export default function AccountPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!slug,
+    enabled: !!slug && !isReserved,
   });
 
   // 3. Query published events
@@ -87,7 +84,7 @@ export default function AccountPage() {
   });
 
   // 4. Query bookings for all event IDs
-  const eventIds = events?.map(e => e.id) || [];
+  const eventIds = useMemo(() => events?.map(e => e.id) || [], [events]);
 
   const { data: bookings } = useQuery({
     queryKey: ['account-bookings', eventIds],
@@ -110,6 +107,7 @@ export default function AccountPage() {
   }, [queryClient]);
 
   // Realtime subscription on bookings
+  const eventIdsKey = eventIds.join(',');
   useEffect(() => {
     if (eventIds.length === 0) return;
     const channel = supabase
@@ -126,7 +124,7 @@ export default function AccountPage() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [eventIds.join(','), refetchBookings]);
+  }, [eventIdsKey, refetchBookings]);
 
   // Window filtering (same as ProducerPage)
   const windowDays = producer?.event_window_days ?? 7;
@@ -159,6 +157,12 @@ export default function AccountPage() {
     .filter(e => e.date === selectedDate)
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
+  // --- Early returns after all hooks ---
+
+  if (isReserved) {
+    return <NotFound />;
+  }
+
   const isLoading = accountLoading || producerLoading;
 
   if (isLoading) {
@@ -172,7 +176,6 @@ export default function AccountPage() {
     );
   }
 
-  // Not found if neither table has data for this slug
   if (!account && !producer) {
     return <NotFound />;
   }
