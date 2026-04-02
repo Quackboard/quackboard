@@ -21,6 +21,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 import { useToast } from '@/hooks/use-toast';
+import { useFormDraft } from '@/hooks/useFormDraft';
+
+const CREATE_RECURRING_MIC_DRAFT_KEY = 'quackboard_create_recurring_mic_draft';
 import {
   AlertDialog,
   AlertDialogAction,
