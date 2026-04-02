@@ -972,7 +972,7 @@ export default function CreateRecurringMic() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/create')}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={() => { clearDraft(); navigate('/create'); }}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
