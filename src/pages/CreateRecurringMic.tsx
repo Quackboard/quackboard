@@ -472,7 +472,7 @@ export default function CreateRecurringMic() {
           </p>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
-            <Button variant="outline" onClick={() => navigate('/create')}>Create Another</Button>
+            <Button variant="outline" onClick={() => { clearDraft(); navigate('/create'); }}>Create Another</Button>
           </div>
         </div>
       </ProducerLayout>
