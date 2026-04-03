@@ -217,9 +217,6 @@ export default function AccountPage() {
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {displayName}
               </h1>
-              {venueName && (
-                <p className="mt-1 text-lg text-muted-foreground">{venueName}</p>
-              )}
             </div>
           </div>
 
