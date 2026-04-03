@@ -248,7 +248,7 @@ export default function AccountPage() {
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Instagram className="h-4 w-4" />
-                  @{instagram.replace(/^@/, '')}
+                  Instagram
                 </a>
               )}
               {website && (
@@ -259,7 +259,7 @@ export default function AccountPage() {
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Globe className="h-4 w-4" />
-                  {website.replace(/^https?:\/\//, '')}
+                  Website
                 </a>
               )}
             </div>
