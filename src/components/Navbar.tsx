@@ -62,7 +62,7 @@ export function Navbar() {
               </Link>
             </Button>
             
-            {user && (
+            {producerPageUrl && (
               <Button 
                 variant="ghost" 
                 size="sm" 
