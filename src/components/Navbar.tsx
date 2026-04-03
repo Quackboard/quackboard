@@ -17,7 +17,7 @@ export function Navbar() {
     navigate('/login');
   };
 
-  const producerPageUrl = slug ? `/producer/${slug}` : `/producer/${user?.id}`;
+  const producerPageUrl = slug ? `/${slug}` : null;
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
