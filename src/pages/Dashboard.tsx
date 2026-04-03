@@ -240,7 +240,7 @@ export default function Dashboard() {
   }, [upcomingEvents, templateMap]);
 
   const displaySlug = slug || user?.id;
-  const producerPageUrl = `/producer/${displaySlug}`;
+  const producerPageUrl = `/${displaySlug}`;
   const fullPageUrl = `${window.location.origin}${producerPageUrl}`;
 
   const handleCopyLink = async () => {

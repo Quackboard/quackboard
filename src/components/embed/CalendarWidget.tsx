@@ -310,7 +310,7 @@ export default function CalendarWidget({
             {eventsToShow.map((event) => (
               <a
                 key={event.id}
-                href={`${window.location.origin}/producer/${producerSlug}`}
+                href={`${window.location.origin}/${producerSlug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

@@ -194,7 +194,7 @@ export default function Onboarding() {
           <Label htmlFor="slug">Your Page URL</Label>
           <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
-              quackboard.com/producer/
+              quackboard.com/
             </span>
             <Input
               id="slug"
