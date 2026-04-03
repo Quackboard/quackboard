@@ -217,9 +217,6 @@ export default function AccountPage() {
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {displayName}
               </h1>
-              {venueName && (
-                <p className="mt-1 text-lg text-muted-foreground">{venueName}</p>
-              )}
             </div>
           </div>
 
@@ -251,7 +248,7 @@ export default function AccountPage() {
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Instagram className="h-4 w-4" />
-                  @{instagram.replace(/^@/, '')}
+                  Instagram
                 </a>
               )}
               {website && (
@@ -262,7 +259,7 @@ export default function AccountPage() {
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Globe className="h-4 w-4" />
-                  {website.replace(/^https?:\/\//, '')}
+                  Website
                 </a>
               )}
             </div>
@@ -286,7 +283,30 @@ export default function AccountPage() {
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
-            <div className="space-y-2">
+            {/* Desktop: time gutter layout; Mobile: stacked cards */}
+            <div className="hidden md:block space-y-2">
+              {filteredEvents.map(event => {
+                const startParts = event.start_time.split(':');
+                const startDate = new Date(2000, 0, 1, +startParts[0], +startParts[1]);
+                const timeLabel = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                return (
+                  <div key={event.id} className="flex gap-4 items-start">
+                    <div className="w-20 shrink-0 pt-3 text-right text-sm font-medium text-muted-foreground">
+                      {timeLabel}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <EventCard
+                        event={event}
+                        bookings={bookings?.filter(b => b.event_id === event.id) || []}
+                        producerVenueName={venueName}
+                        onBookingSuccess={refetchBookings}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="md:hidden space-y-2">
               {filteredEvents.map(event => (
                 <EventCard
                   key={event.id}
