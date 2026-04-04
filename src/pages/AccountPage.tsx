@@ -23,6 +23,12 @@ function ensureHttps(url: string): string {
   return `https://${url}`;
 }
 
+function instagramUrl(value: string): string {
+  const cleaned = value.replace(/^@/, '').trim();
+  if (cleaned.includes('instagram.com')) return ensureHttps(cleaned);
+  return `https://instagram.com/${cleaned}`;
+}
+
 function isEventPast(event: Event): boolean {
   const now = new Date();
   const eventEnd = new Date(`${event.date}T${event.end_time}`);
@@ -243,7 +249,7 @@ export default function AccountPage() {
             <div className="mt-3 flex items-center gap-4">
               {instagram && (
                 <a
-                  href={`https://instagram.com/${instagram.replace(/^@/, '')}`}
+                  href={instagramUrl(instagram)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
