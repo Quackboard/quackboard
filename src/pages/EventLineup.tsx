@@ -108,6 +108,25 @@ export default function EventLineup() {
     enabled: !!id && !!user,
   });
 
+  // Real-time subscription for bookings changes (e.g. email cancellations)
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`lineup-bookings-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings', filter: `event_id=eq.${id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['event-bookings', id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, queryClient]);
+
   // Redirect if event doesn't belong to current producer
   useEffect(() => {
     if (!authLoading && !eventLoading && event && user) {
