@@ -35,7 +35,7 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               asChild
-              className="px-2"
+              className="px-2 whitespace-nowrap"
             >
               <Link to="/dashboard">
                 <LayoutDashboard className="h-4 w-4 mr-1" />
