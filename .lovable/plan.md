@@ -1,23 +1,19 @@
 
 
-## Fix: "Show events for the next 7 days" includes too many days
+## Fix: Edit page signup helper text to show specific date/time
 
 ### Problem
-When a producer sets "Show events for the next 7 days", the window calculation does `today + 7`, which actually covers **8 calendar days** (today through 7 days from now). For example, if today is Friday April 4, it shows through Friday April 11 — but that means if there's a Sunday event on April 6 AND April 13, both Sundays appear, giving a Sunday-to-Sunday span.
+On the Edit Mic page, the helper text says generic "Sign-ups will open 6 days before the event at 09:00" instead of showing a calculated specific date like the Create Single Mic page does (e.g., "Sign-ups will open on Sat, 4/5/2025 at 11:00 AM").
 
 ### Fix
-Change the window calculation from `today + windowDays` to `today + (windowDays - 1)` so that "7 days" means today plus 6 more days = 7 calendar days total.
+Replace the static text at lines 960-964 of `src/pages/EditMic.tsx` with the same calculated date/time logic used in `CreateSingleMic.tsx`.
 
-### Files to edit
+### File to edit
 
 | File | Change |
 |------|--------|
-| `src/pages/ProducerPage.tsx` (line 132) | `windowEnd.setDate(windowEnd.getDate() + windowDays - 1)` |
-| `src/pages/AccountPage.tsx` (line 132-133) | Same fix |
-| `supabase/functions/get-producer-events-embed/index.ts` | Check if same window logic applies to the embed endpoint (currently it just fetches future events with a limit of 10 — no window filtering, so no change needed) |
+| `src/pages/EditMic.tsx` (lines 960-964) | Replace static "X days before" text with computed date: subtract `signupDaysBefore` from `watchDate`, format with weekday/month/day/year, convert time to 12-hour format |
 
-### What stays the same
-- The EditProfile page settings UI (7 / 14 / 30 options)
-- The label "Show events for the next"
-- All event creation, booking, and cancellation flows
+### Implementation detail
+Use the same pattern from CreateSingleMic (lines 466-489): parse `watchDate`, subtract days, format date with `toLocaleDateString`, convert time to 12-hour AM/PM, and display as "Sign-ups will open on {formatted} at {timeStr}".
 
