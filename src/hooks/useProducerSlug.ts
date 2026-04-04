@@ -10,7 +10,7 @@ export function useProducerSlug() {
   const { user } = useAuth();
 
   const { data: producer, isLoading } = useQuery({
-    queryKey: ['producer-profile', user?.id],
+    queryKey: ['producer-slug', user?.id],
     queryFn: async () => {
       // Try producers table first
       const { data: producerData, error: producerError } = await supabase
