@@ -149,160 +149,153 @@ export function EditProfile() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 max-w-xl">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <ProducerLayout>
+        <div className="max-w-xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
         </div>
-      </div>
+      </ProducerLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-xl">
-      <div className="text-center mb-8">
-        <div className="relative">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+    <ProducerLayout>
+      <div className="max-w-xl mx-auto">
+        <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold text-foreground">Edit Public Page</h1>
+          <p className="text-muted-foreground mt-2">Update your public page and manage page settings.</p>
         </div>
-        <p className="text-muted-foreground mt-2">Update your public page and manage page settings.</p>
-      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="name">Account Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Your account name"
-            {...register('name')}
-            className={errors.name ? 'border-destructive' : ''}
-          />
-          <p className="text-xs text-muted-foreground">This will be the title of your public page and used for the URL (e.g. venue name or mic series name)</p>
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            {...register('email')}
-            disabled
-            className="bg-muted cursor-not-allowed"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="venue_name">Venue Name</Label>
-          <Input
-            id="venue_name"
-            type="text"
-            placeholder="Your Venue Name"
-            {...register('venue_name')}
-            className={errors.venue_name ? 'border-destructive' : ''}
-          />
-          {errors.venue_name && (
-            <p className="text-sm text-destructive">{errors.venue_name.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="venue_address">Venue Address</Label>
-          <Input
-            id="venue_address"
-            type="text"
-            placeholder="123 Main St, City, State"
-            {...register('venue_address')}
-            className={errors.venue_address ? 'border-destructive' : ''}
-          />
-          {errors.venue_address && (
-            <p className="text-sm text-destructive">{errors.venue_address.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="instagram">Instagram</Label>
-          <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
-              instagram.com/
-            </span>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="name">Account Name</Label>
             <Input
-              id="instagram"
+              id="name"
               type="text"
-              placeholder="yourhandle"
-              {...register('instagram')}
-              className={`border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.instagram ? 'text-destructive' : ''}`}
+              placeholder="Your account name"
+              {...register('name')}
+              className={errors.name ? 'border-destructive' : ''}
+            />
+            <p className="text-xs text-muted-foreground">This will be the title of your public page and used for the URL (e.g. venue name or mic series name)</p>
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              {...register('email')}
+              disabled
+              className="bg-muted cursor-not-allowed"
             />
           </div>
-          {errors.instagram && (
-            <p className="text-sm text-destructive">{errors.instagram.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            type="text"
-            placeholder="https://yourwebsite.com"
-            {...register('website')}
-            className={errors.website ? 'border-destructive' : ''}
-          />
-          {errors.website && (
-            <p className="text-sm text-destructive">{errors.website.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bio_markdown">Display Text for Public Page</Label>
-          <Controller
-            name="bio_markdown"
-            control={control}
-            render={({ field }) => (
-              <MarkdownEditor
-                value={field.value || ''}
-                onChange={field.onChange}
-                placeholder="Tell us about yourself..."
-                showLink={true}
-              />
-            )}
-          />
-          {errors.bio_markdown && (
-            <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
-          )}
-        </div>
-        <div className="space-y-4 pt-4 border-t border-border">
-          <h2 className="text-lg font-semibold text-foreground">Page Settings</h2>
           <div className="space-y-2">
-            <Label htmlFor="event_window_days">Show events for the next</Label>
+            <Label htmlFor="venue_name">Venue Name</Label>
+            <Input
+              id="venue_name"
+              type="text"
+              placeholder="Your Venue Name"
+              {...register('venue_name')}
+              className={errors.venue_name ? 'border-destructive' : ''}
+            />
+            {errors.venue_name && (
+              <p className="text-sm text-destructive">{errors.venue_name.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="venue_address">Venue Address</Label>
+            <Input
+              id="venue_address"
+              type="text"
+              placeholder="123 Main St, City, State"
+              {...register('venue_address')}
+              className={errors.venue_address ? 'border-destructive' : ''}
+            />
+            {errors.venue_address && (
+              <p className="text-sm text-destructive">{errors.venue_address.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="instagram">Instagram</Label>
+            <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+              <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+                instagram.com/
+              </span>
+              <Input
+                id="instagram"
+                type="text"
+                placeholder="yourhandle"
+                {...register('instagram')}
+                className={`border-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.instagram ? 'text-destructive' : ''}`}
+              />
+            </div>
+            {errors.instagram && (
+              <p className="text-sm text-destructive">{errors.instagram.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              type="text"
+              placeholder="https://yourwebsite.com"
+              {...register('website')}
+              className={errors.website ? 'border-destructive' : ''}
+            />
+            {errors.website && (
+              <p className="text-sm text-destructive">{errors.website.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bio_markdown">Display Text for Public Page</Label>
             <Controller
-              name="event_window_days"
+              name="bio_markdown"
               control={control}
               render={({ field }) => (
-                <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
-                  <SelectTrigger id="event_window_days">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MarkdownEditor
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  placeholder="Tell us about yourself..."
+                  showLink={true}
+                />
               )}
             />
+            {errors.bio_markdown && (
+              <p className="text-sm text-destructive">{errors.bio_markdown.message}</p>
+            )}
           </div>
-        </div>
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h2 className="text-lg font-semibold text-foreground">Page Settings</h2>
+            <div className="space-y-2">
+              <Label htmlFor="event_window_days">Show events for the next</Label>
+              <Controller
+                name="event_window_days"
+                control={control}
+                render={({ field }) => (
+                  <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                    <SelectTrigger id="event_window_days">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="14">14 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </form>
-    </div>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </form>
+      </div>
+    </ProducerLayout>
   );
 }
