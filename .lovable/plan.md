@@ -1,40 +1,87 @@
 
+Problem identified:
 
-## Plan: Fix email cancellation button not working
+1. The navbar itself is not the main issue on the create pages.
+   The real bug is a React Query cache collision:
+   - `useProducerSlug()` uses the key `['producer-profile', user?.id]`
+   - `CreateSingleMic`, `CreateRecurringMic`, and `EditMic` also use that same key
+   - but those page queries fetch different data (`venue_name`, `venue_address`, `timezone`) and do not include `slug`
+   - whichever query resolves last can overwrite the shared cache entry, so the navbar reads a cached producer object with no slug and hides the "View My Public Page" link
 
-### Root Cause
+2. `EditProfile` is a separate issue:
+   - it does not use `ProducerLayout`
+   - so it does not render `Navbar` at all
+   - that means the public page link can never appear there in the current implementation
 
-The `cancel-booking` edge function has **zero logs**, meaning it is not being invoked at all. This strongly suggests the function is not deployed (or was un-deployed at some point). The code in `supabase/functions/cancel-booking/index.ts` and the config in `supabase/config.toml` both look correct — the function just needs to be redeployed.
+3. The route target is already correct:
+   - `Navbar` builds the link as `/${slug}`
+   - that already points to the canonical root public page route, not `/producer/:slug`
 
-The database confirms the issue: booking `6efa3568` has `cancelled_at: null` despite the user attempting cancellation via the email link.
+Files I would touch
 
-### Fix
+1. `src/hooks/useProducerSlug.ts`
+   - keep this hook as the single source of truth for navbar slug lookup
+   - give it a dedicated query key such as `['producer-public-page-link', user?.id]` or similar so it cannot be overwritten by unrelated producer queries
 
-**Step 1: Redeploy the `cancel-booking` edge function**
+2. `src/pages/CreateSingleMic.tsx`
+   - rename its current `['producer-profile', user?.id]` query key to a page-specific key like `['producer-create-single-defaults', user?.id]`
+   - no behavior change besides preventing cache pollution
 
-The function code is correct — it already:
-- Validates the `cancelToken`
-- Sets `cancelled_at` via service role (bypassing RLS)
-- Triggers the cancellation email
-- Returns `{ success: true }`
+3. `src/pages/CreateRecurringMic.tsx`
+   - rename its current `['producer-profile', user?.id]` query key to a page-specific key like `['producer-create-recurring-defaults', user?.id]`
 
-No code changes are needed. The function just needs to be redeployed so it's live on Supabase.
+4. `src/pages/EditMic.tsx`
+   - rename its current `['producer-profile', user?.id]` query key to a page-specific key like `['producer-edit-mic-settings', user?.id]`
 
-**Step 2: Add a defensive `refetchInterval` to the producer pages**
+5. `src/pages/EditProfile.tsx`
+   - wrap the page in `ProducerLayout` so the navbar appears here too
+   - preserve the existing back button and page content styling while moving it inside the shared authenticated layout
 
-As a belt-and-suspenders measure, add `refetchInterval: 10000` (10 seconds) to the bookings query in both `AccountPage.tsx` and `ProducerPage.tsx`. This ensures that even if a Supabase Realtime event is missed after an email-based cancellation, the UI will self-correct within 10 seconds.
+Files previously touched trying to fix this
 
-### What is NOT touched
-- CancelBooking.tsx (the `/cancel/:token` page) — works correctly
-- cancel-booking edge function code — already correct
-- cancel-booking-by-email (in-app cancellation) — already working
-- Email templates, signup flow, booking flow
+1. `src/components/Navbar.tsx`
+   - previously changed to reduce wrapping/overflow risk
+   - button text/spacing was adjusted so the desktop nav would not drop the public page button at narrower widths
+   - link text was kept as “View My Public Page” with responsive shortening on smaller desktop widths
 
-### Technical Details
+2. `src/hooks/useProducerSlug.ts`
+   - previously updated to fall back from `producers.slug` to `accounts_users -> accounts.slug`
+   - this helped when a slug lived on the account record instead of the producer record
+   - but it did not fix the cache collision issue above
 
-| File | Change |
-|------|--------|
-| `supabase/functions/cancel-booking/index.ts` | Redeploy only (no code change) |
-| `src/pages/AccountPage.tsx` | Add `refetchInterval: 10000` to bookings query |
-| `src/pages/ProducerPage.tsx` | Add `refetchInterval: 10000` to bookings query |
+What I would not touch
 
+- routing in `src/App.tsx` because `/:slug` is already the correct destination
+- auth flow
+- public profile page logic
+- database / Supabase schema
+
+Expected result after implementation
+
+- the "View My Public Page" link appears consistently on:
+  - `/dashboard`
+  - `/create`
+  - `/create/singlemic`
+  - `/create/recurringmic`
+  - `/edit-profile`
+  - other authenticated pages already using `ProducerLayout`
+- the link continues to open the canonical `/:slug` public page
+- no accidental side effects to booking, event creation, or public page rendering
+
+Technical details
+
+```text
+Current failure mode:
+Navbar -> useProducerSlug() -> query key ['producer-profile', userId] -> expects slug
+Create/Edit pages -> different query with same key -> returns no slug
+Shared cache entry gets overwritten
+Navbar sees slug = null
+Button disappears
+```
+
+```text
+Fix strategy:
+- give slug lookup its own dedicated query key
+- give page-level producer default queries their own dedicated keys
+- ensure EditProfile uses ProducerLayout so Navbar is present there
+```
