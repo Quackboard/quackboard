@@ -959,9 +959,9 @@ export default function EditMic() {
                     {...register('signupOpensAtTime')}
                   />
                 </div>
-                {watchDate && watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (() => {
-                  const daysBefore = watch('signupDaysBefore') ?? 0;
-                  const timeVal = watch('signupOpensAtTime') ?? '';
+                {watchDate && watchSignupDaysBefore != null && watchSignupTime ? (() => {
+                  const daysBefore = watchSignupDaysBefore ?? 0;
+                  const timeVal = watchSignupTime ?? '';
                   const d = watchDate instanceof Date ? watchDate : new Date(String(watchDate) + 'T00:00:00');
                   if (isNaN(d.getTime())) return null;
                   const openDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -980,7 +980,7 @@ export default function EditMic() {
                       Sign-ups will open on {formatted} at {timeStr}
                     </p>
                   );
-                })()}
+                })() : null}
               </div>
             )}
           </div>
