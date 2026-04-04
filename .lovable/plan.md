@@ -1,27 +1,28 @@
 
 
-## Plan: Update internal `/producer/:slug` links to `/:slug`
+## Plan: Add date to UpcomingEventCard and make it more compact
 
-### Navbar fix (item 1)
+### Changes — single file: `src/components/dashboard/UpcomingEventCard.tsx`
 
-Current line 20: `const producerPageUrl = slug ? `/producer/${slug}` : `/producer/${user?.id}`;`
+**1. Add formatted date display**
 
-The fallback to `user?.id` won't work on AccountPage since it only resolves slugs. Change to:
-- `const producerPageUrl = slug ? `/${slug}` : null;`
-- Conditionally render the "View My Page" link only when `slug` is available. If the producer hasn't completed onboarding (no slug yet), hide the link entirely.
+Format `event.date` as `ddd MM/DD/YYYY` (e.g. "Fri 04/04/2026") using `date-fns`.
 
-### All changes
+**2. Compact layout — put title, date, and time on one line**
 
-| # | File | Change |
-|---|------|--------|
-| 1 | `src/components/Navbar.tsx` (line 20) | Change to `const producerPageUrl = slug ? `/${slug}` : null;` and conditionally render the "View My Page" button only when `producerPageUrl` is truthy |
-| 2 | `src/pages/Dashboard.tsx` | Change `/producer/${displaySlug}` to `/${displaySlug}` |
-| 3 | `src/pages/DiscoverMics.tsx` | Change `/producer/${producer.slug}` to `/${producer.slug}` |
-| 4 | `src/components/embed/CalendarWidget.tsx` | Change `/producer/${producerSlug}` to `/${producerSlug}` |
-| 5 | `src/pages/Onboarding.tsx` | Change URL prefix display from `quackboard.com/producer/` to `quackboard.com/` |
-| 6 | `src/pages/ProducerPage.tsx` | Change redirect from `/producer/${data.slug}` to `/${data.slug}` |
+- **Desktop**: Single row with title, date, and time range inline, then spots/status below. Reduces card height significantly.
+  - Layout: `Title · Fri 04/04/2026 · 7:00 PM – 9:00 PM`
+  - Spots info and signup status stay on a second line.
+  
+- **Mobile**: Stack into two lines max:
+  - Line 1: Title · Date
+  - Line 2: Time range · Spots info
+  - Use `flex-wrap` and smaller text to keep it readable.
+
+**3. Responsive approach**
+
+Use Tailwind responsive classes (`sm:` breakpoint) to switch between stacked mobile layout and inline desktop layout. Keep 44px touch targets on buttons.
 
 ### What is NOT touched
-- `/producer/:slug` route in App.tsx (stays as fallback)
-- Email templates, edge functions, booking flow, signup flow
+- ProducerPage, booking flow, signup flow, edge functions, other dashboard sections
 
