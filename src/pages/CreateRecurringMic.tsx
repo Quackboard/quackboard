@@ -513,17 +513,22 @@ export default function CreateRecurringMic() {
           </div>
 
           {/* 4. Start / End Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time *</Label>
-              <Input id="startTime" type="time" {...register('startTime')} />
-              {errors.startTime && <p className="text-sm text-destructive">{errors.startTime.message}</p>}
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time *</Label>
+                <Input id="startTime" type="time" {...register('startTime')} />
+                {errors.startTime && <p className="text-sm text-destructive">{errors.startTime.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time *</Label>
+                <Input id="endTime" type="time" {...register('endTime')} />
+                {errors.endTime && <p className="text-sm text-destructive">{errors.endTime.message}</p>}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endTime">End Time *</Label>
-              <Input id="endTime" type="time" {...register('endTime')} />
-              {errors.endTime && <p className="text-sm text-destructive">{errors.endTime.message}</p>}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              First event in the series only. For example, if you host mics every hour from 10am–2pm, enter 10am–11am here.
+            </p>
           </div>
         </section>
 
