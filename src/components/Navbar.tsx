@@ -30,7 +30,7 @@ export function Navbar() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1 flex-shrink-0 overflow-x-auto">
+          <div className="hidden md:flex items-center gap-0.5 flex-shrink min-w-0">
             <Button 
               variant="ghost" 
               size="sm" 
