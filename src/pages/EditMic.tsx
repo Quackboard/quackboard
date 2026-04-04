@@ -293,6 +293,8 @@ export default function EditMic() {
   const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
   const watchSections = watch('sections');
+  const watchSignupDaysBefore = watch('signupDaysBefore');
+  const watchSignupTime = watch('signupOpensAtTime');
 
   // Calculate bookings per section
   const activeBookings = useMemo(() => {
