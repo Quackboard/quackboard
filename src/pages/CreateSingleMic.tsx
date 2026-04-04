@@ -465,11 +465,26 @@ export default function CreateSingleMic() {
                   <span className="text-sm text-muted-foreground whitespace-nowrap">days before at</span>
                   <Input type="time" className="w-32" {...register('signupOpensAtTime')} />
                 </div>
-                {watchDate && watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (
-                  <p className="text-xs text-muted-foreground">
-                    Sign-ups will open {watch('signupDaysBefore')} day{watch('signupDaysBefore') !== 1 ? 's' : ''} before the event at {watch('signupOpensAtTime')}
-                  </p>
-                )}
+                {watchDate && watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (() => {
+                  const daysBefore = watch('signupDaysBefore') ?? 0;
+                  const timeVal = watch('signupOpensAtTime') ?? '';
+                  const openDate = new Date(watchDate.getFullYear(), watchDate.getMonth(), watchDate.getDate());
+                  openDate.setDate(openDate.getDate() - daysBefore);
+                  const [h, m] = timeVal.split(':').map(Number);
+                  if (isNaN(h) || isNaN(m)) return null;
+                  openDate.setHours(h, m, 0, 0);
+                  const formatted = openDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: 'numeric' });
+                  const hours = openDate.getHours();
+                  const mins = openDate.getMinutes();
+                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                  const h12 = hours % 12 || 12;
+                  const timeStr = `${h12}:${mins.toString().padStart(2, '0')} ${ampm}`;
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Sign-ups will open on {formatted} at {timeStr}
+                    </p>
+                  );
+                })()}
                 {errors.signupDaysBefore && <p className="text-sm text-destructive">{errors.signupDaysBefore.message}</p>}
                 {errors.signupOpensAtTime && <p className="text-sm text-destructive">{errors.signupOpensAtTime.message}</p>}
               </div>
