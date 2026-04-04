@@ -46,7 +46,7 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               asChild
-              className="px-2"
+              className="px-2 whitespace-nowrap"
             >
               <Link to="/create">
                 <Plus className="h-4 w-4 mr-1" />
@@ -57,7 +57,7 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               asChild
-              className="px-2"
+              className="px-2 whitespace-nowrap"
             >
               <Link to="/edit-profile">
                 <UserPen className="h-4 w-4 mr-1" />
@@ -70,11 +70,11 @@ export function Navbar() {
                 variant="ghost" 
                 size="sm" 
                 asChild
-                className="px-2"
+                className="px-2 whitespace-nowrap"
               >
                 <a href={producerPageUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-1" />
-                  View My Public Page
+                  <span className="hidden lg:inline">View My </span>Public Page
                 </a>
               </Button>
             )}
@@ -83,7 +83,7 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               onClick={handleSignOut}
-              className="text-muted-foreground hover:text-foreground px-2"
+              className="text-muted-foreground hover:text-foreground px-2 whitespace-nowrap"
             >
               <LogOut className="h-4 w-4 mr-1" />
               Log out
