@@ -23,6 +23,12 @@ function ensureHttps(url: string): string {
   return `https://${url}`;
 }
 
+function instagramUrl(value: string): string {
+  const cleaned = value.replace(/^@/, '').trim();
+  if (cleaned.includes('instagram.com')) return ensureHttps(cleaned);
+  return `https://instagram.com/${cleaned}`;
+}
+
 function isEventPast(event: Event): boolean {
   const now = new Date();
   const eventEnd = new Date(`${event.date}T${event.end_time}`);
