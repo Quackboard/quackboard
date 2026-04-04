@@ -173,7 +173,7 @@ export default function EditMic() {
 
   // Fetch producer profile
   const { data: producer } = useQuery({
-    queryKey: ['producer-profile', user?.id],
+    queryKey: ['producer-edit-mic-defaults', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('producers')

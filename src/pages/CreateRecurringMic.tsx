@@ -198,7 +198,7 @@ export default function CreateRecurringMic() {
   const [generatedCount, setGeneratedCount] = useState(0);
 
   const { data: producer } = useQuery({
-    queryKey: ['producer-profile', user?.id],
+    queryKey: ['producer-create-recurring-defaults', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('producers')

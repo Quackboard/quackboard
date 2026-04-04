@@ -114,7 +114,7 @@ export default function CreateSingleMic() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: producer } = useQuery({
-    queryKey: ['producer-profile', user?.id],
+    queryKey: ['producer-create-single-defaults', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('producers')
