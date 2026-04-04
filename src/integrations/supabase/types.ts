@@ -235,7 +235,6 @@ export type Database = {
           recurrence_end_date: string | null
           recurrence_rule: Json | null
           sections_config: Json
-          series_id: string
           signup_anchor_day: number | null
           signup_anchor_time: string | null
           signup_opens_hours_before: number | null
@@ -257,7 +256,6 @@ export type Database = {
           recurrence_end_date?: string | null
           recurrence_rule?: Json | null
           sections_config?: Json
-          series_id?: string
           signup_anchor_day?: number | null
           signup_anchor_time?: string | null
           signup_opens_hours_before?: number | null
@@ -279,7 +277,6 @@ export type Database = {
           recurrence_end_date?: string | null
           recurrence_rule?: Json | null
           sections_config?: Json
-          series_id?: string
           signup_anchor_day?: number | null
           signup_anchor_time?: string | null
           signup_opens_hours_before?: number | null
@@ -316,7 +313,6 @@ export type Database = {
           producer_message: string | null
           publish_at: string | null
           sections_config: Json
-          series_id: string | null
           signup_opens_at: string | null
           source_link: string | null
           start_time: string
@@ -344,7 +340,6 @@ export type Database = {
           producer_message?: string | null
           publish_at?: string | null
           sections_config?: Json
-          series_id?: string | null
           signup_opens_at?: string | null
           source_link?: string | null
           start_time: string
@@ -372,7 +367,6 @@ export type Database = {
           producer_message?: string | null
           publish_at?: string | null
           sections_config?: Json
-          series_id?: string | null
           signup_opens_at?: string | null
           source_link?: string | null
           start_time?: string
