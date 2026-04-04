@@ -497,17 +497,6 @@ export default function CreateRecurringMic() {
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
 
-          {/* 2. Description */}
-          <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Describe your mic — format, rules, what comics should know..." />
-              )}
-            />
-          </div>
 
           {/* 3. Venue */}
           <div className="grid grid-cols-2 gap-4">
