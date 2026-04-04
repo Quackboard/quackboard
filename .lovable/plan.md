@@ -1,28 +1,40 @@
 
 
-## Plan: Add date to UpcomingEventCard and make it more compact
+## Plan: Fix email cancellation button not working
 
-### Changes — single file: `src/components/dashboard/UpcomingEventCard.tsx`
+### Root Cause
 
-**1. Add formatted date display**
+The `cancel-booking` edge function has **zero logs**, meaning it is not being invoked at all. This strongly suggests the function is not deployed (or was un-deployed at some point). The code in `supabase/functions/cancel-booking/index.ts` and the config in `supabase/config.toml` both look correct — the function just needs to be redeployed.
 
-Format `event.date` as `ddd MM/DD/YYYY` (e.g. "Fri 04/04/2026") using `date-fns`.
+The database confirms the issue: booking `6efa3568` has `cancelled_at: null` despite the user attempting cancellation via the email link.
 
-**2. Compact layout — put title, date, and time on one line**
+### Fix
 
-- **Desktop**: Single row with title, date, and time range inline, then spots/status below. Reduces card height significantly.
-  - Layout: `Title · Fri 04/04/2026 · 7:00 PM – 9:00 PM`
-  - Spots info and signup status stay on a second line.
-  
-- **Mobile**: Stack into two lines max:
-  - Line 1: Title · Date
-  - Line 2: Time range · Spots info
-  - Use `flex-wrap` and smaller text to keep it readable.
+**Step 1: Redeploy the `cancel-booking` edge function**
 
-**3. Responsive approach**
+The function code is correct — it already:
+- Validates the `cancelToken`
+- Sets `cancelled_at` via service role (bypassing RLS)
+- Triggers the cancellation email
+- Returns `{ success: true }`
 
-Use Tailwind responsive classes (`sm:` breakpoint) to switch between stacked mobile layout and inline desktop layout. Keep 44px touch targets on buttons.
+No code changes are needed. The function just needs to be redeployed so it's live on Supabase.
+
+**Step 2: Add a defensive `refetchInterval` to the producer pages**
+
+As a belt-and-suspenders measure, add `refetchInterval: 10000` (10 seconds) to the bookings query in both `AccountPage.tsx` and `ProducerPage.tsx`. This ensures that even if a Supabase Realtime event is missed after an email-based cancellation, the UI will self-correct within 10 seconds.
 
 ### What is NOT touched
-- ProducerPage, booking flow, signup flow, edge functions, other dashboard sections
+- CancelBooking.tsx (the `/cancel/:token` page) — works correctly
+- cancel-booking edge function code — already correct
+- cancel-booking-by-email (in-app cancellation) — already working
+- Email templates, signup flow, booking flow
+
+### Technical Details
+
+| File | Change |
+|------|--------|
+| `supabase/functions/cancel-booking/index.ts` | Redeploy only (no code change) |
+| `src/pages/AccountPage.tsx` | Add `refetchInterval: 10000` to bookings query |
+| `src/pages/ProducerPage.tsx` | Add `refetchInterval: 10000` to bookings query |
 
