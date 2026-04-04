@@ -249,7 +249,7 @@ export default function AccountPage() {
             <div className="mt-3 flex items-center gap-4">
               {instagram && (
                 <a
-                  href={`https://instagram.com/${instagram.replace(/^@/, '')}`}
+                  href={instagramUrl(instagram)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
