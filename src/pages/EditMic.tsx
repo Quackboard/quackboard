@@ -130,6 +130,28 @@ function formatTime12h(time: string): string {
 
 type FormData = z.infer<typeof formSchema>;
 
+function SignupHelperText({ date, daysBefore, time }: { date: Date | undefined; daysBefore: number | undefined; time: string | undefined }) {
+  if (!date || daysBefore == null || !time) return null;
+  const d = date instanceof Date ? date : new Date(String(date) + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  const openDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  openDate.setDate(openDate.getDate() - daysBefore);
+  const [h, m] = time.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return null;
+  openDate.setHours(h, m, 0, 0);
+  const formatted = openDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: 'numeric' });
+  const hours = openDate.getHours();
+  const mins = openDate.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  const timeStr = `${h12}:${mins.toString().padStart(2, '0')} ${ampm}`;
+  return (
+    <p className="text-xs text-muted-foreground">
+      Sign-ups will open on {formatted} at {timeStr}
+    </p>
+  );
+}
+
 export default function EditMic() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -959,28 +981,7 @@ export default function EditMic() {
                     {...register('signupOpensAtTime')}
                   />
                 </div>
-                {watchDate && watchSignupDaysBefore != null && watchSignupTime ? (() => {
-                  const daysBefore = watchSignupDaysBefore ?? 0;
-                  const timeVal = watchSignupTime ?? '';
-                  const d = watchDate instanceof Date ? watchDate : new Date(String(watchDate) + 'T00:00:00');
-                  if (isNaN(d.getTime())) return null;
-                  const openDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                  openDate.setDate(openDate.getDate() - daysBefore);
-                  const [h, m] = timeVal.split(':').map(Number);
-                  if (isNaN(h) || isNaN(m)) return null;
-                  openDate.setHours(h, m, 0, 0);
-                  const formatted = openDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: 'numeric' });
-                  const hours = openDate.getHours();
-                  const mins = openDate.getMinutes();
-                  const ampm = hours >= 12 ? 'PM' : 'AM';
-                  const h12 = hours % 12 || 12;
-                  const timeStr = `${h12}:${mins.toString().padStart(2, '0')} ${ampm}`;
-                  return (
-                    <p className="text-xs text-muted-foreground">
-                      Sign-ups will open on {formatted} at {timeStr}
-                    </p>
-                  );
-                })() : null}
+                <SignupHelperText date={watchDate} daysBefore={watchSignupDaysBefore} time={watchSignupTime} />
               </div>
             )}
           </div>
