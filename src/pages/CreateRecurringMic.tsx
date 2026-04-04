@@ -497,17 +497,6 @@ export default function CreateRecurringMic() {
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
 
-          {/* 2. Description */}
-          <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Describe your mic — format, rules, what comics should know..." />
-              )}
-            />
-          </div>
 
           {/* 3. Venue */}
           <div className="grid grid-cols-2 gap-4">
@@ -913,6 +902,7 @@ export default function CreateRecurringMic() {
           {/* Additional Info / Producer Message */}
           <div className="space-y-2">
             <Label>Additional Info (optional)</Label>
+            <p className="text-sm text-muted-foreground">This message will be sent to comic after they sign up.</p>
             <Controller
               name="producerMessage"
               control={control}
@@ -920,7 +910,6 @@ export default function CreateRecurringMic() {
                 <MarkdownEditor value={field.value || ''} onChange={field.onChange} placeholder="Details shown to comics after they sign up..." />
               )}
             />
-            <p className="text-sm text-muted-foreground">This message will be shown to comics after they book a spot.</p>
           </div>
 
           <div className="flex items-center justify-between">
