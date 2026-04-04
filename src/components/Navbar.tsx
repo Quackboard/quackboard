@@ -30,11 +30,12 @@ export function Navbar() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
               asChild
+              className="px-2"
             >
               <Link to="/dashboard">
                 <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -45,20 +46,22 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               asChild
+              className="px-2"
             >
               <Link to="/create">
                 <Plus className="h-4 w-4 mr-1" />
-                Create Mic
+                Create
               </Link>
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               asChild
+              className="px-2"
             >
               <Link to="/edit-profile">
                 <UserPen className="h-4 w-4 mr-1" />
-                Edit Profile
+                Profile
               </Link>
             </Button>
             
@@ -67,10 +70,11 @@ export function Navbar() {
                 variant="ghost" 
                 size="sm" 
                 asChild
+                className="px-2"
               >
                 <a href={producerPageUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-1" />
-                  View My Page
+                  My Page
                 </a>
               </Button>
             )}
@@ -79,9 +83,9 @@ export function Navbar() {
               variant="ghost" 
               size="sm" 
               onClick={handleSignOut}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground px-2"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4 mr-1" />
               Log out
             </Button>
           </div>
