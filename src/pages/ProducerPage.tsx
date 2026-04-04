@@ -38,7 +38,7 @@ export default function ProducerPage() {
         
         // If found by UUID and has a slug, redirect to slug URL
         if (data?.slug) {
-          navigate(`/producer/${data.slug}`, { replace: true });
+          navigate(`/${data.slug}`, { replace: true });
           return data as Producer;
         }
         

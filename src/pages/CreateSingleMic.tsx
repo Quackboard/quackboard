@@ -217,7 +217,6 @@ export default function CreateSingleMic() {
         status,
         publish_at: publishAt,
         signup_opens_at: computeSignupOpensAt(dateStr),
-        series_id: null,
         email_frequency: data.emailFrequency === 'none' ? 'disabled' : (data.emailFrequency || 'disabled'),
         producer_message: data.producerMessage || null,
       }).select('id').single();

@@ -332,7 +332,7 @@ export default function DiscoverMics() {
 
                     if (producer?.slug) {
                       return (
-                        <Link key={ev.id} to={`/producer/${producer.slug}`} className="block">
+                        <Link key={ev.id} to={`/${producer.slug}`} className="block">
                           {cardContent}
                         </Link>
                       );

@@ -30,7 +30,7 @@ interface EventWithBookings {
   status: string;
   publish_at: string | null;
   signup_opens_at: string | null;
-  series_id: string | null;
+  template_id: string | null;
   bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
@@ -43,7 +43,6 @@ interface EventAvailability {
 interface TemplateRow {
   id: string;
   title: string;
-  series_id: string;
   start_time: string;
   end_time: string;
   recurrence_rule: { days?: number[] } | null;
@@ -66,7 +65,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, series_id,
+          sections_config, status, publish_at, signup_opens_at, template_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -89,7 +88,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, series_id,
+          sections_config, status, publish_at, signup_opens_at, template_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -109,7 +108,7 @@ export default function Dashboard() {
         .from('events')
         .select(`
           id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, series_id,
+          sections_config, status, publish_at, signup_opens_at, template_id,
           bookings (id, slot_position, cancelled_at)
         `)
         .eq('producer_id', user!.id)
@@ -127,7 +126,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_templates')
-        .select('id, title, series_id, start_time, end_time, recurrence_rule')
+        .select('id, title, start_time, end_time, recurrence_rule')
         .eq('producer_id', user!.id);
       if (error) throw error;
       return data as TemplateRow[];
@@ -158,16 +157,16 @@ export default function Dashboard() {
     return map;
   }, [availabilityData]);
 
-  // Build template map by series_id
+  // Build template map by template id
   const templateMap = useMemo(() => {
     const map = new Map<string, TemplateRow>();
-    templates?.forEach(t => map.set(t.series_id, t));
+    templates?.forEach(t => map.set(t.id, t));
     return map;
   }, [templates]);
 
   // Categorize upcoming events
   const { happeningNow, openingSoon, recurringGroups, singleGrouped } = useMemo(() => {
-    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], recurringGroups: [] as { seriesId: string; template: TemplateRow; events: EventWithBookings[] }[], singleGrouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
+    if (!upcomingEvents) return { happeningNow: [], openingSoon: [], recurringGroups: [] as { templateId: string; template: TemplateRow; events: EventWithBookings[] }[], singleGrouped: [] as { dateLabel: string; events: EventWithBookings[] }[] };
 
     const currentTime = new Date();
     const currentTimeStr = currentTime.toTimeString().slice(0, 5);
@@ -203,9 +202,9 @@ export default function Dashboard() {
     const singleArr: EventWithBookings[] = [];
 
     for (const event of remainingArr) {
-      if (event.series_id) {
-        if (!recurringMap.has(event.series_id)) recurringMap.set(event.series_id, []);
-        recurringMap.get(event.series_id)!.push(event);
+      if (event.template_id) {
+        if (!recurringMap.has(event.template_id)) recurringMap.set(event.template_id, []);
+        recurringMap.get(event.template_id)!.push(event);
       } else {
         singleArr.push(event);
       }
@@ -213,11 +212,11 @@ export default function Dashboard() {
 
     // Build recurring groups with template info
     const recurringGroupsArr = Array.from(recurringMap.entries())
-      .map(([seriesId, events]) => {
-        const template = templateMap.get(seriesId);
+      .map(([templateId, events]) => {
+        const template = templateMap.get(templateId);
         return {
-          seriesId,
-          template: template ?? { id: '', title: events[0]?.title ?? 'Untitled', series_id: seriesId, start_time: events[0]?.start_time ?? '', end_time: events[0]?.end_time ?? '', recurrence_rule: null },
+          templateId,
+          template: template ?? { id: templateId, title: events[0]?.title ?? 'Untitled', start_time: events[0]?.start_time ?? '', end_time: events[0]?.end_time ?? '', recurrence_rule: null },
           events: events.sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)),
         };
       })
@@ -241,7 +240,7 @@ export default function Dashboard() {
   }, [upcomingEvents, templateMap]);
 
   const displaySlug = slug || user?.id;
-  const producerPageUrl = `/producer/${displaySlug}`;
+  const producerPageUrl = `/${displaySlug}`;
   const fullPageUrl = `${window.location.origin}${producerPageUrl}`;
 
   const handleCopyLink = async () => {
@@ -368,7 +367,7 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       {recurringGroups.map(group => (
                         <RecurringSeriesCard
-                          key={group.seriesId}
+                          key={group.templateId}
                           template={group.template}
                           events={group.events}
                           availabilityMap={availabilityMap}

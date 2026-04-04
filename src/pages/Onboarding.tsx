@@ -177,14 +177,14 @@ export default function Onboarding() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="name">Mic Name</Label>
+          <Label htmlFor="name">Account Name</Label>
           <Input
             id="name"
-            placeholder="Your mic name"
+            placeholder="Your account name"
             {...register('name')}
             className={errors.name ? 'border-destructive' : ''}
           />
-          <p className="text-xs text-muted-foreground">This will be the title of your public page</p>
+          <p className="text-xs text-muted-foreground">This will be the title of your public page and used for the URL (e.g. venue name or mic series name)</p>
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
@@ -194,7 +194,7 @@ export default function Onboarding() {
           <Label htmlFor="slug">Your Page URL</Label>
           <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
-              quackboard.com/producer/
+              quackboard.com/
             </span>
             <Input
               id="slug"
