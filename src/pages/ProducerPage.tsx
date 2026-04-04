@@ -129,7 +129,7 @@ export default function ProducerPage() {
   // Only show events within the producer's chosen window
   const windowDays = producer?.event_window_days ?? 7;
   const windowEnd = new Date();
-  windowEnd.setDate(windowEnd.getDate() + windowDays);
+  windowEnd.setDate(windowEnd.getDate() + windowDays - 1);
   const currentEvents = (events || []).filter(e => {
     if (isEventPast(e)) return false;
     const eventDate = new Date(e.date);

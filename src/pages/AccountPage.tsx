@@ -130,7 +130,7 @@ export default function AccountPage() {
   // Window filtering (same as ProducerPage)
   const windowDays = producer?.event_window_days ?? 7;
   const windowEnd = new Date();
-  windowEnd.setDate(windowEnd.getDate() + windowDays);
+  windowEnd.setDate(windowEnd.getDate() + windowDays - 1);
   const currentEvents = (events || []).filter(e => {
     if (isEventPast(e)) return false;
     const eventDate = new Date(e.date);
