@@ -468,7 +468,9 @@ export default function CreateSingleMic() {
                 {watchDate && watch('signupDaysBefore') !== undefined && watch('signupOpensAtTime') && (() => {
                   const daysBefore = watch('signupDaysBefore') ?? 0;
                   const timeVal = watch('signupOpensAtTime') ?? '';
-                  const openDate = new Date(watchDate.getFullYear(), watchDate.getMonth(), watchDate.getDate());
+                  const d = watchDate instanceof Date ? watchDate : new Date(String(watchDate) + 'T00:00:00');
+                  if (isNaN(d.getTime())) return null;
+                  const openDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
                   openDate.setDate(openDate.getDate() - daysBefore);
                   const [h, m] = timeVal.split(':').map(Number);
                   if (isNaN(h) || isNaN(m)) return null;
