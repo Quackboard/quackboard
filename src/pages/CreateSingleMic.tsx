@@ -325,9 +325,8 @@ export default function CreateSingleMic() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">Title (optional)</Label>
+            <Label htmlFor="title">Title</Label>
             <Input id="title" placeholder="e.g., Tuesday Night Open Mic" {...register('title')} />
-            <p className="text-sm text-muted-foreground">Just for you — comics won't see this</p>
           </div>
         </section>
 
