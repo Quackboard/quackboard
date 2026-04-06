@@ -240,8 +240,21 @@ export default function AccountPage() {
           )}
 
           {bioMarkdown && (
-            <div className="mt-4 prose prose-sm max-w-none text-muted-foreground">
-              <ReactMarkdown>{bioMarkdown}</ReactMarkdown>
+            <div className="mt-4 prose prose-sm max-w-none text-muted-foreground prose-a:text-primary hover:prose-a:underline">
+              <ReactMarkdown
+                components={{
+                  a: ({ href, children }) => (
+                    <a
+                      href={href ? ensureHttps(href) : '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >{bioMarkdown}</ReactMarkdown>
             </div>
           )}
 
