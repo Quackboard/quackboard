@@ -79,7 +79,7 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!slugManuallyEdited && nameValue) {
-      const generatedSlug = generateSlug(nameValue);
+      const generatedSlug = generateSlug(nameValue).replace(/-/g, '');
       setValue('slug', generatedSlug, { shouldValidate: true });
     }
   }, [nameValue, slugManuallyEdited, setValue]);
