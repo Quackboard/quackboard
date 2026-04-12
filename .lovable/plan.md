@@ -1,34 +1,19 @@
-## Make Browse Mics More Prominent for Comics
 
-### What we're building
 
-Add a dedicated section on the landing page aimed at **comics** (not producers) with a friendly message, value prop, and CTA to browse open mics. This sits between the features grid and the final CTA section.
+## Add Comics Banner Under Nav on Home Page
 
-### Changes
+### Change
+**`src/pages/Index.tsx`** only.
 
-`**src/pages/Index.tsx**` — Add a new section after the features grid (after line 107):
+1. **Remove** the existing "Browse Mics Banner" section (the rounded card with "Looking for stage time?" between features grid and CTA).
 
-- Friendly headline: something like **"Looking for stage time?"**
-- Short value prop: "Browse open mics happening this week and grab a spot. No account needed!"
-- A prominent CTA button: **"Browse Open Mics →"** linking to `/browse`
-- Styled as a standout banner — uses `bg-primary/5` or `bg-accent` tones with a border to differentiate it from the producer-focused sections above
-- Include a `Mic` icon for personality
+2. **Add a full-width banner** immediately after `</header>`, before `<main>`:
+   - Copy: **"Comics! Quackboard is open. Waddle over and find your next mic."**
+   - `Mic` icon, "Browse Open Mics →" button
+   - Styled as `w-full border-b border-primary/15 bg-primary/5 py-3 px-4`
+   - Flex row on `md:`, stacked + centered on mobile
 
-### Layout sketch
+Since this markup lives inside `Index.tsx`, it only renders on the home page.
 
-```text
-┌──────────────────────────────────────────────┐
-│  🎤  Looking for stage time?                 │
-│                                              │
-│  Browse open mics happening this week and    │
-│  grab a spot — no account needed.            │
-│                                              │
-│          [ Browse Open Mics → ]              │
-└──────────────────────────────────────────────┘
-```
+### No other files touched.
 
-### Files touched
-
-- `src/pages/Index.tsx` only
-
-Put this above the fold. 
