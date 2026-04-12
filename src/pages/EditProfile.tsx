@@ -9,14 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { validateSlug } from '@/lib/slug';
 
 const editProfileSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   email: z.string().email().optional(),
+  slug: z.string().trim().min(1, 'Page URL is required').refine(
+    (val) => validateSlug(val) === null,
+    (val) => ({ message: validateSlug(val) || 'Invalid slug' })
+  ),
   venue_name: z.string().trim().max(200).optional(),
   venue_address: z.string().trim().max(500).optional(),
   instagram: z.string().trim().max(50).optional(),
@@ -27,17 +33,13 @@ const editProfileSchema = z.object({
 
 type EditProfileFormData = z.infer<typeof editProfileSchema>;
 
-// Extract handle from stored instagram value (could be full URL or just handle)
 function extractInstagramHandle(value: string): string {
   if (!value) return '';
-  // If it's a full URL like instagram.com/handle or https://instagram.com/handle
   const match = value.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/([^/?#]+)/);
   if (match) return match[1];
-  // Otherwise treat as raw handle, strip @ if present
   return value.replace(/^@/, '');
 }
 
-// Convert handle to stored format
 function handleToInstagramUrl(handle: string): string {
   if (!handle) return '';
   const clean = handle.replace(/^@/, '').trim();
@@ -54,6 +56,7 @@ export function EditProfile() {
     defaultValues: {
       name: '',
       email: '',
+      slug: '',
       venue_name: '',
       venue_address: '',
       instagram: '',
@@ -69,9 +72,15 @@ export function EditProfile() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    watch,
   } = form;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [originalSlug, setOriginalSlug] = useState('');
+  const [slugTaken, setSlugTaken] = useState(false);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+
+  const slugValue = watch('slug');
 
   useEffect(() => {
     const fetchProducerData = async () => {
@@ -83,16 +92,19 @@ export function EditProfile() {
       try {
         const { data, error } = await supabase
           .from('producers')
-          .select('name, email, venue_name, venue_address, instagram, website, bio_markdown, event_window_days')
+          .select('name, email, slug, venue_name, venue_address, instagram, website, bio_markdown, event_window_days')
           .eq('id', user.id)
           .maybeSingle();
 
         if (error) throw error;
 
         if (data) {
+          const slug = data.slug || '';
+          setOriginalSlug(slug);
           reset({
             name: data.name || '',
             email: data.email || '',
+            slug,
             venue_name: data.venue_name || '',
             venue_address: data.venue_address || '',
             instagram: extractInstagramHandle(data.instagram || ''),
@@ -112,15 +124,55 @@ export function EditProfile() {
     fetchProducerData();
   }, [user?.id, reset]);
 
+  // Debounced slug availability check
+  useEffect(() => {
+    if (!slugValue || !user?.id) return;
+    if (slugValue === originalSlug) {
+      setSlugTaken(false);
+      setIsCheckingSlug(false);
+      return;
+    }
+    if (validateSlug(slugValue) !== null) {
+      setSlugTaken(false);
+      setIsCheckingSlug(false);
+      return;
+    }
+
+    setIsCheckingSlug(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await supabase
+          .from('producers')
+          .select('id')
+          .eq('slug', slugValue)
+          .neq('id', user.id)
+          .maybeSingle();
+        setSlugTaken(!!data);
+      } catch {
+        setSlugTaken(false);
+      } finally {
+        setIsCheckingSlug(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [slugValue, user?.id, originalSlug]);
+
   const onSubmit = async (data: EditProfileFormData) => {
     if (!user) {
       toast.error('You must be logged in to edit your profile.');
       return;
     }
 
+    if (slugTaken) {
+      toast.error('That URL is already taken. Please choose another.');
+      return;
+    }
+
     try {
       const updates: { [key: string]: any } = {
         name: data.name,
+        slug: data.slug,
         venue_name: data.venue_name,
         venue_address: data.venue_address,
         instagram: handleToInstagramUrl(data.instagram || ''),
@@ -146,6 +198,9 @@ export function EditProfile() {
       console.error('Error updating profile:', error);
     }
   };
+
+  const slugChanged = slugValue && originalSlug && slugValue !== originalSlug;
+  const slugValid = slugValue && validateSlug(slugValue) === null;
 
   if (isLoading) {
     return (
@@ -270,6 +325,59 @@ export function EditProfile() {
           </div>
           <div className="space-y-4 pt-4 border-t border-border">
             <h2 className="text-lg font-semibold text-foreground">Page Settings</h2>
+
+            {/* Slug / Page URL */}
+            <div className="space-y-2">
+              <Label htmlFor="slug">Page URL</Label>
+              <div className="flex items-center gap-0 rounded-md border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input whitespace-nowrap">
+                  quackboard.com/
+                </span>
+                <Input
+                  id="slug"
+                  type="text"
+                  placeholder="your-page-url"
+                  {...register('slug')}
+                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                {slugValid && !isCheckingSlug && !slugTaken && slugValue === originalSlug && (
+                  <span className="pr-3 flex-shrink-0">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  </span>
+                )}
+                {slugValid && isCheckingSlug && (
+                  <span className="pr-3 flex-shrink-0">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </span>
+                )}
+                {slugValid && !isCheckingSlug && !slugTaken && slugChanged && (
+                  <span className="pr-3 flex-shrink-0">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  </span>
+                )}
+                {slugValid && !isCheckingSlug && slugTaken && (
+                  <span className="pr-3 flex-shrink-0">
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  </span>
+                )}
+              </div>
+              {errors.slug && (
+                <p className="text-sm text-destructive">{errors.slug.message}</p>
+              )}
+              {slugTaken && !isCheckingSlug && (
+                <p className="text-sm text-destructive">This URL is already taken</p>
+              )}
+
+              {slugChanged && !slugTaken && slugValid && !isCheckingSlug && (
+                <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    Changing your URL will break any existing links, bookmarks, or embeds using your current URL (quackboard.com/{originalSlug}). This cannot be undone.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="event_window_days">Show events for the next</Label>
               <Controller
@@ -291,7 +399,7 @@ export function EditProfile() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full" disabled={isSubmitting || slugTaken || isCheckingSlug}>
             {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </form>
