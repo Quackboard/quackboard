@@ -280,7 +280,7 @@ serve(async (req) => {
                       <table cellpadding="0" cellspacing="0" border="0" width="100%">
                         <tr>
                           <td align="center" style="padding: 10px 0;">
-                            <a href="${FRONTEND_URL}/producer/${producerSlug}" style="display: inline-block; background-color: #34a08c; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Go to Event Page</a>
+                            <a href="${FRONTEND_URL}/${producerSlug}" style="display: inline-block; background-color: #34a08c; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Go to Event Page</a>
                           </td>
                         </tr>
                         <tr>
