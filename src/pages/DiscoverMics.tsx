@@ -5,19 +5,15 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { format, parseISO, getDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, addDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink } from 'lucide-react';
+import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, ArrowRight } from 'lucide-react';
 import ListMicSheet from '@/components/discover/ListMicSheet';
 import { formatTime } from '@/lib/utils';
 
 const TZ = 'America/Los_Angeles';
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DAY_INDICES = [1, 2, 3, 4, 5, 6, 0]; // Map label position to JS getDay() value
-
 
 type TimeFilter = 'all' | 'morning' | 'afternoon' | 'evening';
-type DayFilter = number | null; // 0-6 or null for all
 
 function getHour(timeStr: string): number {
   const parts = timeStr.split(':');
@@ -33,13 +29,25 @@ function getTimeOfDay(timeStr: string): 'morning' | 'afternoon' | 'evening' {
 
 export default function DiscoverMics() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [dayFilter, setDayFilter] = useState<DayFilter>(null);
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const nowLA = useMemo(() => toZonedTime(new Date(), TZ), []);
-  const mondayStr = useMemo(() => format(startOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
-  const sundayStr = useMemo(() => format(endOfWeek(nowLA, { weekStartsOn: 1 }), 'yyyy-MM-dd'), [nowLA]);
   const todayStr = format(nowLA, 'yyyy-MM-dd');
+
+  // Rolling 7-day window
+  const rollingDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(nowLA, i);
+      return {
+        dateStr: format(d, 'yyyy-MM-dd'),
+        label: format(d, 'EEE M/d'), // e.g. "Mon 4/14"
+      };
+    });
+  }, [nowLA]);
+
+  const startDate = rollingDays[0].dateStr;
+  const endDate = rollingDays[6].dateStr;
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -50,14 +58,14 @@ export default function DiscoverMics() {
   };
 
   const { data: events } = useQuery({
-    queryKey: ['discover-events', mondayStr],
+    queryKey: ['discover-events', startDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
         .eq('status', 'published')
-        .gte('date', mondayStr)
-        .lte('date', sundayStr)
+        .gte('date', startDate)
+        .lte('date', endDate)
         .order('date')
         .order('start_time');
       if (error) throw error;
@@ -67,19 +75,35 @@ export default function DiscoverMics() {
 
   const producerIds = useMemo(() => {
     if (!events) return [];
-    return [...new Set(events.map(e => e.producer_id).filter(Boolean))];
+    return [...new Set(events.map(e => e.producer_id).filter(Boolean))] as string[];
   }, [events]);
 
-  const { data: producers } = useQuery({
-    queryKey: ['discover-producers', producerIds],
+  // Lookup accounts via accounts_users instead of producers table
+  const { data: accountsData } = useQuery({
+    queryKey: ['discover-accounts', producerIds],
     queryFn: async () => {
       if (producerIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('producers')
-        .select('id, name, slug, discoverable')
-        .in('id', producerIds);
-      if (error) throw error;
-      return data;
+      // Get account links for these producer user IDs
+      const { data: links, error: linkError } = await supabase
+        .from('accounts_users')
+        .select('user_id, account_id')
+        .in('user_id', producerIds);
+      if (linkError) throw linkError;
+      if (!links || links.length === 0) return [];
+
+      const accountIds = [...new Set(links.map(l => l.account_id))];
+      const { data: accounts, error: accError } = await supabase
+        .from('accounts')
+        .select('id, slug, discoverable, account_name')
+        .in('id', accountIds);
+      if (accError) throw accError;
+
+      // Build lookup: user_id -> account info
+      const accountMap = new Map(accounts?.map(a => [a.id, a]) || []);
+      return links.map(l => ({
+        user_id: l.user_id,
+        account: accountMap.get(l.account_id) || null,
+      }));
     },
     enabled: producerIds.length > 0,
   });
@@ -95,15 +119,22 @@ export default function DiscoverMics() {
     },
   });
 
-  const producerMap = useMemo(() => {
-    const m = new Map<string, { name: string | null; slug: string | null; discoverable: boolean }>();
-    producers?.forEach(p => m.set(p.id, { name: p.name, slug: p.slug, discoverable: p.discoverable }));
+  // Map producer_id (user_id) -> account info
+  const accountMap = useMemo(() => {
+    const m = new Map<string, { slug: string; discoverable: boolean | null; account_name: string }>();
+    accountsData?.forEach(entry => {
+      if (entry.account) {
+        m.set(entry.user_id, entry.account);
+      }
+    });
     return m;
-  }, [producers]);
+  }, [accountsData]);
 
   const availMap = useMemo(() => {
     const m = new Map<string, { total_slots: number; booked_count: number }>();
-    availability?.forEach(a => m.set(a.event_id, a));
+    availability?.forEach(a => {
+      if (a.event_id) m.set(a.event_id, { total_slots: a.total_slots ?? 0, booked_count: a.booked_count ?? 0 });
+    });
     return m;
   }, [availability]);
 
@@ -112,10 +143,10 @@ export default function DiscoverMics() {
     if (!events) return [];
 
     return events.filter(ev => {
-      // Only show platform mics from discoverable producers
+      // Only show platform mics from discoverable accounts
       if (ev.is_info_only === false) {
-        const producer = producerMap.get(ev.producer_id);
-        if (!producer?.discoverable) return false;
+        const account = ev.producer_id ? accountMap.get(ev.producer_id) : null;
+        if (!account?.discoverable) return false;
       }
 
       // Time of day filter
@@ -123,15 +154,14 @@ export default function DiscoverMics() {
         return false;
       }
 
-      // Day of week filter
-      if (dayFilter !== null) {
-        const eventDate = parseISO(ev.date);
-        if (getDay(eventDate) !== dayFilter) return false;
+      // Day filter (exact date match)
+      if (dayFilter !== null && ev.date !== dayFilter) {
+        return false;
       }
 
       return true;
     });
-  }, [events, timeFilter, dayFilter]);
+  }, [events, timeFilter, dayFilter, accountMap]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -193,24 +223,21 @@ export default function DiscoverMics() {
             ))}
           </div>
 
-          {/* Day of week */}
+          {/* Day filter with dates */}
           <div className="flex flex-wrap gap-1.5">
-            {DAY_LABELS.map((label, i) => {
-              const dayIndex = DAY_INDICES[i];
-              return (
-                <button
-                  key={dayIndex}
-                  onClick={() => setDayFilter(dayFilter === dayIndex ? null : dayIndex)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    dayFilter === dayIndex
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            {rollingDays.map(({ dateStr, label }) => (
+              <button
+                key={dateStr}
+                onClick={() => setDayFilter(dayFilter === dateStr ? null : dateStr)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  dayFilter === dateStr
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -240,13 +267,14 @@ export default function DiscoverMics() {
                   </div>
                 </div>
 
-                {/* Compact event cards */}
+                {/* Event cards */}
                 <div className="space-y-1.5">
                   {dayEvents.map(ev => {
-                    const producer = ev.producer_id ? producerMap.get(ev.producer_id) : null;
+                    const account = ev.producer_id ? accountMap.get(ev.producer_id) : null;
                     const avail = availMap.get(ev.id);
                     const isPlatform = ev.is_info_only === false;
-                    const spotsAvailable = avail ? avail.total_slots - avail.booked_count > 0 : false;
+                    const spotsRemaining = avail ? avail.total_slots - avail.booked_count : 0;
+                    const spotsAvailable = spotsRemaining > 0;
                     const isExpanded = expanded.has(ev.id);
                     const hasDescription = !!ev.description;
                     const isInfoOnly = ev.is_info_only === true;
@@ -268,18 +296,6 @@ export default function DiscoverMics() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0">
-                              {isPlatform && (
-                                <>
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    On Quackboard
-                                  </Badge>
-                                  {avail && spotsAvailable && (
-                                    <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                                      Spots Open
-                                    </Badge>
-                                  )}
-                                </>
-                              )}
                               {hasDescription && (
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleExpand(ev.id); }}
@@ -291,6 +307,36 @@ export default function DiscoverMics() {
                               )}
                             </div>
                           </div>
+
+                          {/* Badges + CTA row for platform mics */}
+                          {isPlatform && (
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                On Quackboard
+                              </Badge>
+                              {avail && spotsAvailable && (
+                                <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                                  {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} open
+                                </Badge>
+                              )}
+                              {account?.slug && spotsAvailable && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-5 text-[10px] px-2 ml-auto"
+                                  asChild
+                                >
+                                  <Link
+                                    to={`/${account.slug}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Grab a Spot
+                                    <ArrowRight className="h-3 w-3 ml-0.5" />
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          )}
 
                           {/* Expanded description + links */}
                           {isExpanded && ev.description && (
@@ -330,9 +376,9 @@ export default function DiscoverMics() {
                       </Card>
                     );
 
-                    if (producer?.slug) {
+                    if (account?.slug) {
                       return (
-                        <Link key={ev.id} to={`/${producer.slug}`} className="block">
+                        <Link key={ev.id} to={`/${account.slug}`} className="block">
                           {cardContent}
                         </Link>
                       );
