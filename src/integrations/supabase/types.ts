@@ -738,6 +738,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_discoverable_producers: {
+        Args: { producer_ids: string[] }
+        Returns: {
+          account_name: string
+          slug: string
+          user_id: string
+        }[]
+      }
       validate_beta_code: { Args: { code_input: string }; Returns: boolean }
     }
     Enums: {
