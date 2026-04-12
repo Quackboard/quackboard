@@ -53,7 +53,7 @@ export default function Index() {
               <Link to="/signup">Get Started</Link>
             </Button>
           </div>
-      </nav>
+        </nav>
       </header>
 
       {/* Comics Banner */}
@@ -74,7 +74,26 @@ export default function Index() {
       <main>
         {/* Hero */}
         <section className="px-4 py-16 md:py-24 text-center">
-
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight">
+              The simplest way to run your open mic
+            </h1>
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto font-medium">
+              We'll get your ducks in a row, so you can focus on being funny.
+            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Create events, manage sign-ups, and keep your comics informed without hassle.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <Button size="lg" asChild>
+                <Link to="/signup">Start for Free</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link to="/login">I already have an account</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
         {/* Features Grid */}
         <section className="px-4 py-16 bg-muted/30">
@@ -100,7 +119,6 @@ export default function Index() {
             </div>
           </div>
         </section>
-
 
         {/* CTA Section */}
         <section className="px-4 py-16 md:py-24 text-center">
