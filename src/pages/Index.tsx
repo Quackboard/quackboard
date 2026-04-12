@@ -56,6 +56,21 @@ export default function Index() {
         </nav>
       </header>
 
+      {/* Comics Banner */}
+      <section className="w-full border-b border-primary/15 bg-primary/5 py-3 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-center md:text-left">
+          <div className="flex items-center gap-2">
+            <Mic className="h-5 w-5 text-primary shrink-0" />
+            <p className="text-sm font-medium text-foreground">
+              Comics! Quackboard is open. Waddle over and find your next mic.
+            </p>
+          </div>
+          <Button size="sm" asChild>
+            <Link to="/browse">Browse Open Mics →</Link>
+          </Button>
+        </div>
+      </section>
+
       <main>
         {/* Hero */}
         <section className="px-4 py-16 md:py-24 text-center">
@@ -79,25 +94,6 @@ export default function Index() {
             </div>
           </div>
         </section>
-
-        {/* Browse Mics Banner */}
-        <section className="px-4 py-10">
-          <div className="max-w-3xl mx-auto rounded-xl border border-primary/20 bg-primary/5 p-8 md:p-10 text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <Mic className="h-7 w-7 text-primary" />
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Looking for stage time?
-              </h2>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Browse open mics happening this week and grab a spot — no account needed.
-            </p>
-            <Button size="lg" asChild>
-              <Link to="/browse">Browse Open Mics →</Link>
-            </Button>
-          </div>
-        </section>
-
 
         {/* Features Grid */}
         <section className="px-4 py-16 bg-muted/30">
@@ -123,7 +119,6 @@ export default function Index() {
             </div>
           </div>
         </section>
-
 
         {/* CTA Section */}
         <section className="px-4 py-16 md:py-24 text-center">
