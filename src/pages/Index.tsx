@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, Repeat, Bell, ExternalLink } from 'lucide-react';
+import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Mic } from 'lucide-react';
 
 const features = [
   {
@@ -77,6 +77,24 @@ export default function Index() {
                 <Link to="/login">I already have an account</Link>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Browse Mics Banner */}
+        <section className="px-4 py-10">
+          <div className="max-w-3xl mx-auto rounded-xl border border-primary/20 bg-primary/5 p-8 md:p-10 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <Mic className="h-7 w-7 text-primary" />
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                Looking for stage time?
+              </h2>
+            </div>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              Browse open mics happening this week and grab a spot — no account needed.
+            </p>
+            <Button size="lg" asChild>
+              <Link to="/browse">Browse Open Mics →</Link>
+            </Button>
           </div>
         </section>
 
