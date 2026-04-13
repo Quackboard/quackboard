@@ -297,6 +297,7 @@ export type Database = {
       }
       events: {
         Row: {
+          account_id: string | null
           allow_multiple_slots: boolean | null
           city: string | null
           created_at: string | null
@@ -324,6 +325,7 @@ export type Database = {
           venue_name: string
         }
         Insert: {
+          account_id?: string | null
           allow_multiple_slots?: boolean | null
           city?: string | null
           created_at?: string | null
@@ -351,6 +353,7 @@ export type Database = {
           venue_name: string
         }
         Update: {
+          account_id?: string | null
           allow_multiple_slots?: boolean | null
           city?: string | null
           created_at?: string | null
