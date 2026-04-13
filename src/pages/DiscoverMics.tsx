@@ -78,32 +78,15 @@ export default function DiscoverMics() {
     return [...new Set(events.map(e => e.producer_id).filter(Boolean))] as string[];
   }, [events]);
 
-  // Lookup accounts via accounts_users instead of producers table
   const { data: accountsData } = useQuery({
     queryKey: ['discover-accounts', producerIds],
     queryFn: async () => {
       if (producerIds.length === 0) return [];
-      // Get account links for these producer user IDs
-      const { data: links, error: linkError } = await supabase
-        .from('accounts_users')
-        .select('user_id, account_id')
-        .in('user_id', producerIds);
-      if (linkError) throw linkError;
-      if (!links || links.length === 0) return [];
-
-      const accountIds = [...new Set(links.map(l => l.account_id))];
-      const { data: accounts, error: accError } = await supabase
-        .from('accounts')
-        .select('id, slug, discoverable, account_name')
-        .in('id', accountIds);
-      if (accError) throw accError;
-
-      // Build lookup: user_id -> account info
-      const accountMap = new Map(accounts?.map(a => [a.id, a]) || []);
-      return links.map(l => ({
-        user_id: l.user_id,
-        account: accountMap.get(l.account_id) || null,
-      }));
+      const { data, error } = await supabase.rpc('get_discoverable_producers', {
+        producer_ids: producerIds
+      } as any);
+      if (error) throw error;
+      return (data as any[]) || [];
     },
     enabled: producerIds.length > 0,
   });
