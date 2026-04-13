@@ -334,20 +334,21 @@ serve(async (req) => {
     });
 
     // --- Producer Email Content ---
-    // IMPORTANT: Cancellation emails should ALWAYS be sent immediately, regardless of email_frequency
+    // Producer cancellation emails are disabled — producers do not receive emails when a guest cancels.
     // For new bookings: Only send immediate producer email if email_frequency is explicitly 'immediate'
     // For 'daily' new bookings, the scheduled notification functions will handle it
     const normalizedFrequency = emailFrequency ? String(emailFrequency).trim().toLowerCase() : null;
     const isCancellation = body.isCancellation === true;
-    const shouldSendImmediateProducerEmail = producer && (
-      isCancellation || // Always send cancellation emails immediately
+    const shouldSendImmediateProducerEmail = producer && !isCancellation && (
       normalizedFrequency === 'immediate' // Only send new booking emails for immediate frequency
     );
 
     console.log(`Producer email check - producer: ${!!producer}, isCancellation: ${isCancellation}, emailFrequency: "${emailFrequency}" (normalized: "${normalizedFrequency}"), shouldSend: ${shouldSendImmediateProducerEmail}`);
 
-    if (!shouldSendImmediateProducerEmail && producer && !isCancellation) {
-      console.log(`Skipping immediate producer email - email_frequency is "${normalizedFrequency}" (not 'daily'). Will be included in scheduled ${normalizedFrequency || 'none'} notifications.`);
+    if (isCancellation && producer) {
+      console.log(`Skipping producer cancellation email — cancellation notifications to producers are disabled.`);
+    } else if (!shouldSendImmediateProducerEmail && producer) {
+      console.log(`Skipping immediate producer email - email_frequency is "${normalizedFrequency}" (not 'immediate'). Will be included in scheduled ${normalizedFrequency || 'none'} notifications.`);
     }
 
     if (shouldSendImmediateProducerEmail) {
