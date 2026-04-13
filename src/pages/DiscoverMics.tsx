@@ -291,11 +291,8 @@ export default function DiscoverMics() {
                           {/* Badges + CTA row for platform mics */}
                           {isPlatform && (
                             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                On Quackboard
-                              </Badge>
                               {avail && spotsAvailable && (
-                                <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                   {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} open
                                 </Badge>
                               )}
@@ -310,7 +307,7 @@ export default function DiscoverMics() {
                                     to={`/${account.slug}`}
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    Grab a Spot
+                                    Grab a Spot on Quackboard
                                     <ArrowRight className="h-3 w-3 ml-0.5" />
                                   </Link>
                                 </Button>
