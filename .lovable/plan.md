@@ -1,22 +1,25 @@
+## Add "Browse More Mics" link to public account pages
 
+Add a subtle but noticeable link to `/browse` in the existing footer of `AccountPage.tsx`, just above the "Powered by Quackboard" branding. Keep it on-brand — casual, encouraging, not pushy.
 
-## Email Preview — Low Signup Alert
+### Changes
 
-No code changes needed. I'll render a static HTML file of the current low-signup alert email template with sample data filled in, so you can review the design.
+`**src/pages/AccountPage.tsx**` — Add a browse link in the footer section (around line 230):
 
-### Sample data used
-- Producer name: "Alex"
-- Event title: "Tuesday Night Open Mic"
-- Date: Tuesday, April 14
-- Time: 8:00 PM
-- Venue: "The Laugh Factory, 123 Main St"
-- Signups: 2 / 12 spots filled
-- Subject line: `⚠️ Low Signups: "Tuesday Night Open Mic" — only 2 signed up`
+```tsx
+<footer className="mt-12 pt-6 border-t border-border text-center space-y-2">
+  <div>
+    <a href="/browse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+      Looking for more mics? <span className="underline">Browse mics that fit your schedule </span> →
+    </a>
+  </div>
+  <div>
+    <a href="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+      <img src="/favicon.png" alt="Quackboard" className="h-4 w-4" />
+      <span>Powered by <span className="font-medium font-outfit">Quackboard</span></span>
+    </a>
+  </div>
+</footer>
+```
 
-### What I'll do
-1. Write the rendered HTML to `/mnt/documents/low-signup-alert-preview.html` with the template variables filled in
-2. Present it as a downloadable artifact for you to open in your browser
-
-### No files modified
-Zero changes to any project files — this is just a visual preview.
-
+One file, ~5 lines added. No other changes.
