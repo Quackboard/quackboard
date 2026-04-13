@@ -392,6 +392,14 @@ export default function DiscoverMics() {
                       </Card>
                     );
 
+                    if (deepLink) {
+                      return (
+                        <Link key={ev.id} to={deepLink} className="block">
+                          {cardContent}
+                        </Link>
+                      );
+                    }
+
                     if (account?.slug) {
                       return (
                         <Link key={ev.id} to={`/${account.slug}`} className="block">
