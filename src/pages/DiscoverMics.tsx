@@ -102,13 +102,10 @@ export default function DiscoverMics() {
     },
   });
 
-  // Map producer_id (user_id) -> account info
   const accountMap = useMemo(() => {
     const m = new Map<string, { slug: string; discoverable: boolean | null; account_name: string }>();
-    accountsData?.forEach(entry => {
-      if (entry.account) {
-        m.set(entry.user_id, entry.account);
-      }
+    accountsData?.forEach((entry: any) => {
+      m.set(entry.user_id, { slug: entry.slug, discoverable: true, account_name: entry.account_name });
     });
     return m;
   }, [accountsData]);
