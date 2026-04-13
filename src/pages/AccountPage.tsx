@@ -342,9 +342,12 @@ export default function AccountPage() {
 
         <footer className="mt-12 pt-6 border-t border-border text-center space-y-2">
           <div>
-            <a href="/browse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Looking for more mics? <span className="underline">Browse mics that fit your schedule</span> →
-            </a>
+            <span className="text-sm text-muted-foreground">
+              More stage time is out there.{' '}
+              <a href="/browse" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">
+                Browse open mics that fit your schedule
+              </a> →
+            </span>
           </div>
           <div>
             <a href="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
