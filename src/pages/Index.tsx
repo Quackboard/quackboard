@@ -1,37 +1,38 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Mic } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Mic } from "lucide-react";
 
 const features = [
   {
     icon: Calendar,
-    title: 'Create Mics in Seconds',
-    description: 'Set up your open mic with date, time, venue, and spot sections. Publish instantly or schedule for later.',
+    title: "Create Mics in Seconds",
+    description:
+      "Set up your open mic with date, time, venue, and spot sections. Publish instantly or schedule for later.",
   },
   {
     icon: Users,
-    title: 'Effortless Sign-ups',
-    description: 'Comics sign up directly from your public page. No apps to download, no accounts required.',
+    title: "Effortless Sign-ups",
+    description: "Comics sign up directly from your public page. No apps to download, no accounts required.",
   },
   {
     icon: Repeat,
-    title: 'Recurring Events',
-    description: 'Run a weekly mic? Set it once and let Quackboard create future dates automatically.',
+    title: "Recurring Events",
+    description: "Run a weekly mic? Set it once and let Quackboard create future dates automatically.",
   },
   {
     icon: Clock,
-    title: 'Scheduled Publishing',
-    description: 'Control when your mic goes live and when sign-ups open. Build anticipation for your regulars.',
+    title: "Scheduled Publishing",
+    description: "Control when your mic goes live and when sign-ups open. Build anticipation for your regulars.",
   },
   {
     icon: Bell,
-    title: 'Email Notifications',
-    description: 'Keep comics informed with automatic confirmations and updates when spots open up.',
+    title: "Email Notifications",
+    description: "Keep comics informed with automatic confirmations and updates when spots open up.",
   },
   {
     icon: ExternalLink,
-    title: 'Embeddable Widget',
-    description: 'Add your upcoming mics to any website with a simple embed code. Keep your audience informed.',
+    title: "Embeddable Widget",
+    description: "Add your upcoming mics to any website with a simple embed code. Keep your audience informed.",
   },
 ];
 
@@ -62,7 +63,7 @@ export default function Index() {
           <div className="flex items-center gap-2">
             <Mic className="h-5 w-5 text-primary shrink-0" />
             <p className="text-sm font-medium text-foreground">
-              Comics! Quackboard is open. Waddle over and find your next mic.
+              Comics! Quackboard is open. Discover mics that fit your schedule.
             </p>
           </div>
           <Button size="sm" asChild>
@@ -76,13 +77,13 @@ export default function Index() {
         <section className="px-4 py-16 md:py-24 text-center">
           <div className="max-w-3xl mx-auto space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight">
-              The simplest way to run your open mic
+              The easiest way to run your open mic
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto font-medium">
-              We'll get your ducks in a row, so you can focus on being funny.
+              Less admin. More comedy.
             </p>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Create events, manage sign-ups, and keep your comics informed without hassle.
+              Create events, manage sign-ups, and keep your comics in the loop.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
               <Button size="lg" asChild>
@@ -103,17 +104,10 @@ export default function Index() {
             </h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="p-6 rounded-lg bg-card border border-border card-hover"
-                >
+                <div key={feature.title} className="p-6 rounded-lg bg-card border border-border card-hover">
                   <feature.icon className="h-8 w-8 text-primary mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {feature.description}
-                  </p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -123,9 +117,7 @@ export default function Index() {
         {/* CTA Section */}
         <section className="px-4 py-16 md:py-24 text-center">
           <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
-              Ready to simplify your open mic?
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">Ready to simplify your open mic?</h2>
             <p className="text-muted-foreground">
               Join producers who are spending less time managing sign-ups and more time on what matters—great comedy.
             </p>
@@ -141,9 +133,13 @@ export default function Index() {
         <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground space-y-2">
           <p>© {new Date().getFullYear()} Quackboard. Built for comedy producers.</p>
           <div className="flex items-center justify-center gap-3">
-            <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy Policy
+            </Link>
             <span>·</span>
-            <Link to="/terms" className="hover:text-foreground">Terms of Service</Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms of Service
+            </Link>
           </div>
         </div>
       </footer>
