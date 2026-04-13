@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, addDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, ArrowRight } from 'lucide-react';
+import { Mic, ChevronDown, ChevronUp, Instagram, ExternalLink, ArrowRight, Eye } from 'lucide-react';
 import ListMicSheet from '@/components/discover/ListMicSheet';
 import { formatTime } from '@/lib/utils';
+import { getSignupStatus } from '@/lib/signup-status';
 
 const TZ = 'America/Los_Angeles';
 
@@ -62,7 +63,7 @@ export default function DiscoverMics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link')
+        .select('id, title, venue_name, venue_address, city, date, start_time, end_time, is_info_only, producer_id, sections_config, description, instagram_url, source_link, signup_opens_at')
         .eq('status', 'published')
         .gte('date', startDate)
         .lte('date', endDate)
@@ -255,10 +256,13 @@ export default function DiscoverMics() {
                     const isPlatform = ev.is_info_only === false;
                     const spotsRemaining = avail ? avail.total_slots - avail.booked_count : 0;
                     const spotsAvailable = spotsRemaining > 0;
+                    const isFull = avail ? spotsRemaining <= 0 : false;
                     const isExpanded = expanded.has(ev.id);
                     const hasDescription = !!ev.description;
                     const isInfoOnly = ev.is_info_only === true;
                     const cityDisplay = ev.city || '';
+                    const signupStatus = isPlatform ? getSignupStatus(ev.signup_opens_at) : null;
+                    const deepLink = account?.slug ? `/${account.slug}?date=${ev.date}` : null;
 
                     const cardContent = (
                       <Card className="transition-shadow hover:shadow-md">
@@ -289,28 +293,63 @@ export default function DiscoverMics() {
                           </div>
 
                           {/* Badges + CTA row for platform mics */}
-                          {isPlatform && (
+                          {isPlatform && signupStatus && (
                             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              {avail && spotsAvailable && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                  {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} open
+                              {/* Signups open + spots available */}
+                              {signupStatus.type === 'open' && spotsAvailable && (
+                                <>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} open
+                                  </Badge>
+                                  {deepLink && (
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      className="h-5 text-[10px] px-2 ml-auto"
+                                      asChild
+                                    >
+                                      <Link
+                                        to={deepLink}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        Grab a Spot
+                                        <ArrowRight className="h-3 w-3 ml-0.5" />
+                                      </Link>
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Signups open but full */}
+                              {signupStatus.type === 'open' && isFull && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/50 bg-muted text-muted-foreground">
+                                  Full
                                 </Badge>
                               )}
-                              {account?.slug && spotsAvailable && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="h-5 text-[10px] px-2 ml-auto"
-                                  asChild
-                                >
-                                  <Link
-                                    to={`/${account.slug}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    Grab a Spot on Quackboard
-                                    <ArrowRight className="h-3 w-3 ml-0.5" />
-                                  </Link>
-                                </Button>
+
+                              {/* Signups not open yet */}
+                              {(signupStatus.type === 'soon' || signupStatus.type === 'future') && (
+                                <>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                    {signupStatus.label}
+                                  </Badge>
+                                  {deepLink && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 text-[10px] px-2 ml-auto text-muted-foreground"
+                                      asChild
+                                    >
+                                      <Link
+                                        to={deepLink}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Eye className="h-3 w-3 mr-0.5" />
+                                        View Page
+                                      </Link>
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )}
@@ -352,6 +391,14 @@ export default function DiscoverMics() {
                         </CardContent>
                       </Card>
                     );
+
+                    if (deepLink) {
+                      return (
+                        <Link key={ev.id} to={deepLink} className="block">
+                          {cardContent}
+                        </Link>
+                      );
+                    }
 
                     if (account?.slug) {
                       return (
