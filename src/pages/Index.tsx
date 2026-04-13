@@ -6,23 +6,22 @@ const features = [
   {
     icon: Calendar,
     title: "Create Mics in Seconds",
-    description:
-      "Set up your open mic with date, time, venue, and spot sections. Publish instantly or schedule for later.",
+    description: "Date, time, venue, spots. Fill in the blanks and you're live. Seriously, that's it",
   },
   {
     icon: Users,
     title: "Effortless Sign-ups",
-    description: "Comics sign up directly from your public page. No apps to download, no accounts required.",
+    description: "Comics sign up directly from your public page. No app and no account necessary",
   },
   {
     icon: Repeat,
     title: "Recurring Events",
-    description: "Run a weekly mic? Set it once and let Quackboard create future dates automatically.",
+    description: "Run a weekly mic? Set it once and Quackboard handles the rest every single week",
   },
   {
     icon: Clock,
     title: "Scheduled Publishing",
-    description: "Control when your mic goes live and when sign-ups open. Build anticipation for your regulars.",
+    description: "Post your mic now, open sign-ups later. Great for hype-building",
   },
   {
     icon: Bell,
@@ -32,7 +31,7 @@ const features = [
   {
     icon: ExternalLink,
     title: "Embeddable Widget",
-    description: "Add your upcoming mics to any website with a simple embed code. Keep your audience informed.",
+    description: "Have your own site? Drop in one line of code and your mics show up automatically",
   },
 ];
 
@@ -100,7 +99,7 @@ export default function Index() {
         <section className="px-4 py-16 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-12">
-              Everything you need to run a smooth mic
+              Built for comedy producers who have better things to do.
             </h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature) => (
