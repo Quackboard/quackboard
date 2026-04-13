@@ -116,7 +116,9 @@ export default function Index() {
         {/* CTA Section */}
         <section className="px-4 py-16 md:py-24 text-center">
           <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">Ready to simplify your open mic?</h2>
+            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
+              Ready to take mic management off your to-do list?
+            </h2>
             <p className="text-muted-foreground">
               Join producers who are spending less time on sign-ups and more time on great comedy.
             </p>
