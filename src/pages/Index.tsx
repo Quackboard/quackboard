@@ -26,7 +26,7 @@ const features = [
   {
     icon: Bell,
     title: "Email Notifications",
-    description: "Keep comics informed with automatic confirmations and updates when spots open up.",
+    description: "Keep comics informed with automatic confirmations and updates when spots open up",
   },
   {
     icon: ExternalLink,
