@@ -221,6 +221,10 @@ export function SpotList({
           // After cutoff, hide entire section if no bookings
           if (wildcardCutoffPassed && bookedCount === 0) return null;
 
+  const bookingsBySlot = new Map(
+    bookings.map(b => [b.slot_position, b])
+  );
+
 
           return (
             <div key={sectionIndex}>
