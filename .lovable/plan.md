@@ -1,19 +1,51 @@
-## Remove "View all spots" collapse in SpotList
+## Implement: Browse page past-mic filter + deep-link auto-expand
 
-**File**: `src/components/producer/SpotList.tsx` — display logic only
+### 1. Hide past mics on Browse (DiscoverMics.tsx)
 
-Currently, sections with more than 6 slots show a collapsed summary ("X spots available" + "View all spots" link) requiring an extra tap. This removes that intermediate state so expanding the mobile card immediately shows all spots.
+In the `filtered` useMemo (line 126), add a check: if `ev.date === todayStr`, parse `ev.end_time` against `nowLA` and exclude events whose end time has passed.
 
-### Change
+```ts
+// Inside the filter callback, before the time-of-day check:
+if (ev.date === todayStr) {
+  const [h, m] = ev.end_time.split(':').map(Number);
+  const endMinutes = h * 60 + m;
+  const nowMinutes = nowLA.getHours() * 60 + nowLA.getMinutes();
+  if (endMinutes <= nowMinutes) return false;
+}
+```
 
-Remove the `shouldCollapse` / `isExpanded` gating (lines 241-269) and the "Collapse" button (lines 323-332). Every section will always render the full spot list directly.
+### 2. Add `&time=` to deep links (DiscoverMics.tsx)
 
-Specifically:
+Update the `deepLink` variable (line 265) to include `start_time`:
 
-- Delete the `shouldCollapse` and `isExpanded` variables (lines 241-242)
-- Delete the collapsed summary block (lines 245-269)
-- Delete the "Collapse" button block (lines 323-332)
+```ts
+const deepLink = account?.slug ? `/${account.slug}?date=${ev.date}&time=${ev.start_time}` : null;
+```
 
-No changes to booking logic, modal, wildcard handling, or any other file. The `expandedSections` state and `toggleSection` function become unused and will also be removed for cleanliness.
+### 3. Read URL params + pass autoExpand (AccountPage.tsx)
 
-Do not touch any other files or edge functions or any code besides the above. 
+- Import `useSearchParams` from react-router-dom.
+- Read `date` and `time` query params.
+- If `date` param exists, use it to initialize `selectedDate` (in the `useEffect` at line 150, set it from URL on first load).
+- When rendering EventCards, pass `autoExpand={event.start_time === timeParam}` (only when `timeParam` is present).
+
+### 4. Accept autoExpand prop (EventCard.tsx)
+
+- Add `autoExpand?: boolean` to `EventCardProps`.
+- Initialize mobile `expanded` state: `useState(autoExpand ?? false)`.
+
+### Files changed
+
+
+| File                                    | What                                                        |
+| --------------------------------------- | ----------------------------------------------------------- |
+| `src/pages/DiscoverMics.tsx`            | Filter past end-time events; add `&time=` to deep links     |
+| `src/pages/AccountPage.tsx`             | Read `date`+`time` from URL; pass `autoExpand` to EventCard |
+| `src/components/producer/EventCard.tsx` | Accept + use `autoExpand` prop                              |
+
+
+### Risk
+
+Zero impact on regular account page visits (no params = existing behavior). No booking/signup/edge function changes. 
+
+Do not touch any files or edge functionsexcept for what is listed above. 
