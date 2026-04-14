@@ -99,7 +99,7 @@ serve(async (req) => {
 
     // Filter events whose date+start_time falls within the window
     const eventsInWindow = events.filter((e) => {
-      const eventDateTime = new Date(`${e.date}T${e.start_time}`);
+      const eventDateTime = eventLocalToUTC(e.date, e.start_time);
       return eventDateTime >= windowStart && eventDateTime <= windowEnd;
     });
 
