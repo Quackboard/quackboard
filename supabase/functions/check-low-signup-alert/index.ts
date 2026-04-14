@@ -5,6 +5,23 @@ const ACCOUNT_ID = "c9f7bec9-9c8a-4e0f-87ff-2e64832c1027";
 const SIGNUP_THRESHOLD = 4;
 const HOURS_BEFORE = 2;
 
+function eventLocalToUTC(dateStr: string, timeStr: string, tz = "America/Los_Angeles"): Date {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const [h, mi, s] = timeStr.split(":").map(Number);
+  let guess = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+    }).formatToParts(new Date(guess));
+    const get = (t: string) => parseInt(parts.find(p => p.type === t)!.value);
+    const laUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
+    const target = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+    guess += target - laUTC;
+  }
+  return new Date(guess);
+}
+
 const ZEPTOMAIL_API_URL = "https://api.zeptomail.com/v1.1/email";
 const ZEPTOMAIL_API_TOKEN = Deno.env.get("ZEPTOMAIL_API_TOKEN");
 const ZEPTOMAIL_FROM_EMAIL = Deno.env.get("ZEPTOMAIL_FROM_EMAIL") || "noreply@quackboard.com";
@@ -82,7 +99,7 @@ serve(async (req) => {
 
     // Filter events whose date+start_time falls within the window
     const eventsInWindow = events.filter((e) => {
-      const eventDateTime = new Date(`${e.date}T${e.start_time}`);
+      const eventDateTime = eventLocalToUTC(e.date, e.start_time);
       return eventDateTime >= windowStart && eventDateTime <= windowEnd;
     });
 
