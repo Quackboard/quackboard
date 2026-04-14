@@ -14,6 +14,7 @@ interface EventCardProps {
   bookings: Booking[];
   producerVenueName?: string | null;
   onBookingSuccess: () => void;
+  autoExpand?: boolean;
 }
 
 function formatTime(time: string): string {
@@ -124,8 +125,8 @@ function useAutoOpenTimer(event: Event) {
   return { now, countdown };
 }
 
-export function EventCard({ event, bookings, producerVenueName, onBookingSuccess }: EventCardProps) {
-  const [expanded, setExpanded] = useState(false);
+export function EventCard({ event, bookings, producerVenueName, onBookingSuccess, autoExpand }: EventCardProps) {
+  const [expanded, setExpanded] = useState(autoExpand ?? false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const isMobile = useIsMobile();
   const sections = parseSectionsConfig(event.sections_config);

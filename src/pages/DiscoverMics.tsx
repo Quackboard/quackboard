@@ -124,6 +124,14 @@ export default function DiscoverMics() {
     if (!events) return [];
 
     return events.filter(ev => {
+      // Hide events whose end time has already passed today
+      if (ev.date === todayStr) {
+        const [h, m] = ev.end_time.split(':').map(Number);
+        const endMinutes = h * 60 + m;
+        const nowMinutes = nowLA.getHours() * 60 + nowLA.getMinutes();
+        if (endMinutes <= nowMinutes) return false;
+      }
+
       // Only show platform mics from discoverable accounts
       if (ev.is_info_only === false) {
         const account = ev.producer_id ? accountMap.get(ev.producer_id) : null;
@@ -262,7 +270,7 @@ export default function DiscoverMics() {
                     const isInfoOnly = ev.is_info_only === true;
                     const cityDisplay = ev.city || '';
                     const signupStatus = isPlatform ? getSignupStatus(ev.signup_opens_at) : null;
-                    const deepLink = account?.slug ? `/${account.slug}?date=${ev.date}` : null;
+                    const deepLink = account?.slug ? `/${account.slug}?date=${ev.date}&time=${ev.start_time}` : null;
 
                     const cardContent = (
                       <Card className="transition-shadow hover:shadow-md">

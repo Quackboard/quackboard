@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -37,7 +37,10 @@ function isEventPast(event: Event): boolean {
 
 export default function AccountPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const timeParam = searchParams.get('time');
+  const [selectedDate, setSelectedDate] = useState<string | null>(dateParam);
   const queryClient = useQueryClient();
 
   const isReserved = !!slug && RESERVED_SLUGS.has(slug);
@@ -315,11 +318,12 @@ export default function AccountPage() {
                       {timeLabel}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <EventCard
+                    <EventCard
                         event={event}
                         bookings={bookings?.filter(b => b.event_id === event.id) || []}
                         producerVenueName={venueName}
                         onBookingSuccess={refetchBookings}
+                        autoExpand={!!timeParam && event.start_time === timeParam}
                       />
                     </div>
                   </div>
@@ -334,6 +338,7 @@ export default function AccountPage() {
                   bookings={bookings?.filter(b => b.event_id === event.id) || []}
                   producerVenueName={venueName}
                   onBookingSuccess={refetchBookings}
+                  autoExpand={!!timeParam && event.start_time === timeParam}
                 />
               ))}
             </div>
