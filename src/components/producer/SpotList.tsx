@@ -49,6 +49,10 @@ export function SpotList({
     sectionLabel: '',
   });
 
+  const bookingsBySlot = new Map(
+    bookings.map(b => [b.slot_position, b])
+  );
+
   const openModal = (spotNumber: number, sectionLabel: string) => {
     setModalState({ open: true, spotNumber, sectionLabel });
   };
@@ -221,13 +225,6 @@ export function SpotList({
           // After cutoff, hide entire section if no bookings
           if (wildcardCutoffPassed && bookedCount === 0) return null;
 
-  const bookingsBySlot = new Map(
-    bookings.map(b => [b.slot_position, b])
-  );
-
-  const bookingsBySlot = new Map(
-    bookings.map(b => [b.slot_position, b])
-  );
 
           return (
             <div key={sectionIndex}>
