@@ -1,46 +1,80 @@
-## Fix: Landing page mobile responsiveness
 
-### Problem identified
 
-Two issues causing the "Get Started" button to be cut off on mobile:
+## Fix: Timezone bug in low-signup alert edge function
 
-1. `**src/App.css**` — `#root { padding: 2rem; }` adds 32px padding on each side, stealing 64px from the 390px viewport. This is leftover Vite boilerplate and affects every page.
-2. `**src/pages/Index.tsx**` — The nav bar renders all three buttons ("Browse Mics", "Log in", "Get Started") in a single horizontal row with `gap-3` and no mobile breakpoint. On screens under ~420px, the "Get Started" button overflows off-screen.
+### Root cause
 
-### Other pages checked
+The function computes `now()` in UTC (correct), then builds the event datetime as:
+```js
+new Date(`${e.date}T${e.start_time}`)
+```
+This is parsed as **UTC**, but the stored date/time values represent **America/Los_Angeles local time**. A 7:30 PM LA event becomes 7:30 PM UTC (= 12:30 PM PDT), so the 2-hour window check fires ~7 hours too early.
 
-- **Login/Signup**: Fine — centered form layout, no overflow.
-- **Browse (/browse)**: Fine — proper mobile layout with scrollable day chips.
-- **Dashboard/Navbar**: Fine — already has a hamburger menu for mobile.
-- **Account pages**: Fine — single-column layouts.
+### Fix
 
-The issue is isolated to the landing page nav and the global `#root` padding.
+**File: `supabase/functions/check-low-signup-alert/index.ts`**
 
-### Changes
+1. **Convert event date+time to a proper UTC timestamp by applying the LA offset.** Use a helper that constructs the event datetime in America/Los_Angeles and converts to UTC for comparison:
 
-**File 1: `src/App.css**`
+```ts
+// At the top of the function
+function eventToUTC(dateStr: string, timeStr: string): Date {
+  // Build an ISO string with explicit LA timezone interpretation
+  // Using Intl to get the current UTC offset for LA
+  const naive = new Date(`${dateStr}T${timeStr}`);
+  const laString = naive.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+  const utcString = naive.toLocaleString("en-US", { timeZone: "UTC" });
+  const diff = new Date(utcString).getTime() - new Date(laString).getTime();
+  return new Date(naive.getTime() + diff);
+}
+```
 
-- Remove `padding: 2rem` from `#root` (or set to `0`). The individual pages already handle their own padding via `px-4`.
-- Keep `max-width` and `margin: 0 auto` as-is.
+Or more reliably, use `Intl.DateTimeFormat` to compute the offset:
 
-**File 2: `src/pages/Index.tsx**`
+```ts
+function eventLocalToUTC(dateStr: string, timeStr: string, tz = "America/Los_Angeles"): Date {
+  // Parse components
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const [h, mi, s] = timeStr.split(":").map(Number);
+  
+  // Create a date assuming UTC, then find what that instant looks like in LA
+  // Iterate to find the UTC instant where the LA wall-clock matches our target
+  let guess = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+    }).formatToParts(new Date(guess));
+    const get = (t: string) => parseInt(parts.find(p => p.type === t)!.value);
+    const laUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
+    const target = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+    guess += target - laUTC;
+  }
+  return new Date(guess);
+}
+```
 
-- On mobile (below `sm`), hide "Browse Mics" and "Log in" text buttons. Show only the "Get Started" CTA button plus a hamburger menu icon, or alternatively:
-- Simpler approach: reduce `gap-3` to `gap-1` on mobile, make the ghost buttons smaller with `text-sm` and tighter padding, and use `flex-wrap` as a safety net so nothing gets clipped.
-- Recommended: Match the pattern from `Navbar.tsx` — on `md:` and below, collapse to a hamburger icon that reveals the links. On mobile, show only "Quackboard" + a compact "Get Started" button + hamburger for the rest.
+2. **Replace the naive parse on ~line 80:**
+```ts
+// Before (BUG):
+const eventDateTime = new Date(`${e.date}T${e.start_time}`);
 
-### Recommended approach (simplest, consistent with brand)
+// After:
+const eventDateTime = eventLocalToUTC(e.date, e.start_time);
+```
 
-On screens below `md`:
+3. **No other changes needed.** The `now()`, `windowStart`, and `windowEnd` are already in UTC. Once `eventDateTime` is also correctly in UTC, the comparison works.
 
-- Show: "Quackboard" logo + "Get Started" button only
-- Hide "Browse Mics" and "Log in" behind a mobile menu toggle (hamburger icon), matching the existing Navbar pattern
-- The hero section already has "Start for Free" and "I already have an account" buttons, so hiding nav links on mobile loses nothing
+### Verification
+
+For a 7:30 PM PDT event on 4/14:
+- PDT offset = UTC-7, so 7:30 PM PDT = 2:30 AM UTC on 4/15
+- The alert window (1.5–2.5h before) = 12:00 AM – 1:00 AM UTC on 4/15
+- That's 5:00 PM – 6:00 PM PDT on 4/14 — alert fires around 5:30 PM PDT as expected
 
 ### Risk
 
-- Display-only change to the landing page nav
-- No changes to routing, auth, booking, or any edge functions
-- All other pages already render correctly on mobile
+- Only touches `check-low-signup-alert/index.ts` — no other edge functions or frontend files
+- No booking, signup, or mic setup logic affected
+- The fix is isolated to how event datetimes are interpreted for the time-window comparison
 
-Proceed with the recommended approach and do not touch any edge functions, files not in the above 2. 
