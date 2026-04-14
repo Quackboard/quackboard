@@ -1,19 +1,19 @@
-## Update browse link copy in AccountPage footer
+## Remove "View all spots" collapse in SpotList
 
-**File**: `src/pages/AccountPage.tsx` — footer section only
+**File**: `src/components/producer/SpotList.tsx` — display logic only
 
-Change the browse link from:
+Currently, sections with more than 6 slots show a collapsed summary ("X spots available" + "View all spots" link) requiring an extra tap. This removes that intermediate state so expanding the mobile card immediately shows all spots.
 
-```
-Looking for more mics? Browse mics that fit your schedule →
-```
+### Change
 
-To:
+Remove the `shouldCollapse` / `isExpanded` gating (lines 241-269) and the "Collapse" button (lines 323-332). Every section will always render the full spot list directly.
 
-```
-More stage time is out there. Browse open mics that fit your schedule →
-```
+Specifically:
 
-Where "Browse open mics that fit your schedule." is a hyperlink opening `/browse` in a new tab (`target="_blank"`).
+- Delete the `shouldCollapse` and `isExpanded` variables (lines 241-242)
+- Delete the collapsed summary block (lines 245-269)
+- Delete the "Collapse" button block (lines 323-332)
 
-No other files touched. No signup flow impact — this is a static footer link on the public account page.
+No changes to booking logic, modal, wildcard handling, or any other file. The `expandedSections` state and `toggleSection` function become unused and will also be removed for cleanliness.
+
+Do not touch any other files or edge functions or any code besides the above. 
