@@ -1,51 +1,46 @@
-## Implement: Browse page past-mic filter + deep-link auto-expand
+## Fix: Landing page mobile responsiveness
 
-### 1. Hide past mics on Browse (DiscoverMics.tsx)
+### Problem identified
 
-In the `filtered` useMemo (line 126), add a check: if `ev.date === todayStr`, parse `ev.end_time` against `nowLA` and exclude events whose end time has passed.
+Two issues causing the "Get Started" button to be cut off on mobile:
 
-```ts
-// Inside the filter callback, before the time-of-day check:
-if (ev.date === todayStr) {
-  const [h, m] = ev.end_time.split(':').map(Number);
-  const endMinutes = h * 60 + m;
-  const nowMinutes = nowLA.getHours() * 60 + nowLA.getMinutes();
-  if (endMinutes <= nowMinutes) return false;
-}
-```
+1. `**src/App.css**` — `#root { padding: 2rem; }` adds 32px padding on each side, stealing 64px from the 390px viewport. This is leftover Vite boilerplate and affects every page.
+2. `**src/pages/Index.tsx**` — The nav bar renders all three buttons ("Browse Mics", "Log in", "Get Started") in a single horizontal row with `gap-3` and no mobile breakpoint. On screens under ~420px, the "Get Started" button overflows off-screen.
 
-### 2. Add `&time=` to deep links (DiscoverMics.tsx)
+### Other pages checked
 
-Update the `deepLink` variable (line 265) to include `start_time`:
+- **Login/Signup**: Fine — centered form layout, no overflow.
+- **Browse (/browse)**: Fine — proper mobile layout with scrollable day chips.
+- **Dashboard/Navbar**: Fine — already has a hamburger menu for mobile.
+- **Account pages**: Fine — single-column layouts.
 
-```ts
-const deepLink = account?.slug ? `/${account.slug}?date=${ev.date}&time=${ev.start_time}` : null;
-```
+The issue is isolated to the landing page nav and the global `#root` padding.
 
-### 3. Read URL params + pass autoExpand (AccountPage.tsx)
+### Changes
 
-- Import `useSearchParams` from react-router-dom.
-- Read `date` and `time` query params.
-- If `date` param exists, use it to initialize `selectedDate` (in the `useEffect` at line 150, set it from URL on first load).
-- When rendering EventCards, pass `autoExpand={event.start_time === timeParam}` (only when `timeParam` is present).
+**File 1: `src/App.css**`
 
-### 4. Accept autoExpand prop (EventCard.tsx)
+- Remove `padding: 2rem` from `#root` (or set to `0`). The individual pages already handle their own padding via `px-4`.
+- Keep `max-width` and `margin: 0 auto` as-is.
 
-- Add `autoExpand?: boolean` to `EventCardProps`.
-- Initialize mobile `expanded` state: `useState(autoExpand ?? false)`.
+**File 2: `src/pages/Index.tsx**`
 
-### Files changed
+- On mobile (below `sm`), hide "Browse Mics" and "Log in" text buttons. Show only the "Get Started" CTA button plus a hamburger menu icon, or alternatively:
+- Simpler approach: reduce `gap-3` to `gap-1` on mobile, make the ghost buttons smaller with `text-sm` and tighter padding, and use `flex-wrap` as a safety net so nothing gets clipped.
+- Recommended: Match the pattern from `Navbar.tsx` — on `md:` and below, collapse to a hamburger icon that reveals the links. On mobile, show only "Quackboard" + a compact "Get Started" button + hamburger for the rest.
 
+### Recommended approach (simplest, consistent with brand)
 
-| File                                    | What                                                        |
-| --------------------------------------- | ----------------------------------------------------------- |
-| `src/pages/DiscoverMics.tsx`            | Filter past end-time events; add `&time=` to deep links     |
-| `src/pages/AccountPage.tsx`             | Read `date`+`time` from URL; pass `autoExpand` to EventCard |
-| `src/components/producer/EventCard.tsx` | Accept + use `autoExpand` prop                              |
+On screens below `md`:
 
+- Show: "Quackboard" logo + "Get Started" button only
+- Hide "Browse Mics" and "Log in" behind a mobile menu toggle (hamburger icon), matching the existing Navbar pattern
+- The hero section already has "Start for Free" and "I already have an account" buttons, so hiding nav links on mobile loses nothing
 
 ### Risk
 
-Zero impact on regular account page visits (no params = existing behavior). No booking/signup/edge function changes. 
+- Display-only change to the landing page nav
+- No changes to routing, auth, booking, or any edge functions
+- All other pages already render correctly on mobile
 
-Do not touch any files or edge functionsexcept for what is listed above. 
+Proceed with the recommended approach and do not touch any edge functions, files not in the above 2. 
