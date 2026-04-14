@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Mic } from "lucide-react";
+import { Calendar, Users, Clock, Repeat, Bell, ExternalLink, Mic, Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const features = [
   {
@@ -36,13 +38,16 @@ const features = [
 ];
 
 export default function Index() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background bg-texture">
       {/* Hero Section */}
       <header className="px-4 py-6">
         <nav className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="text-xl font-bold text-foreground">Quackboard</span>
-          <div className="flex items-center gap-3">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" asChild>
               <Link to="/browse">Browse Mics</Link>
             </Button>
@@ -53,7 +58,37 @@ export default function Index() {
               <Link to="/signup">Get Started</Link>
             </Button>
           </div>
+          {/* Mobile nav */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button size="sm" asChild>
+              <Link to="/signup">Get Started</Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </nav>
+        {/* Mobile dropdown */}
+        <div
+          className={cn(
+            "md:hidden overflow-hidden transition-all duration-200 ease-in-out max-w-5xl mx-auto",
+            mobileMenuOpen ? "max-h-40 mt-3" : "max-h-0"
+          )}
+        >
+          <div className="flex flex-col gap-1 py-2 border-t border-border">
+            <Button variant="ghost" size="sm" asChild className="justify-start" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/browse">Browse Mics</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="justify-start" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/login">Log in</Link>
+            </Button>
+          </div>
+        </div>
       </header>
 
       {/* Comics Banner */}
