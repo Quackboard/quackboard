@@ -133,6 +133,7 @@ export function RecurringSeriesCard({ template, events, availabilityMap, onDelet
                     key={event.id}
                     event={event}
                     availability={availabilityMap.get(event.id) ?? null}
+                    onDelete={onDeleteEvent}
                   />
                 ))}
               </div>
