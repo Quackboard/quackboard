@@ -412,6 +412,8 @@ export default function Dashboard() {
                               key={event.id}
                               event={event}
                               availability={availabilityMap.get(event.id) ?? null}
+                              activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                              onDelete={handleDeleteEvent}
                             />
                           ))}
                         </div>
@@ -442,7 +444,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   (pastEvents || []).map(event => (
-                    <EventRow key={event.id} event={event} isPast />
+                    <EventRow key={event.id} event={event} isPast onDelete={handleDeleteEvent} />
                   ))
                 )}
               </div>
