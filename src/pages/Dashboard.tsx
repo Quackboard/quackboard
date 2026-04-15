@@ -1,7 +1,7 @@
 import { ProducerLayout } from '@/components/layouts/ProducerLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase, SUPABASE_URL_PUBLIC } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Loader2, Plus, Copy, Check, Calendar, List, ChevronDown } from 'lucide-react';
@@ -10,8 +10,9 @@ import { UpcomingEventCard } from '@/components/dashboard/UpcomingEventCard';
 import { RecurringSeriesCard } from '@/components/dashboard/RecurringSeriesCard';
 import { CalendarDashboard } from '@/components/dashboard/CalendarDashboard';
 import { useProducerSlug } from '@/hooks/useProducerSlug';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { EmbedSection } from '@/components/embed/EmbedSection';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -254,6 +255,20 @@ export default function Dashboard() {
     }
   };
 
+  const queryClient = useQueryClient();
+
+  const handleDeleteEvent = useCallback(async (eventId: string) => {
+    const { error } = await supabase.from('events').delete().eq('id', eventId);
+    if (error) {
+      sonnerToast.error('Failed to delete event');
+      throw error;
+    }
+    sonnerToast.success('Event deleted');
+    queryClient.invalidateQueries({ queryKey: ['producer-events-upcoming'] });
+    queryClient.invalidateQueries({ queryKey: ['producer-events-past'] });
+    queryClient.invalidateQueries({ queryKey: ['producer-all-events'] });
+  }, [queryClient]);
+
   const eventsLoading = listViewType === 'upcoming' ? upcomingLoading : pastLoading;
   const hasNoUpcomingEvents = happeningNow.length === 0 && openingSoon.length === 0 && recurringGroups.length === 0 && singleGrouped.length === 0;
 
@@ -334,6 +349,8 @@ export default function Dashboard() {
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
                           isHappeningNow
+                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          onDelete={handleDeleteEvent}
                         />
                       ))}
                     </div>
@@ -352,6 +369,8 @@ export default function Dashboard() {
                           key={event.id}
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
+                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          onDelete={handleDeleteEvent}
                         />
                       ))}
                     </div>
@@ -371,6 +390,7 @@ export default function Dashboard() {
                           template={group.template}
                           events={group.events}
                           availabilityMap={availabilityMap}
+                          onDeleteEvent={handleDeleteEvent}
                         />
                       ))}
                     </div>
@@ -392,6 +412,8 @@ export default function Dashboard() {
                               key={event.id}
                               event={event}
                               availability={availabilityMap.get(event.id) ?? null}
+                              activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                              onDelete={handleDeleteEvent}
                             />
                           ))}
                         </div>
@@ -422,7 +444,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   (pastEvents || []).map(event => (
-                    <EventRow key={event.id} event={event} isPast />
+                    <EventRow key={event.id} event={event} isPast onDelete={handleDeleteEvent} />
                   ))
                 )}
               </div>
