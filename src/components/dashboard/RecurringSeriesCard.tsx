@@ -148,10 +148,15 @@ export function RecurringSeriesCard({ template, events, availabilityMap, onDelet
 function InstanceRow({
   event,
   availability,
+  onDelete,
 }: {
   event: SeriesEvent;
   availability: { total_slots: number; booked_count: number } | null;
+  onDelete?: (eventId: string) => Promise<void>;
 }) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isMobile = useIsMobile();
   const totalSlots = availability?.total_slots ?? 0;
   const bookedCount = availability?.booked_count ?? 0;
   const spotsAvailable = Math.max(0, totalSlots - bookedCount);
