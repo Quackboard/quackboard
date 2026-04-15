@@ -349,6 +349,8 @@ export default function Dashboard() {
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
                           isHappeningNow
+                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          onDelete={handleDeleteEvent}
                         />
                       ))}
                     </div>
@@ -367,6 +369,8 @@ export default function Dashboard() {
                           key={event.id}
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
+                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          onDelete={handleDeleteEvent}
                         />
                       ))}
                     </div>
@@ -386,6 +390,7 @@ export default function Dashboard() {
                           template={group.template}
                           events={group.events}
                           availabilityMap={availabilityMap}
+                          onDeleteEvent={handleDeleteEvent}
                         />
                       ))}
                     </div>
