@@ -204,14 +204,83 @@ function InstanceRow({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-1.5 shrink-0">
-        <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
-          <Link to={`/events/${event.id}/edit`}>Edit</Link>
-        </Button>
-        <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
-          <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
-        </Button>
+      <div className="shrink-0">
+        {isMobile ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to={`/events/${event.id}/edit`}>Edit</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
+              </DropdownMenuItem>
+              {onDelete && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={() => setShowDeleteDialog(true)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex gap-1.5">
+            <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+              <Link to={`/events/${event.id}/edit`}>Edit</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+              <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
+            </Button>
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
+
+      {onDelete && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this event?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will only delete this single event, not the entire series. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await onDelete(event.id);
+                  } finally {
+                    setIsDeleting(false);
+                    setShowDeleteDialog(false);
+                  }
+                }}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? 'Deleting\u2026' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
