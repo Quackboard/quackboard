@@ -181,7 +181,7 @@ export function UpcomingEventCard({ event, availability, isHappeningNow, activeB
             <AlertDialogDescription>
               {activeBookingCount > 0
                 ? `${activeBookingCount} ${activeBookingCount === 1 ? 'person' : 'people'} will be removed from the lineup. This can't be undone.`
-                : 'This event will be permanently deleted. This can't be undone.'}
+                : "This event will be permanently deleted. This can\u2019t be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
