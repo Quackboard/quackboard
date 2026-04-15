@@ -61,7 +61,7 @@ export function Navbar() {
             >
               <Link to="/edit-profile">
                 <UserPen className="h-4 w-4 mr-1" />
-                Profile
+                Edit Account
               </Link>
             </Button>
             
@@ -74,7 +74,7 @@ export function Navbar() {
               >
                 <a href={producerPageUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-1" />
-                  <span className="hidden lg:inline">View My </span>Public Page
+                  View Page
                 </a>
               </Button>
             )}
@@ -147,7 +147,7 @@ export function Navbar() {
             >
               <Link to="/edit-profile">
                 <UserPen className="h-4 w-4 mr-2" />
-                Edit Profile
+                Edit Account
               </Link>
             </Button>
             
@@ -160,7 +160,7 @@ export function Navbar() {
               >
                 <a href={producerPageUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  View My Public Page
+                  View Page
                 </a>
               </Button>
             )}
