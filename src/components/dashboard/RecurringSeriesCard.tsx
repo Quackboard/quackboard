@@ -48,9 +48,10 @@ interface RecurringSeriesCardProps {
   template: TemplateInfo;
   events: SeriesEvent[];
   availabilityMap: Map<string, { total_slots: number; booked_count: number }>;
+  onDeleteEvent?: (eventId: string) => Promise<void>;
 }
 
-export function RecurringSeriesCard({ template, events, availabilityMap }: RecurringSeriesCardProps) {
+export function RecurringSeriesCard({ template, events, availabilityMap, onDeleteEvent }: RecurringSeriesCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Build subtitle parts
