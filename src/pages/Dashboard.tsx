@@ -255,6 +255,20 @@ export default function Dashboard() {
     }
   };
 
+  const queryClient = useQueryClient();
+
+  const handleDeleteEvent = useCallback(async (eventId: string) => {
+    const { error } = await supabase.from('events').delete().eq('id', eventId);
+    if (error) {
+      sonnerToast.error('Failed to delete event');
+      throw error;
+    }
+    sonnerToast.success('Event deleted');
+    queryClient.invalidateQueries({ queryKey: ['producer-events-upcoming'] });
+    queryClient.invalidateQueries({ queryKey: ['producer-events-past'] });
+    queryClient.invalidateQueries({ queryKey: ['producer-all-events'] });
+  }, [queryClient]);
+
   const eventsLoading = listViewType === 'upcoming' ? upcomingLoading : pastLoading;
   const hasNoUpcomingEvents = happeningNow.length === 0 && openingSoon.length === 0 && recurringGroups.length === 0 && singleGrouped.length === 0;
 
