@@ -73,12 +73,15 @@ export function SignUpModal({
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      instagram: '',
-    },
+    defaultValues: readPrefill(),
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(readPrefill());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
