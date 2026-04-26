@@ -1,5 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
+
+const PREFILL_KEY = 'quackboard:comic-prefill';
+
+function readPrefill(): { name: string; email: string; instagram: string } {
+  const empty = { name: '', email: '', instagram: '' };
+  if (typeof window === 'undefined') return empty;
+  try {
+    const raw = window.sessionStorage.getItem(PREFILL_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw);
+    return {
+      name: typeof parsed.name === 'string' ? parsed.name : '',
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+      instagram: typeof parsed.instagram === 'string' ? parsed.instagram : '',
+    };
+  } catch {
+    return empty;
+  }
+}
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
