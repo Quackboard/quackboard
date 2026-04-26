@@ -98,6 +98,18 @@ export function SignUpModal({
       });
 
       if (result.success) {
+        try {
+          window.sessionStorage.setItem(
+            PREFILL_KEY,
+            JSON.stringify({
+              name: data.name,
+              email: data.email,
+              instagram: data.instagram ?? '',
+            })
+          );
+        } catch {
+          // ignore storage failures (private mode, quota, etc.)
+        }
         toast({
           title: "You're in!",
           description: sectionLabel ? `You've grabbed a spot in ${sectionLabel}` : "You've grabbed a spot",
