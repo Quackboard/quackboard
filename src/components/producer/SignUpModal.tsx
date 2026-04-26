@@ -1,5 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
+
+const PREFILL_KEY = 'quackboard:comic-prefill';
+
+function readPrefill(): { name: string; email: string; instagram: string } {
+  const empty = { name: '', email: '', instagram: '' };
+  if (typeof window === 'undefined') return empty;
+  try {
+    const raw = window.sessionStorage.getItem(PREFILL_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw);
+    return {
+      name: typeof parsed.name === 'string' ? parsed.name : '',
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+      instagram: typeof parsed.instagram === 'string' ? parsed.instagram : '',
+    };
+  } catch {
+    return empty;
+  }
+}
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -54,12 +73,15 @@ export function SignUpModal({
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      instagram: '',
-    },
+    defaultValues: readPrefill(),
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(readPrefill());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -76,6 +98,18 @@ export function SignUpModal({
       });
 
       if (result.success) {
+        try {
+          window.sessionStorage.setItem(
+            PREFILL_KEY,
+            JSON.stringify({
+              name: data.name,
+              email: data.email,
+              instagram: data.instagram ?? '',
+            })
+          );
+        } catch {
+          // ignore storage failures (private mode, quota, etc.)
+        }
         toast({
           title: "You're in!",
           description: sectionLabel ? `You've grabbed a spot in ${sectionLabel}` : "You've grabbed a spot",
