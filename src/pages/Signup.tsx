@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import LogoFull from '@/assets/logo-full-clean.png';
 import {
   Dialog,
@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/dialog';
 
 export default function Signup() {
-  const [accessCode, setAccessCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,7 +39,6 @@ export default function Signup() {
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
-    if (!accessCode.trim()) newErrors.accessCode = 'Access code is required';
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       newErrors.email = 'Enter a valid email';
@@ -62,13 +60,6 @@ export default function Signup() {
     if (!validateStep1()) return;
     setIsValidating(true);
     try {
-      const { data: isValid, error } = await supabase.rpc('validate_beta_code', { code_input: accessCode });
-      if (error) throw new Error('Failed to validate access code');
-      if (!isValid) {
-        toast({ title: 'Invalid access code', description: 'Please check your code and try again.', variant: 'destructive' });
-        setIsValidating(false);
-        return;
-      }
       setErrors({});
       setPassword('');
       setConfirmPassword('');
@@ -160,37 +151,9 @@ export default function Signup() {
           </Link>
           <h2 className="text-2xl font-semibold text-foreground">Create your account</h2>
           <p className="text-muted-foreground mt-2">Start managing your open mics in minutes</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            <Lock className="h-3 w-3" />
-            Beta Access Required
-          </div>
         </div>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="accessCode">Access Code</Label>
-            <Input
-              id="accessCode"
-              type="text"
-              placeholder="Enter your beta access code"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              className={errors.accessCode ? 'border-destructive' : ''}
-            />
-            {errors.accessCode && <p className="text-sm text-destructive">{errors.accessCode}</p>}
-            <p className="text-sm text-muted-foreground">
-              Don't have a code?{' '}
-              <a
-                href="mailto:hello@quackboard.com?subject=Quackboard Beta Access Request"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary font-medium hover:underline"
-              >
-                Request access
-              </a>
-            </p>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
