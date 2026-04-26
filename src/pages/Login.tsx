@@ -42,9 +42,19 @@ export default function Login() {
   });
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
-    }
+    if (loading || !user) return;
+    (async () => {
+      const { data: producer } = await supabase
+        .from('producers')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!producer || producer.name === null) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
+    })();
   }, [user, loading, navigate]);
 
   const onPasswordSubmit = async (data: PasswordFormData) => {
