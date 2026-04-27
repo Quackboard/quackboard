@@ -38,23 +38,26 @@ export interface GeneratedEvent {
  *
  * If firstShowDate doesn't match the recurrence rule, silently advance
  * to the next matching day and generate from there.
+ *
+ * If `endDate` is provided, no events with date > endDate (inclusive) are returned.
  */
 export function generateEventDates(
   firstShowDate: Date,
-  rule: RecurrenceRule
+  rule: RecurrenceRule,
+  endDate?: Date
 ): GeneratedEvent[] {
   const windowEnd = addDays(startOfDay(firstShowDate), 30);
-  const events: GeneratedEvent[] = [];
+  let generated: GeneratedEvent[] = [];
 
   if (rule.frequency === 'weekly' || rule.frequency === 'hourly') {
-    return generateWeeklyOrHourly(firstShowDate, windowEnd, rule);
+    generated = generateWeeklyOrHourly(firstShowDate, windowEnd, rule);
+  } else if (rule.frequency === 'monthly') {
+    generated = generateMonthly(firstShowDate, windowEnd, rule);
   }
 
-  if (rule.frequency === 'monthly') {
-    return generateMonthly(firstShowDate, windowEnd, rule);
-  }
-
-  return events;
+  if (!endDate) return generated;
+  const cap = format(startOfDay(endDate), 'yyyy-MM-dd');
+  return generated.filter(ev => ev.date <= cap);
 }
 
 // ── Weekly / Hourly ──

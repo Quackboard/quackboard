@@ -101,6 +101,12 @@ const formSchema = z.object({
   message: 'End time must be after start time',
   path: ['endTime'],
 }).refine((data) => {
+  if (!data.recurrenceEndDate || !data.firstShowDate) return true;
+  return data.recurrenceEndDate >= data.firstShowDate;
+}, {
+  message: 'End series date must be on or after the first show date',
+  path: ['recurrenceEndDate'],
+}).refine((data) => {
   if (['every_week', 'every_other_week'].includes(data.frequency)) {
     return data.days && data.days.length > 0;
   }
@@ -393,7 +399,7 @@ export default function CreateRecurringMic() {
 
       // Step 2 — Generate events (only after template insert succeeds)
       const firstDate = firstMatchDate || data.firstShowDate;
-      const generatedEvents = generateEventDates(firstDate, recurrenceRule);
+      const generatedEvents = generateEventDates(firstDate, recurrenceRule, data.recurrenceEndDate);
 
       if (generatedEvents.length > 0) {
         const timezone = producer?.timezone || 'America/Los_Angeles';
