@@ -1,29 +1,36 @@
-## What this does
+## Goal
 
-Reassigns two future No Bad Mics events from the redundant template `380419f4` to the keeper template `523ea87a`, and updates their `signup_opens_at` so all this week's mics open for sign-ups at the same time (Saturday 5/02 @ 8:00 AM PT).
+Improve the "Spot already taken" recovery flow in `SignUpModal.tsx` only. No changes to the edge function, booking logic, realtime sync, or any other component.
 
-## Affected events
+## Changes (single file: `src/components/producer/SignUpModal.tsx`)
 
-| Event ID | Date / Time | Current template | New template | New signup_opens_at |
-|---|---|---|---|---|
-| `a22ec6fa-2663-4320-9f5b-2d754dab412e` | Tue 2026-05-05 @ 7:30 PM | `380419f4` | `523ea87a` | 2026-05-02 15:00 UTC |
-| `47fed86c-bcae-483c-a89d-02a65bf9096e` | Wed 2026-05-06 @ 7:30 PM | `380419f4` | `523ea87a` | 2026-05-02 15:00 UTC |
+### 1. Persist comic info across failed attempts
 
-Both events have **zero bookings** and identical metadata to the keeper template's events (title, venue, sections, producer message). Only `template_id` and `signup_opens_at` change.
+Today, prefill is only written to `sessionStorage` after a *successful* booking. Update the prefill logic so the user's name/email/instagram are saved as soon as they attempt a booking, regardless of outcome.
 
-## SQL
+- On submit (before calling `createBooking`), write the current form values to `sessionStorage` under the existing `quackboard:comic-prefill` key.
+- Keep the existing post-success write (harmless, same data).
+- Result: if the slot is taken and they pick another spot, the modal reopens with their info already filled in.
 
-```sql
-UPDATE public.events
-SET template_id = '523ea87a-e7e9-4e67-bc60-94e8ac99b9a4',
-    signup_opens_at = '2026-05-02 15:00:00+00'
-WHERE id IN (
-  'a22ec6fa-2663-4320-9f5b-2d754dab412e',
-  '47fed86c-bcae-483c-a89d-02a65bf9096e'
-)
-AND template_id = '380419f4-35ee-4d34-b295-7ece03d5e6b8';
-```
+### 2. Auto-close modal on `slot_taken`
 
-## Out of scope
+In the `switch (result.code)` block, the `slot_taken` case will:
+- Show the existing destructive toast ("Spot already taken — Try another spot").
+- Call `onOpenChange(false)` to close the modal.
+- Do NOT call `form.reset()` (so values stay in `sessionStorage` prefill for the next open).
+- Do NOT call `onSuccess()` (no booking happened — leave the parent's success-only refetch alone).
 
-No code changes, no other events touched, no edge function or RLS changes, no emails sent. Step 3 (deactivating redundant templates) and step 4 (verification) will be handled in follow-up requests.
+Other error cases (`duplicate_email`, default) keep current behavior: toast shown, modal stays open.
+
+## Out of scope (explicitly untouched)
+
+- `create-booking` edge function
+- `SpotList.tsx` realtime subscription
+- Any parent component (`EventCard`, `ProducerPage`)
+- Toast copy for other error codes
+- Success flow
+
+## Technical notes
+
+- The existing `useEffect` on `[open]` already calls `form.reset(readPrefill())` when the modal opens, so persisting values to sessionStorage is sufficient — no need to manually re-seed the form on next open.
+- Wrap the new sessionStorage write in try/catch (matches existing pattern for private mode/quota safety).
