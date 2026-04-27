@@ -1,22 +1,25 @@
 ## Problem
 
-The magic link email's header takes up so much vertical space that Gmail clips the message and shows a "..." to expand. Logo is 200px wide with chunky padding above and below, and the outer body adds another 40px of padding before the card even starts.
+The **End Series Date** in recurring mic setup saves to `event_templates.recurrence_end_date` but is ignored when generating event instances. `generateEventDates()` always produces 30 days from the first show date, so mics get created past the end date.
 
-## Changes
+## Fix
 
-Edit `supabase/functions/_shared/email-templates/magic-link.tsx` to tighten the top of the email:
+**1. `src/lib/recurring-event-generator.ts`**
+- Add an optional `endDate?: Date` parameter to `generateEventDates(firstShowDate, rule, endDate?)`.
+- After generating the 30-day window as today, filter out any event whose `date` is after `endDate` (string compare on `yyyy-MM-dd`, inclusive of the end date itself).
+- Internal generators are not changed — the cap is applied as a final filter, keeping the diff minimal.
 
-- Logo width: `200px` → `140px` (still clearly readable, much shorter)
-- Logo section padding: `32px 24px 24px` → `16px 24px 12px`
-- Outer body padding: `40px 0` → `20px 0` (less dead space above the card)
-- Content section top padding: `32px 28px 20px` → `24px 28px 20px` (small trim so the heading sits closer to the divider)
+**2. `src/pages/CreateRecurringMic.tsx`**
+- Pass `data.recurrenceEndDate` as the third argument to `generateEventDates(firstDate, recurrenceRule, data.recurrenceEndDate)`.
+- Add a Zod `.refine()` so `recurrenceEndDate >= firstShowDate` when both are set, with message: "End series date must be on or after the first show date."
 
-Divider bar, body copy, button, and footer stay as-is.
+## Risk (already discussed)
 
-## Deploy
+- `generateEventDates` is only called from `CreateRecurringMic.tsx` — no other page, hook, or edge function imports it.
+- The `endDate` param is optional; existing series with no end date behave identically.
+- Dashboard, public account page, and signup flow all read existing `events` rows — none of them call the generator. They are unaffected.
+- No edge functions, migrations, or other pages touched.
 
-Redeploy the `auth-email-hook` edge function so the new template ships.
+## Follow-up (separate pass after this lands)
 
-## Out of scope
-
-No other email templates touched. No content/copy changes.
+Investigate whether a cron job / scheduled DB function regenerates events on a rolling basis past the initial 30 days. If one exists, it must also honor `recurrence_end_date`. No code search has surfaced one yet.
