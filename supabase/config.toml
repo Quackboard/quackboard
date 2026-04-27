@@ -7,3 +7,5 @@ project_id = "dkbahxjibpobbefqufqa"
     verify_jwt = false
   [functions.create-booking]
     verify_jwt = false
+  [functions.regenerate-recurring-events]
+    verify_jwt = false
