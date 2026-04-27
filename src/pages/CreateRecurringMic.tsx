@@ -399,7 +399,7 @@ export default function CreateRecurringMic() {
 
       // Step 2 — Generate events (only after template insert succeeds)
       const firstDate = firstMatchDate || data.firstShowDate;
-      const generatedEvents = generateEventDates(firstDate, recurrenceRule);
+      const generatedEvents = generateEventDates(firstDate, recurrenceRule, data.recurrenceEndDate);
 
       if (generatedEvents.length > 0) {
         const timezone = producer?.timezone || 'America/Los_Angeles';
