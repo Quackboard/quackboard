@@ -3,6 +3,40 @@
 // generation left off — no gaps, no duplicates.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { fromZonedTime } from "https://esm.sh/date-fns-tz@3.2.0";
+
+function buildEventSectionsConfig(
+  templateSections: any,
+  eventDateStr: string,
+  timezone: string,
+): any {
+  if (!Array.isArray(templateSections)) return templateSections;
+  return templateSections.map((s: any) => {
+    if (
+      s &&
+      s.type === "wildcard" &&
+      s.signup_opens_at_days_before !== undefined &&
+      s.signup_opens_at_days_before !== null &&
+      s.signup_opens_at_time
+    ) {
+      const eventDate = new Date(eventDateStr + "T00:00:00");
+      const cutoffDate = new Date(eventDate);
+      cutoffDate.setDate(
+        cutoffDate.getDate() - s.signup_opens_at_days_before,
+      );
+      const [h, m] = String(s.signup_opens_at_time).split(":").map(Number);
+      cutoffDate.setHours(h, m || 0, 0, 0);
+      const utcCutoff = fromZonedTime(cutoffDate, timezone).toISOString();
+      return {
+        label: s.label,
+        slots: s.slots || 0,
+        type: "wildcard",
+        signup_opens_at: utcCutoff,
+      };
+    }
+    return s;
+  });
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -300,6 +334,14 @@ Deno.serve(async (req) => {
           ? parseYmd(earliest[0].date)
           : windowStart;
 
+        // Producer timezone for wildcard cutoff resolution
+        const { data: producerRow } = await supabase
+          .from("producers")
+          .select("timezone")
+          .eq("id", tpl.producer_id)
+          .maybeSingle();
+        const producerTimezone = producerRow?.timezone || "America/Los_Angeles";
+
         const candidates = generateEvents(
           windowStart,
           windowEnd,
@@ -340,7 +382,11 @@ Deno.serve(async (req) => {
             date: c.date,
             start_time: c.start_time,
             end_time: c.end_time,
-            sections_config: tpl.sections_config,
+            sections_config: buildEventSectionsConfig(
+              tpl.sections_config,
+              c.date,
+              producerTimezone,
+            ),
             allow_multiple_slots: tpl.allow_multiple_slots,
             signup_opens_at: calcSignupOpensAt({
               eventDate: c.date,

@@ -10,6 +10,44 @@ import {
   lastDayOfMonth,
   format,
 } from 'date-fns';
+import { fromZonedTime } from 'date-fns-tz';
+
+/**
+ * Resolve template-level sections_config into per-event sections_config.
+ * For wildcard sections with relative cutoff settings, compute the concrete
+ * UTC `signup_opens_at` ISO string for the given event date in the producer's timezone.
+ * Mirrors the logic in CreateSingleMic.tsx.
+ */
+export function buildEventSectionsConfig(
+  templateSections: any[],
+  eventDateStr: string,
+  timezone: string
+): any[] {
+  if (!Array.isArray(templateSections)) return templateSections;
+  return templateSections.map((s: any) => {
+    if (
+      s &&
+      s.type === 'wildcard' &&
+      s.signup_opens_at_days_before !== undefined &&
+      s.signup_opens_at_days_before !== null &&
+      s.signup_opens_at_time
+    ) {
+      const eventDate = new Date(eventDateStr + 'T00:00:00');
+      const cutoffDate = new Date(eventDate);
+      cutoffDate.setDate(cutoffDate.getDate() - s.signup_opens_at_days_before);
+      const [h, m] = String(s.signup_opens_at_time).split(':').map(Number);
+      cutoffDate.setHours(h, m || 0, 0, 0);
+      const utcCutoff = fromZonedTime(cutoffDate, timezone).toISOString();
+      return {
+        label: s.label,
+        slots: s.slots || 0,
+        type: 'wildcard',
+        signup_opens_at: utcCutoff,
+      };
+    }
+    return s;
+  });
+}
 
 /**
  * Recurrence rule as stored in event_templates.recurrence_rule (JSONB).
