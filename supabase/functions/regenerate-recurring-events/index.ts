@@ -334,6 +334,14 @@ Deno.serve(async (req) => {
           ? parseYmd(earliest[0].date)
           : windowStart;
 
+        // Producer timezone for wildcard cutoff resolution
+        const { data: producerRow } = await supabase
+          .from("producers")
+          .select("timezone")
+          .eq("id", tpl.producer_id)
+          .maybeSingle();
+        const producerTimezone = producerRow?.timezone || "America/Los_Angeles";
+
         const candidates = generateEvents(
           windowStart,
           windowEnd,
