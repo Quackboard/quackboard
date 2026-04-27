@@ -1,26 +1,22 @@
 ## Problem
 
-The magic link email shows a broken image inside a teal gradient header, with "Quackboard" rendered as text. The current image URL (`https://quackboard1.lovable.app/favicon.png`) doesn't render reliably in Gmail, and the favicon is just the duck — not the dual-color wordmark on the login page.
-
-## Goal
-
-Match the login page: duck + dual-color "Quackboard" wordmark on a clean white header, separated from the body by a thin teal divider bar.
+The magic link email's header takes up so much vertical space that Gmail clips the message and shows a "..." to expand. Logo is 200px wide with chunky padding above and below, and the outer body adds another 40px of padding before the card even starts.
 
 ## Changes
 
-**1. Host the login-page logo publicly**
-- Copy `src/assets/logo-full-clean.png` → `public/logo-full-clean.png` so it's served at `https://quackboard.com/logo-full-clean.png` (reachable by email clients).
+Edit `supabase/functions/_shared/email-templates/magic-link.tsx` to tighten the top of the email:
 
-**2. Update `supabase/functions/_shared/email-templates/magic-link.tsx`**
-- Remove the teal gradient header section (the broken `<Img>` and the "Quackboard" `<Text>`).
-- Add a new white header containing only the full logo image (~180px wide, height auto, centered) with comfortable padding.
-- Add a thin teal divider bar (3-4px tall, `#34a08c`, full card width) immediately below the header to separate it from the body copy.
-- Drop the unused `header` / `headerText` style constants.
-- Body copy, button, and footer are untouched.
+- Logo width: `200px` → `140px` (still clearly readable, much shorter)
+- Logo section padding: `32px 24px 24px` → `16px 24px 12px`
+- Outer body padding: `40px 0` → `20px 0` (less dead space above the card)
+- Content section top padding: `32px 28px 20px` → `24px 28px 20px` (small trim so the heading sits closer to the divider)
 
-**3. Deploy**
-- Redeploy the `auth-email-hook` edge function so the new template ships.
+Divider bar, body copy, button, and footer stay as-is.
+
+## Deploy
+
+Redeploy the `auth-email-hook` edge function so the new template ships.
 
 ## Out of scope
 
-Per your earlier instruction, no other email templates or edge functions are touched — only `magic-link.tsx` and the new public asset.
+No other email templates touched. No content/copy changes.
