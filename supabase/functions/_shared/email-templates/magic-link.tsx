@@ -31,7 +31,7 @@ export const MagicLinkEmail = ({
       <Container style={card}>
         <Section style={logoSection}>
           <Img
-            src="https://quackboard.com/logo-full-clean.png"
+            src="https://quackboard.com/assets/logo-full-clean-DQoo0aR3.png"
             width="200"
             alt="Quackboard"
             style={logoImg}
