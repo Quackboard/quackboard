@@ -207,18 +207,21 @@ function calcSignupOpensAt(opts: {
   anchorDay?: number | null;
   anchorTime?: string | null;
 }): string | null {
+  const startHHMM = normalizeTime(opts.eventStartTime);
   if (opts.mode === "rolling" && opts.rollingHours != null) {
-    const eventMs = new Date(
-      `${opts.eventDate}T${opts.eventStartTime}:00Z`,
-    ).getTime();
+    const eventMs = new Date(`${opts.eventDate}T${startHHMM}:00Z`).getTime();
+    if (Number.isNaN(eventMs)) return null;
     return new Date(eventMs - opts.rollingHours * 3600_000).toISOString();
   }
   if (opts.mode === "fixed" && opts.anchorDay != null && opts.anchorTime) {
+    const anchorHHMM = normalizeTime(opts.anchorTime);
     const eventDateObj = parseYmd(opts.eventDate);
     let daysBack = dowUTC(eventDateObj) - opts.anchorDay;
     if (daysBack <= 0) daysBack += 7;
     const anchor = addDaysUTC(eventDateObj, -daysBack);
-    return new Date(`${ymd(anchor)}T${opts.anchorTime}:00Z`).toISOString();
+    const ms = new Date(`${ymd(anchor)}T${anchorHHMM}:00Z`).getTime();
+    if (Number.isNaN(ms)) return null;
+    return new Date(ms).toISOString();
   }
   return null;
 }
