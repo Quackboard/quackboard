@@ -86,6 +86,20 @@ export function SignUpModal({
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
 
+    // Persist info immediately so a failed attempt doesn't lose their input
+    try {
+      window.sessionStorage.setItem(
+        PREFILL_KEY,
+        JSON.stringify({
+          name: data.name,
+          email: data.email,
+          instagram: data.instagram ?? '',
+        })
+      );
+    } catch {
+      // ignore storage failures (private mode, quota, etc.)
+    }
+
     try {
       const result = await createBooking({
         eventId,
@@ -128,6 +142,8 @@ export function SignUpModal({
             description: 'Try another spot',
             variant: 'destructive',
           });
+          // Auto-close so they can pick a new spot; keep prefill intact
+          onOpenChange(false);
           break;
         case 'duplicate_email':
           toast({
