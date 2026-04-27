@@ -37,6 +37,7 @@ import {
 import {
   generateEventDates,
   calculateSignupOpensAt,
+  buildEventSectionsConfig,
   type RecurrenceRule,
 } from '@/lib/recurring-event-generator';
 
@@ -426,7 +427,7 @@ export default function CreateRecurringMic() {
             date: ev.date,
             start_time: ev.start_time,
             end_time: ev.end_time,
-            sections_config: sectionsConfig,
+            sections_config: buildEventSectionsConfig(sectionsConfig, ev.date, timezone),
             allow_multiple_slots: data.allowMultipleSlots,
             signup_opens_at: signupOpensAt,
             status: 'published',
