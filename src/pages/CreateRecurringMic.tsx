@@ -953,7 +953,7 @@ export default function CreateRecurringMic() {
         {/* 11. Submit */}
         <div className="space-y-3 pt-4">
           <p className="text-sm text-muted-foreground">
-            We'll create your shows for the next 30 days starting from your first show date. Come back in a month to add more.
+            Recurring events are scheduled up to 30 days in advance and update automatically.
           </p>
           <div className="flex gap-3">
             <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
