@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatTime } from '@/lib/utils';
 import { getSignupStatus } from '@/lib/signup-status';
 import { format, parseISO } from 'date-fns';
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { MoreVertical, Trash2, Copy } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   DropdownMenu,
@@ -139,6 +139,9 @@ export function UpcomingEventCard({ event, availability, isHappeningNow, activeB
                     <DropdownMenuItem asChild>
                       <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={`/events/${event.id}/duplicate`}>Duplicate</Link>
+                    </DropdownMenuItem>
                     {onDelete && (
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -156,6 +159,11 @@ export function UpcomingEventCard({ event, availability, isHappeningNow, activeB
                   </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/events/${event.id}/lineup`}>Lineup</Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild title="Duplicate">
+                    <Link to={`/events/${event.id}/duplicate`}>
+                      <Copy className="h-4 w-4" />
+                    </Link>
                   </Button>
                   {onDelete && (
                     <Button
