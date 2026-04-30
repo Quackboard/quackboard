@@ -7,6 +7,8 @@ export function createQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         staleTime: STALE_TIME_MS,
+        refetchOnWindowFocus: false,
+        retry: 1,
       },
     },
   });

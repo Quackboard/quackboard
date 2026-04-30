@@ -1,10 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { fetchAccountPageData } from "./fetchAccountPageData";
+import {
+  ACCOUNTS_FETCH_COLUMNS,
+  PRODUCERS_FETCH_COLUMNS,
+} from "./fetchAccountPageDataColumns";
 
 function stubQuery(data: unknown) {
   const q: Record<string, unknown> = {};
   const chain = () => q;
-  q.select = chain;
+  q.select = () => q;
   q.eq = chain;
   q.is = chain;
   q.order = chain;
@@ -69,6 +73,49 @@ describe("fetchAccountPageData", () => {
     expect(queriedTables).toContain("events");
   });
 
+  it("uses explicit column lists for accounts and producers (no select *)", async () => {
+    const selects: { table: string; cols: string }[] = [];
+
+    const client = {
+      from(table: string) {
+        const rowData =
+          table === "accounts"
+            ? MOCK_ACCOUNT
+            : table === "producers"
+              ? MOCK_PRODUCER
+              : MOCK_EVENTS;
+
+        const q: Record<string, unknown> = {};
+        const chain = () => q;
+        q.select = (cols: string) => {
+          selects.push({ table, cols });
+          return q;
+        };
+        q.eq = chain;
+        q.is = chain;
+        q.order = chain;
+        q.maybeSingle = () => Promise.resolve({ data: rowData, error: null });
+        q.then = (resolve: (v: unknown) => unknown) =>
+          Promise.resolve({ data: rowData, error: null }).then(resolve);
+        return q;
+      },
+    };
+
+    await fetchAccountPageData("test-slug", client as any);
+
+    const accountCols = selects.find((s) => s.table === "accounts")?.cols ?? "";
+    const producerCols = selects.find((s) => s.table === "producers")?.cols ?? "";
+
+    expect(accountCols).not.toMatch(/\*/);
+    expect(producerCols).not.toMatch(/\*/);
+    expect(accountCols).toBe(ACCOUNTS_FETCH_COLUMNS);
+    expect(producerCols).toBe(PRODUCERS_FETCH_COLUMNS);
+    expect(accountCols).toContain("slug");
+    expect(accountCols).toContain("account_name");
+    expect(producerCols).toContain("id");
+    expect(producerCols).toContain("event_window_days");
+  });
+
   it("starts accounts and producers before either resolves", async () => {
     const started: string[] = [];
     const resolvers: Record<string, () => void> = {};
@@ -97,7 +144,7 @@ describe("fetchAccountPageData", () => {
 
         const q: Record<string, unknown> = {};
         const chain = () => q;
-        q.select = chain;
+        q.select = () => q;
         q.eq = chain;
         q.is = chain;
         q.order = chain;

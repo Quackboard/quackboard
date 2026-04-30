@@ -1,5 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Event, Booking } from "@/types/database";
+import {
+  ACCOUNTS_FETCH_COLUMNS,
+  PRODUCERS_FETCH_COLUMNS,
+} from "@/lib/fetchAccountPageDataColumns";
 
 export interface AccountPageData {
   account: Record<string, unknown> | null;
@@ -22,8 +26,14 @@ export async function fetchAccountPageData(
     { data: account, error: accountError },
     { data: producer, error: producerError },
   ] = await Promise.all([
-    (client.from("accounts") as any).select("*").eq("slug", slug).maybeSingle(),
-    (client.from("producers") as any).select("*").eq("slug", slug).maybeSingle(),
+    (client.from("accounts") as any)
+      .select(ACCOUNTS_FETCH_COLUMNS)
+      .eq("slug", slug)
+      .maybeSingle(),
+    (client.from("producers") as any)
+      .select(PRODUCERS_FETCH_COLUMNS)
+      .eq("slug", slug)
+      .maybeSingle(),
   ]);
 
   if (accountError) throw accountError;

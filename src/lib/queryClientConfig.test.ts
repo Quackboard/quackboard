@@ -45,4 +45,14 @@ describe("QueryClient staleTime", () => {
     client = createQueryClient();
     expect(client.getDefaultOptions().queries?.staleTime).toBe(60_000);
   });
+
+  it("createQueryClient disables refetch on window focus by default", () => {
+    client = createQueryClient();
+    expect(client.getDefaultOptions().queries?.refetchOnWindowFocus).toBe(false);
+  });
+
+  it("createQueryClient sets retry to 1 by default", () => {
+    client = createQueryClient();
+    expect(client.getDefaultOptions().queries?.retry).toBe(1);
+  });
 });
