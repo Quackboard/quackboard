@@ -609,10 +609,10 @@ export default function CreateSingleMic() {
         {/* Actions */}
         <div className="flex gap-3 pt-4">
           <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="button" variant="outline" onClick={handleSubmit((data) => onSubmit(data, 'draft'))} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={handleSubmit((data) => onSubmit(data, 'draft'), onValidationError)} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as Draft'}
           </Button>
-          <Button type="button" onClick={handleSubmit((data) => onSubmit(data, 'published'))} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit((data) => onSubmit(data, 'published'), onValidationError)} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
           </Button>
         </div>
