@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { Instagram, Globe, MapPin } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
+import { ACCOUNT_PAGE_EVENT_COLUMNS } from '@/lib/accountPageColumns';
 import { Event, Booking } from '@/types/database';
 import { DaySelector } from '@/components/producer/DaySelector';
 import { EventCard } from '@/components/producer/EventCard';
@@ -81,7 +82,7 @@ export default function AccountPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(ACCOUNT_PAGE_EVENT_COLUMNS)
         .eq('producer_id', producer!.id)
         .eq('status', 'published')
         .order('date', { ascending: true })

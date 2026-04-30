@@ -28,7 +28,7 @@ interface EventWithBookings {
   status: string;
   publish_at: string | null;
   signup_opens_at: string | null;
-  bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
+  bookings?: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
 interface CalendarDashboardProps {

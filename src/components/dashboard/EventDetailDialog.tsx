@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatTime } from '@/lib/utils';
+import { activeBookingsList } from '@/lib/eventRowActiveBookings';
 
 interface EventWithBookings {
   id: string;
@@ -80,7 +81,7 @@ export function EventDetailDialog({ event, isOpen, onClose, getEventStatus }: Ev
             <div>
               <p className="font-medium">Bookings</p>
               <p className="text-muted-foreground">
-                {event.bookings.filter(b => !b.cancelled_at).length} spots filled out of {event.sections_config.reduce((acc, s) => acc + s.slots, 0)} total
+                {activeBookingsList(event.bookings).length} spots filled out of {event.sections_config.reduce((acc, s) => acc + s.slots, 0)} total
               </p>
             </div>
           </div>

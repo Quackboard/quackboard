@@ -14,6 +14,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { EmbedSection } from '@/components/embed/EmbedSection';
+import {
+  DASHBOARD_CALENDAR_EVENT_COLUMNS,
+  DASHBOARD_EVENT_COLUMNS,
+  DASHBOARD_PAST_EVENT_COLUMNS,
+} from '@/lib/dashboardEventColumns';
+import { bookingCountForDeleteDialog } from '@/lib/bookingCountForDeleteDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,7 +38,7 @@ interface EventWithBookings {
   publish_at: string | null;
   signup_opens_at: string | null;
   template_id: string | null;
-  bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
+  bookings?: { id: string; slot_position: number; cancelled_at: string | null }[];
 }
 
 interface EventAvailability {
@@ -64,11 +70,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select(`
-          id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, template_id,
-          bookings (id, slot_position, cancelled_at)
-        `)
+        .select(DASHBOARD_CALENDAR_EVENT_COLUMNS)
         .eq('producer_id', user!.id)
         .order('date', { ascending: true });
       if (error) throw error;
@@ -87,11 +89,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select(`
-          id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, template_id,
-          bookings (id, slot_position, cancelled_at)
-        `)
+        .select(DASHBOARD_EVENT_COLUMNS)
         .eq('producer_id', user!.id)
         .or(`date.gt.${today},and(date.eq.${today},end_time.gte.${nowTime})`)
         .order('date', { ascending: true });
@@ -107,11 +105,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select(`
-          id, title, date, created_at, start_time, end_time, venue_name,
-          sections_config, status, publish_at, signup_opens_at, template_id,
-          bookings (id, slot_position, cancelled_at)
-        `)
+        .select(DASHBOARD_PAST_EVENT_COLUMNS)
         .eq('producer_id', user!.id)
         .or(`date.lt.${today},and(date.eq.${today},end_time.lt.${nowTime})`)
         .order('date', { ascending: false });
@@ -349,7 +343,9 @@ export default function Dashboard() {
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
                           isHappeningNow
-                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          activeBookingCount={bookingCountForDeleteDialog(
+                            availabilityMap.get(event.id) ?? null
+                          )}
                           onDelete={handleDeleteEvent}
                         />
                       ))}
@@ -369,7 +365,9 @@ export default function Dashboard() {
                           key={event.id}
                           event={event}
                           availability={availabilityMap.get(event.id) ?? null}
-                          activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                          activeBookingCount={bookingCountForDeleteDialog(
+                            availabilityMap.get(event.id) ?? null
+                          )}
                           onDelete={handleDeleteEvent}
                         />
                       ))}
@@ -412,7 +410,9 @@ export default function Dashboard() {
                               key={event.id}
                               event={event}
                               availability={availabilityMap.get(event.id) ?? null}
-                              activeBookingCount={event.bookings.filter(b => !b.cancelled_at).length}
+                              activeBookingCount={bookingCountForDeleteDialog(
+                                availabilityMap.get(event.id) ?? null
+                              )}
                               onDelete={handleDeleteEvent}
                             />
                           ))}
