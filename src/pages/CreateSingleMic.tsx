@@ -172,6 +172,66 @@ export default function CreateSingleMic() {
   const watchSignupOption = watch('signupOption');
   const watchDate = watch('date');
 
+  const FIELD_LABELS: Record<string, string> = {
+    date: 'Date',
+    startTime: 'Start time',
+    endTime: 'End time',
+    title: 'Title',
+    venueName: 'Venue name',
+    venueAddress: 'Venue address',
+    sections: 'Spot section',
+    slots: 'Spots',
+    signup_opens_at_days_before: 'Wildcard days before',
+    signup_opens_at_time: 'Wildcard cutoff time',
+    signupOption: 'Signup timing',
+    signupDaysBefore: 'Signup days before',
+    signupOpensAtTime: 'Signup time',
+    producerMessage: 'Producer message',
+    emailFrequency: 'Email frequency',
+    allowMultipleSlots: 'Multiple spots',
+  };
+
+  const findFirstError = (
+    errs: unknown,
+  ): { key: string | null; message: string } | null => {
+    if (!errs || typeof errs !== 'object') return null;
+    for (const [key, value] of Object.entries(errs as Record<string, unknown>)) {
+      if (!value) continue;
+      if (typeof value === 'object' && 'message' in (value as Record<string, unknown>)) {
+        const msg = (value as { message?: unknown }).message;
+        if (typeof msg === 'string' && msg.length > 0) {
+          return { key, message: msg };
+        }
+      }
+      const nested = findFirstError(value);
+      if (nested) return nested;
+    }
+    return null;
+  };
+
+  const onValidationError = (formErrors: unknown) => {
+    const first = findFirstError(formErrors);
+    const label = first?.key ? FIELD_LABELS[first.key] : null;
+    const description = first?.message
+      ? label
+        ? `${label}: ${first.message}`
+        : first.message
+      : 'Some required fields are missing or invalid.';
+
+    toast({
+      title: 'Please fix the errors above',
+      description,
+      variant: 'destructive',
+    });
+
+    try {
+      const el = document.querySelector('[aria-invalid="true"]') as HTMLElement | null;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch {
+      // ignore
+    }
+  };
+
   const onSubmit = async (data: FormData, status: 'draft' | 'published') => {
     if (!user) return;
     setIsSubmitting(true);
