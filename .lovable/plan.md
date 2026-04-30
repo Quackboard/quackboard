@@ -1,36 +1,46 @@
 ## Goal
 
-Improve the "Spot already taken" recovery flow in `SignUpModal.tsx` only. No changes to the edge function, booking logic, realtime sync, or any other component.
+Stop the silent "nothing happens on Publish" experience in `src/pages/CreateSingleMic.tsx`. When validation fails, surface a destructive toast naming the first invalid field so the user knows what to fix.
 
-## Changes (single file: `src/components/producer/SignUpModal.tsx`)
+## Changes (single file: `src/pages/CreateSingleMic.tsx`)
 
-### 1. Persist comic info across failed attempts
+### 1. Add a validation-error handler
 
-Today, prefill is only written to `sessionStorage` after a *successful* booking. Update the prefill logic so the user's name/email/instagram are saved as soon as they attempt a booking, regardless of outcome.
+Add a small helper inside the component that takes the RHF `errors` object (the second arg `handleSubmit` passes to its error callback), walks it to find the first field with a `message`, and shows a destructive toast:
 
-- On submit (before calling `createBooking`), write the current form values to `sessionStorage` under the existing `quackboard:comic-prefill` key.
-- Keep the existing post-success write (harmless, same data).
-- Result: if the slot is taken and they pick another spot, the modal reopens with their info already filled in.
+- Title: "Please fix the errors above"
+- Description: the first error message (e.g. "End time must be after start time", "Venue name is required"), prefixed with a human-readable field label when possible (date, start time, end time, venue name, venue address, sections, signup timing, etc.).
+- Falls back to "Some required fields are missing or invalid." if no message can be extracted.
 
-### 2. Auto-close modal on `slot_taken`
+It will also attempt to scroll the first invalid field into view using `document.querySelector('[aria-invalid="true"]')` + `scrollIntoView({ behavior: 'smooth', block: 'center' })`, wrapped in a try/catch.
 
-In the `switch (result.code)` block, the `slot_taken` case will:
-- Show the existing destructive toast ("Spot already taken — Try another spot").
-- Call `onOpenChange(false)` to close the modal.
-- Do NOT call `form.reset()` (so values stay in `sessionStorage` prefill for the next open).
-- Do NOT call `onSuccess()` (no booking happened — leave the parent's success-only refetch alone).
+### 2. Wire it into both buttons
 
-Other error cases (`duplicate_email`, default) keep current behavior: toast shown, modal stays open.
+Update the two buttons on lines 552 and 555 so `handleSubmit` receives the new error handler as its second argument:
+
+```ts
+onClick={handleSubmit(
+  (data) => onSubmit(data, 'draft'),
+  onValidationError,
+)}
+```
+
+Same for the Publish button with `'published'`.
+
+### 3. Field label map
+
+Small `Record<string, string>` inside the component mapping form field names (`date`, `startTime`, `endTime`, `venueName`, `venueAddress`, `sections`, `signupDaysBefore`, `signupOpensAtTime`, `producerMessage`, etc.) to friendly labels used in the toast description. Wildcard sub-errors (`sections.0.slots`, `sections.1.signup_opens_at_time`) get a generic "Spot section" label.
 
 ## Out of scope (explicitly untouched)
 
-- `create-booking` edge function
-- `SpotList.tsx` realtime subscription
-- Any parent component (`EventCard`, `ProducerPage`)
-- Toast copy for other error codes
-- Success flow
+- `onSubmit` itself, the edge function call, and the success path
+- The Zod schema and any validation rules
+- `CreateRecurringMic.tsx` (same pattern could be applied later but not in this change)
+- Recurring mic generation horizon work discussed earlier
+- Toast styling (uses existing `useToast` already imported on line 24)
 
 ## Technical notes
 
-- The existing `useEffect` on `[open]` already calls `form.reset(readPrefill())` when the modal opens, so persisting values to sessionStorage is sufficient — no need to manually re-seed the form on next open.
-- Wrap the new sessionStorage write in try/catch (matches existing pattern for private mode/quota safety).
+- `handleSubmit(onValid, onInvalid)` is the standard RHF API; `onInvalid` receives `FieldErrors<FormData>`.
+- Nested errors (sections array, refinements) are walked recursively to find the first `{ message: string }` leaf.
+- No new dependencies. No schema changes. No DB or edge function changes.
