@@ -109,6 +109,38 @@ This document is updated **after each performance task** is completed. You can c
 
 ---
 
+## Task 4 — One shared “producer URL” check after login (completed)
+
+**Date (approx.):** April 2026  
+**Branch / integration:** `perf/task-4-protected-route-producer-slug-cache` → `perf/integration`
+
+### What was going wrong
+
+- After you **log in**, the app was **asking the database twice** (in two different ways) for essentially the same thing: **“Does this producer account already have its public page URL set?”**  
+- One path powered the **nav / dashboard**, the other ran only inside the **route guard**. That meant **extra wait time**, **extra load**, and two places to keep in sync if we ever change how slugs are resolved.
+
+### What users might have noticed
+
+- **After:** Slightly **snappier** move from login into the **dashboard and other producer pages**, with **less duplicate work** in the background. Day-to-day screens should behave the same.
+- **New producers** without a URL yet should still land on **onboarding**; **edit profile** after changing your public link should refresh what the app thinks your URL is **without waiting several minutes**.
+
+### What we changed (high level)
+
+- The **protected route** now uses the **same cached lookup** as the rest of the producer UI for “do we have a public slug?” instead of firing its own separate request every time.
+- If **loading that lookup fails**, we **do not** trap you in a redirect loop—we let you through (same safety behavior as before).
+- After **saving edit profile**, we **refresh** that shared lookup so the **navbar and links** pick up a new slug right away.
+
+### Risks / things to watch when testing
+
+- **Rare account types:** If someone’s slug comes from a **different table path** than a plain producer row, the guard now **matches the navbar** (usually good; confirm if you have special test accounts).
+- **Please click once:** log in → **dashboard** → open **edit profile** → change nothing and back; then (if you have a staging user) change slug, save, confirm **dashboard / nav** show the new URL.
+
+### Technical reference (optional)
+
+- `ProtectedRoute.tsx` + `useProducerSlug` (`isError` exposed); `EditProfile.tsx` invalidates `['producer-slug', user.id]` after successful update.
+
+---
+
 ## Template — copy for each new task
 
 ### Task N — **[short title]**

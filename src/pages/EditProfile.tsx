@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ function handleToInstagramUrl(handle: string): string {
 export function EditProfile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const form = useForm<EditProfileFormData>({
     resolver: zodResolver(editProfileSchema),
@@ -190,6 +192,8 @@ export function EditProfile() {
       if (error) {
         throw error;
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['producer-slug', user.id] });
 
       toast.success('Profile updated successfully!');
       navigate('/dashboard');
