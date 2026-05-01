@@ -141,6 +141,39 @@ This document is updated **after each performance task** is completed. You can c
 
 ---
 
+## Task 5 — Faster load for the public producer page (completed)
+
+**Date (approx.):** April 2026  
+**Branch / integration:** `perf/task-5-account-page-fetch-account-page-data` → `perf/integration`
+
+### What was going wrong
+
+- The **public mic page** (`/{slug}`) was asking the database in **several separate steps** (profile, producer, events, then bookings), which added **extra round-trips** before everything on the page was ready.
+- The **batch helper** in code could already load the same data in **fewer trips**, but the **live page** was not using it yet.
+
+### What users might have noticed
+
+- **After:** The page should **finish loading sooner** on slower connections, with **less back-and-forth** to the server. The first full view of the page may wait slightly longer for **events and bookings** to be ready together before the skeleton disappears (a tradeoff for fewer total requests).
+- **Sign-ups, live slot updates, and two-tab behavior** should still work the same way in normal use.
+
+### What we changed (high level)
+
+- The public page now loads through **one coordinated data fetch** (two server phases inside it: profile batch, then events with bookings embedded).
+- **Event lists** use the same **lean column lists** as before—no return to “download every column.”
+- When someone books or a **live update** fires, the page **refreshes that same bundle** so lists stay in sync (a future task can make that refresh even lighter).
+
+### Risks / things to watch when testing
+
+- **Stale or blank edge cases:** Try a **bad slug**, a **reserved path**, and a **real producer** page; confirm **NotFound** and normal pages still behave.
+- **Two browsers:** book or cancel in one window; the other should still update.
+- If the **skeleton feels longer** on very slow networks, tell us—we can tune a follow-up without undoing the fewer-round-trips win.
+
+### Technical reference (optional)
+
+- `AccountPage.tsx`: single React Query `['account-page', slug]` + `fetchAccountPageData`; `fetchAccountPageData.ts` events `select` aligned with `ACCOUNT_PAGE_EVENT_COLUMNS` + embedded `bookings`.
+
+---
+
 ## Template — copy for each new task
 
 ### Task N — **[short title]**

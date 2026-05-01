@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
+import { ACCOUNT_PAGE_EVENT_COLUMNS } from "./accountPageColumns";
 import { fetchAccountPageData } from "./fetchAccountPageData";
 import {
   ACCOUNTS_FETCH_COLUMNS,
   PRODUCERS_FETCH_COLUMNS,
 } from "./fetchAccountPageDataColumns";
+
+const EXPECTED_EVENTS_SELECT = `${ACCOUNT_PAGE_EVENT_COLUMNS},bookings(id, event_id, slot_position, guest_name, cancelled_at)`;
 
 function stubQuery(data: unknown) {
   const q: Record<string, unknown> = {};
@@ -114,6 +117,13 @@ describe("fetchAccountPageData", () => {
     expect(accountCols).toContain("account_name");
     expect(producerCols).toContain("id");
     expect(producerCols).toContain("event_window_days");
+
+    const eventCols = selects.find((s) => s.table === "events")?.cols ?? "";
+    expect(eventCols).not.toMatch(/^\*/);
+    expect(eventCols).toBe(EXPECTED_EVENTS_SELECT);
+    expect(eventCols).toContain("bookings(id");
+    expect(eventCols).toContain("id");
+    expect(eventCols).toContain("signup_opens_at");
   });
 
   it("starts accounts and producers before either resolves", async () => {

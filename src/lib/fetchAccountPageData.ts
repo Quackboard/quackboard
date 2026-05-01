@@ -1,9 +1,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Event, Booking } from "@/types/database";
+import { ACCOUNT_PAGE_EVENT_COLUMNS } from "@/lib/accountPageColumns";
 import {
   ACCOUNTS_FETCH_COLUMNS,
   PRODUCERS_FETCH_COLUMNS,
 } from "@/lib/fetchAccountPageDataColumns";
+
+const ACCOUNT_PAGE_EVENTS_WITH_BOOKINGS_SELECT = `${ACCOUNT_PAGE_EVENT_COLUMNS},bookings(id, event_id, slot_position, guest_name, cancelled_at)`;
 
 export interface AccountPageData {
   account: Record<string, unknown> | null;
@@ -45,7 +48,7 @@ export async function fetchAccountPageData(
   }
 
   const { data: rawEvents, error: eventsError } = await (client.from("events") as any)
-    .select("*, bookings(id, event_id, slot_position, guest_name, cancelled_at)")
+    .select(ACCOUNT_PAGE_EVENTS_WITH_BOOKINGS_SELECT)
     .eq("producer_id", producerRow.id)
     .eq("status", "published")
     .order("date", { ascending: true })
