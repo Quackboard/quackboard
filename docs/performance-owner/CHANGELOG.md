@@ -78,6 +78,37 @@ This document is updated **after each performance task** is completed. You can c
 
 ---
 
+## Task 3 — Less background polling on the public mic page (completed)
+
+**Date (approx.):** April 2026  
+**Branch / integration:** `perf/task-3-account-page-remove-bookings-poll` → `perf/integration`
+
+### What was going wrong
+
+- On the **public producer page** (`/{slug}`), the list of who booked which slot was **re-downloaded from the server every 10 seconds** for everyone viewing the page, **even when nothing changed**.
+- The same page **already** listens for live database updates, so the timer was mostly **duplicate work**—extra traffic, battery, and load on a page that should feel light for comics signing up on their phones.
+
+### What users might have noticed
+
+- **Before:** Quiet background activity every few seconds while the page stayed open (often invisible, but it adds up at scale).
+- **After:** Slot lists should still **update right away** when someone books or cancels (live updates and your own sign-up still refresh the list). **No change** to sign-up rules, emails, or security.
+
+### What we changed (high level)
+
+- **Removed** the fixed **every-10-seconds** refresh for bookings on the public page.
+- **Kept** live updates when bookings change, and **kept** an immediate refresh after **you** successfully book a spot on that device.
+
+### Risks / things to watch when testing
+
+- We traded a small **“self-heal every 10 seconds”** safety net for **less background traffic**. If live updates were ever slow or blocked (unusual networks, strict firewalls), a tab could show **stale slots until you refresh the page**—not wrong payments or broken logins.
+- **Please click once:** open a public `/{slug}` in **two browsers** (or two tabs with different users); book or release a slot in one and confirm the other updates. Try a normal sign-up on your phone once.
+
+### Technical reference (optional)
+
+- `AccountPage.tsx`: bookings `useQuery` no longer sets `refetchInterval`; realtime + `invalidateQueries` + `onBookingSuccess` unchanged.
+
+---
+
 ## Template — copy for each new task
 
 ### Task N — **[short title]**

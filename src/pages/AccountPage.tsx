@@ -110,7 +110,6 @@ export default function AccountPage() {
     },
     enabled: eventIds.length > 0,
     placeholderData: (prev) => prev,
-    refetchInterval: 10_000,
   });
 
   const refetchBookings = useCallback(() => {
