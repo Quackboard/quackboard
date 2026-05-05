@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { Instagram, Globe, MapPin } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAccountPageData } from '@/lib/fetchAccountPageData';
 import { Event, Booking } from '@/types/database';
 import { DaySelector } from '@/components/producer/DaySelector';
 import { EventCard } from '@/components/producer/EventCard';
@@ -45,76 +46,23 @@ export default function AccountPage() {
 
   const isReserved = !!slug && RESERVED_SLUGS.has(slug);
 
-  // 1. Query accounts table for profile display
-  const { data: account, isLoading: accountLoading } = useQuery({
-    queryKey: ['account', slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('slug', slug!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+  const { data, isLoading } = useQuery({
+    queryKey: ['account-page', slug],
+    queryFn: () => fetchAccountPageData(slug!, supabase),
     enabled: !!slug && !isReserved,
-  });
-
-  // 2. Query producers table for producer_id and event_window_days
-  const { data: producer, isLoading: producerLoading } = useQuery({
-    queryKey: ['account-producer', slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('producers')
-        .select('*')
-        .eq('slug', slug!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!slug && !isReserved,
-  });
-
-  // 3. Query published events
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ['account-events', producer?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('producer_id', producer!.id)
-        .eq('status', 'published')
-        .order('date', { ascending: true })
-        .order('start_time', { ascending: true });
-      if (error) throw error;
-      return data as Event[];
-    },
-    enabled: !!producer?.id,
-  });
-
-  // 4. Query bookings for all event IDs
-  const eventIds = useMemo(() => events?.map(e => e.id) || [], [events]);
-
-  const { data: bookings } = useQuery({
-    queryKey: ['account-bookings', eventIds],
-    queryFn: async () => {
-      if (eventIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('id, event_id, slot_position, guest_name, cancelled_at')
-        .in('event_id', eventIds)
-        .is('cancelled_at', null);
-      if (error) throw error;
-      return data as Booking[];
-    },
-    enabled: eventIds.length > 0,
     placeholderData: (prev) => prev,
-    refetchInterval: 10_000,
   });
 
-  const refetchBookings = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['account-bookings'] });
-  }, [queryClient]);
+  const account = data?.account as Record<string, unknown> | null | undefined;
+  const producer = data?.producer as Record<string, unknown> | null | undefined;
+  const events = (data?.events ?? []) as (Event & { bookings: Booking[] })[];
+
+  const eventIds = useMemo(() => events.map((e) => e.id), [events]);
+
+  const invalidateAccountPage = useCallback(() => {
+    if (!slug) return;
+    queryClient.invalidateQueries({ queryKey: ['account-page', slug] });
+  }, [queryClient, slug]);
 
   // Realtime subscription on bookings
   const eventIdsKey = eventIds.join(',');
@@ -128,19 +76,19 @@ export default function AccountPage() {
         (payload) => {
           const eventId = (payload.new as any)?.event_id || (payload.old as any)?.event_id;
           if (eventId && eventIds.includes(eventId)) {
-            refetchBookings();
+            invalidateAccountPage();
           }
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [eventIdsKey, refetchBookings]);
+  }, [eventIdsKey, invalidateAccountPage]);
 
   // Window filtering (same as ProducerPage)
-  const windowDays = producer?.event_window_days ?? 7;
+  const windowDays = (producer?.event_window_days as number | undefined) ?? 7;
   const windowEnd = new Date();
   windowEnd.setDate(windowEnd.getDate() + windowDays - 1);
-  const currentEvents = (events || []).filter(e => {
+  const currentEvents = events.filter(e => {
     if (isEventPast(e)) return false;
     const eventDate = new Date(e.date);
     return eventDate <= windowEnd;
@@ -151,7 +99,7 @@ export default function AccountPage() {
 
   // Auto-select first date
   useEffect(() => {
-    if (events && !selectedDate) {
+    if (events.length > 0 && !selectedDate) {
       const firstCurrentDate = currentEvents
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .map(e => e.date)[0];
@@ -173,8 +121,6 @@ export default function AccountPage() {
     return <NotFound />;
   }
 
-  const isLoading = accountLoading || producerLoading;
-
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
@@ -191,14 +137,14 @@ export default function AccountPage() {
   }
 
   // Use account data with producer fallback
-  const displayName = account?.account_name || producer?.name || 'Unknown';
-  const venueName = account?.venue_name || producer?.venue_name;
-  const venueAddress = account?.venue_address || producer?.venue_address;
-  const bioMarkdown = account?.bio_markdown || producer?.bio_markdown;
-  const instagram = account?.instagram || producer?.instagram;
-  const website = account?.website || producer?.website;
-  const headerImageUrl = account?.header_image_url || producer?.header_image_url;
-  const profileImageUrl = account?.profile_image_url || producer?.profile_image_url;
+  const displayName = (account?.account_name as string | undefined) || (producer?.name as string | undefined) || 'Unknown';
+  const venueName = (account?.venue_name as string | undefined) || (producer?.venue_name as string | undefined);
+  const venueAddress = (account?.venue_address as string | undefined) || (producer?.venue_address as string | undefined);
+  const bioMarkdown = (account?.bio_markdown as string | undefined) || (producer?.bio_markdown as string | undefined);
+  const instagram = (account?.instagram as string | undefined) || (producer?.instagram as string | undefined);
+  const website = (account?.website as string | undefined) || (producer?.website as string | undefined);
+  const headerImageUrl = (account?.header_image_url as string | undefined) || (producer?.header_image_url as string | undefined);
+  const profileImageUrl = (account?.profile_image_url as string | undefined) || (producer?.profile_image_url as string | undefined);
 
   return (
     <main className="min-h-screen bg-background">
@@ -290,12 +236,7 @@ export default function AccountPage() {
         </header>
 
         {/* Event Listing */}
-        {eventsLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-        ) : eventDates.length === 0 ? (
+        {eventDates.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No events scheduled.</p>
           </div>
@@ -320,9 +261,9 @@ export default function AccountPage() {
                     <div className="flex-1 min-w-0">
                     <EventCard
                         event={event}
-                        bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                        producerVenueName={venueName}
-                        onBookingSuccess={refetchBookings}
+                        bookings={event.bookings ?? []}
+                        producerVenueName={venueName as string | null | undefined}
+                        onBookingSuccess={invalidateAccountPage}
                         autoExpand={!!timeParam && event.start_time === timeParam}
                       />
                     </div>
@@ -335,9 +276,9 @@ export default function AccountPage() {
                 <EventCard
                   key={event.id}
                   event={event}
-                  bookings={bookings?.filter(b => b.event_id === event.id) || []}
-                  producerVenueName={venueName}
-                  onBookingSuccess={refetchBookings}
+                  bookings={event.bookings ?? []}
+                  producerVenueName={venueName as string | null | undefined}
+                  onBookingSuccess={invalidateAccountPage}
                   autoExpand={!!timeParam && event.start_time === timeParam}
                 />
               ))}

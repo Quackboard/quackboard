@@ -27,3 +27,6 @@ dist-ssr
    .env.local
    node_modules/
    dist/
+
+# Local iOS experiments — do not commit
+ios/

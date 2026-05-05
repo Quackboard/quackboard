@@ -3,13 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Hook to get the current user's producer slug
- * Returns slug if set, null if not set, undefined while loading
+ * Hook to get the current user's producer slug.
+ * Returns slug if set, null if not set; isLoading while fetching; isError if the query failed.
  */
 export function useProducerSlug() {
   const { user } = useAuth();
 
-  const { data: producer, isLoading } = useQuery({
+  const { data: producer, isLoading, isError } = useQuery({
     queryKey: ['producer-slug', user?.id],
     queryFn: async () => {
       // Try producers table first
@@ -51,6 +51,7 @@ export function useProducerSlug() {
     slug: producer?.slug || null,
     name: producer?.name || null,
     isLoading,
+    isError,
     needsOnboarding: !isLoading && producer && !producer.slug,
   };
 }

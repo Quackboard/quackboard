@@ -1,7 +1,7 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useProducerSlug } from '@/hooks/useProducerSlug';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -11,39 +11,9 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [checkingSlug, setCheckingSlug] = useState(true);
-  const [hasSlug, setHasSlug] = useState<boolean | null>(null);
+  const { slug, isLoading: slugLoading, isError: slugError } = useProducerSlug();
 
-  useEffect(() => {
-    const checkSlug = async () => {
-      if (!user) {
-        setCheckingSlug(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('producers')
-        .select('slug')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking slug:', error);
-        setHasSlug(true); // Assume has slug on error to avoid redirect loop
-      } else {
-        setHasSlug(!!data?.slug);
-      }
-      setCheckingSlug(false);
-    };
-
-    if (user && !loading) {
-      checkSlug();
-    } else if (!loading) {
-      setCheckingSlug(false);
-    }
-  }, [user, loading]);
-
-  if (loading || checkingSlug) {
+  if (loading || (user && slugLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -55,11 +25,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if we came from onboarding and need to stay on dashboard
   const fromOnboarding = location.state?.fromOnboarding;
 
-  // Redirect to onboarding if user doesn't have a slug (except if already on onboarding)
-  if (hasSlug === false && location.pathname !== '/onboarding' && !fromOnboarding) {
+  // Match prior behavior on fetch errors: do not force onboarding (avoids redirect loops).
+  const needsOnboardingSlug =
+    !slugLoading &&
+    !slugError &&
+    slug === null &&
+    location.pathname !== '/onboarding' &&
+    !fromOnboarding;
+
+  if (needsOnboardingSlug) {
     return <Navigate to="/onboarding" replace />;
   }
 

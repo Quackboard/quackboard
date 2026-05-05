@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isAfter } from 'date-fns';
 import { cn, formatTime } from '@/lib/utils';
+import { activeBookingsList } from '@/lib/eventRowActiveBookings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChevronDown, MoreVertical, Trash2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -43,7 +44,7 @@ interface EventRowProps {
     status: string;
     publish_at: string | null;
     signup_opens_at: string | null;
-    bookings: { id: string; slot_position: number; cancelled_at: string | null }[];
+    bookings?: { id: string; slot_position: number; cancelled_at: string | null }[];
   };
   isPast?: boolean;
   onDelete?: (eventId: string) => Promise<void>;
@@ -77,7 +78,7 @@ export function EventRow({ event, isPast = false, onDelete }: EventRowProps) {
   const now = new Date();
   const isMobile = useIsMobile();
   const sections = parseSections(event.sections_config);
-  const activeBookings = event.bookings.filter(b => !b.cancelled_at);
+  const activeBookings = activeBookingsList(event.bookings);
   const activeBookingCount = activeBookings.length;
 
   const getStatus = () => {
