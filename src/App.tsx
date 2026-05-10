@@ -28,7 +28,9 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import EmailPreview from "./pages/EmailPreview";
 import DiscoverMics from "./pages/DiscoverMics";
-import Admin from "./pages/Admin";
+import { AdminGate } from "./pages/admin/AdminGate";
+import AdminAccounts from "./pages/admin/AdminAccounts";
+import AdminAccountDetail from "./pages/admin/AdminAccountDetail";
 import AccountPage from "./pages/AccountPage";
 import { FeedbackButton } from "./components/FeedbackButton";
 
@@ -65,7 +67,8 @@ const App = () => (
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/email-preview" element={<EmailPreview />} />
             
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<AdminGate><AdminAccounts /></AdminGate>} />
+            <Route path="/admin/accounts/:id" element={<AdminGate><AdminAccountDetail /></AdminGate>} />
 
             <Route path="/browse" element={<DiscoverMics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
